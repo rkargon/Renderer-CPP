@@ -1,0 +1,329 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		D91EBF2F19420AE1009FC85B /* common.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D91EBF2E19420AE1009FC85B /* common.cpp */; };
+		D92DFC3E1942249D00CA4882 /* QTKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D92DFC3D1942249D00CA4882 /* QTKit.framework */; };
+		D92DFC43194224CC00CA4882 /* QtCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D92DFC3F194224CC00CA4882 /* QtCore.framework */; };
+		D92DFC44194224CC00CA4882 /* QtGui.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D92DFC40194224CC00CA4882 /* QtGui.framework */; };
+		D92DFC45194224CC00CA4882 /* QtQml.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D92DFC41194224CC00CA4882 /* QtQml.framework */; };
+		D92DFC481942251400CA4882 /* QtWidgets.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D92DFC471942251400CA4882 /* QtWidgets.framework */; };
+		D92DFC4B19422F9E00CA4882 /* RenderWindow.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D92DFC4919422F9E00CA4882 /* RenderWindow.cpp */; };
+		D92DFC4E1942324F00CA4882 /* RenderArea.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D92DFC4C1942324F00CA4882 /* RenderArea.cpp */; };
+		D930A2FF1944A3B300C51194 /* camera.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D930A2FD1944A3B300C51194 /* camera.cpp */; };
+		D96BB38A1940AE450011583B /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D96BB3891940AE450011583B /* main.cpp */; };
+		D96BB38C1940AE450011583B /* Renderer.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = D96BB38B1940AE450011583B /* Renderer.1 */; };
+		D993672B194514FE005C507C /* scene.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D9936729194514FE005C507C /* scene.cpp */; };
+		D993672E1945230F005C507C /* rendering.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D993672C1945230F005C507C /* rendering.cpp */; };
+		D9BEDABA19410BE7001B0748 /* geom.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D9BEDAB819410BE7001B0748 /* geom.cpp */; };
+		D9E5DB08194B9BF4007979FC /* kdtree.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D9E5DB06194B9BF4007979FC /* kdtree.cpp */; };
+		D9E699D41940FA5A0070422B /* mesh.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D9E699D21940FA5A0070422B /* mesh.cpp */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		D96BB3841940AE450011583B /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1;
+			dstSubfolderSpec = 0;
+			files = (
+				D96BB38C1940AE450011583B /* Renderer.1 in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		D91EBF2E19420AE1009FC85B /* common.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = common.cpp; sourceTree = "<group>"; };
+		D92DFC3D1942249D00CA4882 /* QTKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QTKit.framework; path = System/Library/Frameworks/QTKit.framework; sourceTree = SDKROOT; };
+		D92DFC3F194224CC00CA4882 /* QtCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QtCore.framework; path = ../../../../Qt/5.3/clang_64/lib/QtCore.framework; sourceTree = "<group>"; };
+		D92DFC40194224CC00CA4882 /* QtGui.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QtGui.framework; path = ../../../../Qt/5.3/clang_64/lib/QtGui.framework; sourceTree = "<group>"; };
+		D92DFC41194224CC00CA4882 /* QtQml.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QtQml.framework; path = ../../../../Qt/5.3/clang_64/lib/QtQml.framework; sourceTree = "<group>"; };
+		D92DFC471942251400CA4882 /* QtWidgets.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QtWidgets.framework; path = ../../../../Qt/5.3/clang_64/lib/QtWidgets.framework; sourceTree = "<group>"; };
+		D92DFC4919422F9E00CA4882 /* RenderWindow.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RenderWindow.cpp; sourceTree = "<group>"; };
+		D92DFC4A19422F9E00CA4882 /* RenderWindow.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RenderWindow.h; sourceTree = "<group>"; };
+		D92DFC4C1942324F00CA4882 /* RenderArea.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RenderArea.cpp; sourceTree = "<group>"; };
+		D92DFC4D1942324F00CA4882 /* RenderArea.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RenderArea.h; sourceTree = "<group>"; };
+		D930A2FD1944A3B300C51194 /* camera.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = camera.cpp; sourceTree = "<group>"; };
+		D930A2FE1944A3B300C51194 /* camera.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = camera.h; sourceTree = "<group>"; };
+		D96BB3861940AE450011583B /* Renderer */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Renderer; sourceTree = BUILT_PRODUCTS_DIR; };
+		D96BB3891940AE450011583B /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		D96BB38B1940AE450011583B /* Renderer.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = Renderer.1; sourceTree = "<group>"; };
+		D9936729194514FE005C507C /* scene.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = scene.cpp; sourceTree = "<group>"; };
+		D993672A194514FE005C507C /* scene.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = scene.h; sourceTree = "<group>"; };
+		D993672C1945230F005C507C /* rendering.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = rendering.cpp; sourceTree = "<group>"; };
+		D993672D1945230F005C507C /* rendering.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rendering.h; sourceTree = "<group>"; };
+		D9BEDAB819410BE7001B0748 /* geom.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = geom.cpp; sourceTree = "<group>"; };
+		D9BEDAB919410BE7001B0748 /* geom.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = geom.h; sourceTree = "<group>"; };
+		D9E5DB06194B9BF4007979FC /* kdtree.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = kdtree.cpp; sourceTree = "<group>"; };
+		D9E5DB07194B9BF4007979FC /* kdtree.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = kdtree.h; sourceTree = "<group>"; };
+		D9E699D21940FA5A0070422B /* mesh.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = mesh.cpp; sourceTree = "<group>"; };
+		D9E699D31940FA5A0070422B /* mesh.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mesh.h; sourceTree = "<group>"; };
+		D9E699D51940FA840070422B /* common.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = common.h; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		D96BB3831940AE450011583B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D92DFC481942251400CA4882 /* QtWidgets.framework in Frameworks */,
+				D92DFC43194224CC00CA4882 /* QtCore.framework in Frameworks */,
+				D92DFC44194224CC00CA4882 /* QtGui.framework in Frameworks */,
+				D92DFC45194224CC00CA4882 /* QtQml.framework in Frameworks */,
+				D92DFC3E1942249D00CA4882 /* QTKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		D96BB37D1940AE450011583B = {
+			isa = PBXGroup;
+			children = (
+				D92DFC471942251400CA4882 /* QtWidgets.framework */,
+				D92DFC3F194224CC00CA4882 /* QtCore.framework */,
+				D92DFC40194224CC00CA4882 /* QtGui.framework */,
+				D92DFC41194224CC00CA4882 /* QtQml.framework */,
+				D92DFC3D1942249D00CA4882 /* QTKit.framework */,
+				D96BB3881940AE450011583B /* Renderer */,
+				D96BB3871940AE450011583B /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		D96BB3871940AE450011583B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				D96BB3861940AE450011583B /* Renderer */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		D96BB3881940AE450011583B /* Renderer */ = {
+			isa = PBXGroup;
+			children = (
+				D930A2FD1944A3B300C51194 /* camera.cpp */,
+				D930A2FE1944A3B300C51194 /* camera.h */,
+				D91EBF2E19420AE1009FC85B /* common.cpp */,
+				D9E699D51940FA840070422B /* common.h */,
+				D9BEDAB819410BE7001B0748 /* geom.cpp */,
+				D9BEDAB919410BE7001B0748 /* geom.h */,
+				D96BB3891940AE450011583B /* main.cpp */,
+				D9936729194514FE005C507C /* scene.cpp */,
+				D993672A194514FE005C507C /* scene.h */,
+				D9E699D21940FA5A0070422B /* mesh.cpp */,
+				D9E699D31940FA5A0070422B /* mesh.h */,
+				D993672C1945230F005C507C /* rendering.cpp */,
+				D993672D1945230F005C507C /* rendering.h */,
+				D9E5DB06194B9BF4007979FC /* kdtree.cpp */,
+				D9E5DB07194B9BF4007979FC /* kdtree.h */,
+				D92DFC4C1942324F00CA4882 /* RenderArea.cpp */,
+				D92DFC4D1942324F00CA4882 /* RenderArea.h */,
+				D96BB38B1940AE450011583B /* Renderer.1 */,
+				D92DFC4919422F9E00CA4882 /* RenderWindow.cpp */,
+				D92DFC4A19422F9E00CA4882 /* RenderWindow.h */,
+			);
+			path = Renderer;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		D96BB3851940AE450011583B /* Renderer */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D96BB38F1940AE450011583B /* Build configuration list for PBXNativeTarget "Renderer" */;
+			buildPhases = (
+				D96BB3821940AE450011583B /* Sources */,
+				D96BB3831940AE450011583B /* Frameworks */,
+				D96BB3841940AE450011583B /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Renderer;
+			productName = Renderer;
+			productReference = D96BB3861940AE450011583B /* Renderer */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D96BB37E1940AE450011583B /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0510;
+				ORGANIZATIONNAME = "Raphael Kargon";
+			};
+			buildConfigurationList = D96BB3811940AE450011583B /* Build configuration list for PBXProject "Renderer" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = D96BB37D1940AE450011583B;
+			productRefGroup = D96BB3871940AE450011583B /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				D96BB3851940AE450011583B /* Renderer */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		D96BB3821940AE450011583B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D993672E1945230F005C507C /* rendering.cpp in Sources */,
+				D930A2FF1944A3B300C51194 /* camera.cpp in Sources */,
+				D9E5DB08194B9BF4007979FC /* kdtree.cpp in Sources */,
+				D91EBF2F19420AE1009FC85B /* common.cpp in Sources */,
+				D96BB38A1940AE450011583B /* main.cpp in Sources */,
+				D92DFC4B19422F9E00CA4882 /* RenderWindow.cpp in Sources */,
+				D993672B194514FE005C507C /* scene.cpp in Sources */,
+				D9E699D41940FA5A0070422B /* mesh.cpp in Sources */,
+				D92DFC4E1942324F00CA4882 /* RenderArea.cpp in Sources */,
+				D9BEDABA19410BE7001B0748 /* geom.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		D96BB38D1940AE450011583B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.9;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		D96BB38E1940AE450011583B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.9;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		D96BB3901940AE450011583B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					/Users/raphaelkargon/Qt/5.3/clang_64/lib,
+				);
+				"FRAMEWORK_SEARCH_PATHS[arch=*]" = "/Users/raphaelkargon/Qt/5.3/clang_64/lib/**";
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
+					"/Users/raphaelkargon/Qt/5.3/clang_64/include/**",
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		D96BB3911940AE450011583B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					/Users/raphaelkargon/Qt/5.3/clang_64/lib,
+				);
+				"FRAMEWORK_SEARCH_PATHS[arch=*]" = "/Users/raphaelkargon/Qt/5.3/clang_64/lib/**";
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
+					"/Users/raphaelkargon/Qt/5.3/clang_64/include/**",
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		D96BB3811940AE450011583B /* Build configuration list for PBXProject "Renderer" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D96BB38D1940AE450011583B /* Debug */,
+				D96BB38E1940AE450011583B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D96BB38F1940AE450011583B /* Build configuration list for PBXNativeTarget "Renderer" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D96BB3901940AE450011583B /* Debug */,
+				D96BB3911940AE450011583B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = D96BB37E1940AE450011583B /* Project object */;
+}
