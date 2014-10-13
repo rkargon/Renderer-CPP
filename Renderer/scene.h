@@ -18,22 +18,23 @@ enum tex_projection_t {TEX_PROJ_SPHERICAL, TEX_PROJ_CUBIC, TEXT_PROJ_CYLINDRICAL
 
 class material{
 public:
-    color diff_col;
-    real diff_intensity;
+    color diff_col; //The diffuse color of the material
+    real diff_intensity; //The intensity of the diffuse color.
     
-    color spec_col;
-    real spec_intensity;
-    real spec_hardness;
+    color spec_col; //The color of specular highlights
+    real spec_intensity; //The intensity of specular highlights
+    real spec_hardness; //The hardness of specular highlights (according to Phong reflection model)
     
-    real refl_intensity;
-    real alpha;
-    real ior;
+    real refl_intensity; //Amount of light reflected (0 = no relfection, 1 = mirror)
+    real alpha; //Transparency of material. 0 = transparent, 1 = opaque
+    real ior; //Index of refraction for transparency.
     
+    //Textures for color, specular intensity, and normal map
     QImage *col_tex;
     QImage *spec_tex;
     QImage *norm_tex;
     
-    material(const color& dc=color(1,1,1), const real di=1, const color& sc=color(1,1,1), const real si=1, const real sh=128, const real ri=0, const real a=1, const real indxofrefr=1.3, QImage *c=nullptr, QImage *s=nullptr, QImage *n=nullptr);
+    material(const color& dc=color(1,1,1), const real di=1, const color& sc=color(1,1,1), const real si=1, const real sh=128, const real ri=0.4, const real a=1, const real indxofrefr=1.3, QImage *c=nullptr, QImage *s=nullptr, QImage *n=nullptr);
     color getColor(real txu, real txv);
     vertex getNormal(real txu, real txv);
     color getSpecCol(real txu, real txv);
@@ -67,8 +68,8 @@ public:
     vertex betaR, betaM; //Rayleigh and Mie scattering coefficients at sea level
     real Hr, Hm; //Rayleigh and Mie scale heights
     real radiusEarth, radiusAtmo; //Earth and atmosphere radii
-    vertex sundirection;
-    real sunintensity;
+    vertex sundirection; //vector pointing in direction of the sun
+    real sunintensity; //Intensity of the sun
     real g; //mean cosine
     
     sky(vertex betaR = vertex(5.5e-6, 13.0e-6, 22.4e-6), vertex betaM = vertex(21e-6, 21e-6, 21e-6), real Hr = 7994, real Hm = 1200, real radiusEarth=6360e3, real radiusAtmo=6420e3, vertex sundirection=vertex(0,1,0.2), real sunintensity=20, real g = 0.76);

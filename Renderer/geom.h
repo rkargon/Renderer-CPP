@@ -83,6 +83,8 @@ struct ptrEquality{
     bool operator() ( X const &lhs, Y const &rhs ) const
     { return * lhs == * rhs; }
 };
+
+//stores a vertex, as well as texture coordinates and adjacent faces.
 class meshvertex : public vertex
 {
 public:

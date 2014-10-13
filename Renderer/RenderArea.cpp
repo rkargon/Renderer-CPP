@@ -14,9 +14,8 @@ RenderArea::RenderArea(QWidget *parent): QWidget(parent){
     setFocusPolicy(Qt::StrongFocus);
     setFocus(Qt::ActiveWindowFocusReason);
     setLayout(new QHBoxLayout);
-    
-    std::ifstream infile("/Users/raphaelkargon/Documents/Programming/STL Renderer/sphere.stl");
-    sc = new scene(new camera(), std::vector<lamp*>(), new world(), new mesh(infile, "Object"));
+    std::ifstream infile("/Users/raphaelkargon/Documents/Programming/STL Renderer/dragon.stl");
+    sc = new scene(new camera(), std::vector<lamp*>(), new sky(), new mesh(infile, "Object"));
     clock_t begin = clock();
     sc->kdt = kdtree::buildTree(sc->obj->faces);
     clock_t end = clock();
