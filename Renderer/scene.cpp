@@ -21,14 +21,17 @@ material::material(const color& dc, const real di, const color& sc, const real s
     spec_tex(s),
     norm_tex(n){}
 
+//Either returns diff_col, or if col_tex is defined, the pixel corresponding to the passed texture coordinates
 color material::getColor(real txu, real txv){
     if(col_tex==nullptr) return diff_col;
     else return RGBToColor(col_tex->pixel(txu*col_tex->width(), txv*col_tex->height()));
 }
+//TODO: Return normal relative to a passed, default normal
 vertex material::getNormal(real txu, real txv){
     if(norm_tex==nullptr) return vertex();
     else return RGBToColor(norm_tex->pixel(txu*norm_tex->width(), txv*norm_tex->height()));
 }
+//Returns spec_col, or the corresponding pixel of spec_tex to determine specular color
 color material::getSpecCol(real txu, real txv){
     if(spec_tex==nullptr) return spec_col;
     else return RGBToColor(spec_tex->pixel(txu*spec_tex->width(), txv*spec_tex->height()));
@@ -47,13 +50,14 @@ lamp::lamp(const real i, const int fall, const vertex& l, const color& c)
     col(c){}
 
 
-world::world(const color& hc, const color& zc, const bool flat, const bool sky)
+world::world(const color& hc, const color& zc, const bool flat)
     :horizoncol(hc),
     zenithcol(zc),
-    isFlat(flat),
-    isSky(sky){}
+    isFlat(flat){}
 
 //PRECONDITION: dir is normalized
+//If isFlat, horizoncol is returned.
+//Otherwise, z component of r.z is used to interpolate between horizoncol and zenithcol
 color world::getColor(const ray &r){
     if(isFlat) return horizoncol;
     else{
@@ -72,6 +76,9 @@ sky::sky(vertex betaR, vertex betaM, real Hr, real Hm, real radiusEarth, real ra
     sunintensity(sunintensity),
     g(g){}
 
+
+//Source: http://scratchapixel.com/lessons/3d-advanced-lessons/simulating-the-colors-of-the-sky/atmospheric-scattering/
+//Given aa view ray, calculates the color of sky in that direction using atmospheric scattering.
 color sky::getColor(const ray& r){
     ray r_new = r;
     r_new.org.z+=radiusEarth;

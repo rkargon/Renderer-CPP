@@ -29,12 +29,14 @@ public:
     real alpha; //Transparency of material. 0 = transparent, 1 = opaque
     real ior; //Index of refraction for transparency.
     
-    //Textures for color, specular intensity, and normal map
+    //Textures for color, specular color, and normal map
     QImage *col_tex;
     QImage *spec_tex;
     QImage *norm_tex;
     
     material(const color& dc=color(1,1,1), const real di=1, const color& sc=color(1,1,1), const real si=1, const real sh=128, const real ri=0.4, const real a=1, const real indxofrefr=1.3, QImage *c=nullptr, QImage *s=nullptr, QImage *n=nullptr);
+    
+    //Get color, normal vector, and specular color using given texture coordinate
     color getColor(real txu, real txv);
     vertex getNormal(real txu, real txv);
     color getSpecCol(real txu, real txv);
@@ -43,7 +45,13 @@ public:
 class lamp{
 public:
     real intensity;
-    int falloff;
+    
+    //Currently, falloff is not used and is assumed to be inverse quadratic
+    int falloff; //The falloff exponent of the lamp's brightness
+    //0 - constant falloff
+    //1 - inverse linear falloff
+    //2 - inverse quadratic falloff
+    
     vertex loc;
     color col;
     
@@ -53,9 +61,9 @@ public:
 
 class world{
 public:
-    color horizoncol, zenithcol;
-    bool isFlat, isSky;
-    world(const color& hc = color(1,1,1), const color& zc=color(0.8,0.8,1), const bool flat=false, const bool sky=false);
+    color horizoncol, zenithcol; //The color at horizon level, and the the color at the top of the sky
+    bool isFlat; //If isFlat, all colors are horizoncol and zenithcol is ignored.
+    world(const color& hc = color(1,1,1), const color& zc=color(0.8,0.8,1), const bool flat=false);
     virtual color getColor(const ray& r);
 };
 

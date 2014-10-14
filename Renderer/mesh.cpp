@@ -37,21 +37,26 @@ mesh::mesh(ifstream& infile, string objname){
     unordered_set<edge, edgeHasher> edges_hash;
     unordered_set<edge, edgeHasher>::const_iterator e_iter;
     while (!infile.read(facebuffer, 50).eof()){
+        //read face normal
         xtmp = ((float *)facebuffer)[0];
         ytmp = ((float *)facebuffer)[1];
         ztmp = ((float *)facebuffer)[2];
         norm.set(xtmp, ytmp, ztmp);
         
+        //read first vertex
         xtmp = ((float *)facebuffer)[3];
         ytmp = ((float *)facebuffer)[4];
         ztmp = ((float *)facebuffer)[5];
         vtmp.set(xtmp, ytmp, ztmp);
+        //if vertex is not unique, then just point to the existing vertex.
+        //Otherwise, store new vertex
         if((v_iter = vertices_hash.find(vtmp)) == vertices_hash.end()){
             v1 = new meshvertex(xtmp, ytmp, ztmp);
             vertices_hash.insert({vtmp, v1});
         }
         else v1 = v_iter->second;
         
+        //second vertex
         xtmp = ((float *)facebuffer)[6];
         ytmp = ((float *)facebuffer)[7];
         ztmp = ((float *)facebuffer)[8];
@@ -62,6 +67,7 @@ mesh::mesh(ifstream& infile, string objname){
         }
         else v2 = v_iter->second;
         
+        //third vertex
         xtmp = ((float *)facebuffer)[9];
         ytmp = ((float *)facebuffer)[10];
         ztmp = ((float *)facebuffer)[11];
@@ -72,10 +78,12 @@ mesh::mesh(ifstream& infile, string objname){
         }
         else v3 = v_iter->second;
         
+        //Store edges of triangle
         edges_hash.emplace(v1, v2);
         edges_hash.emplace(v2, v3);
         edges_hash.emplace(v3, v1);
         
+        //Load face with normal, vertices, and link to this object
         facetmp = new face(norm, v1, v2, v3, this);
         faces.push_back(facetmp);
         v1->faces.push_back(facetmp);
@@ -85,9 +93,11 @@ mesh::mesh(ifstream& infile, string objname){
         i++;
     }
     
+    //Load unique vertices into this->vertices
     for(auto it = vertices_hash.begin(); it != vertices_hash.end(); ++it){
         vertices.push_back(it->second);
     }
+    //load unique edges into this->edges
     for(auto it = edges_hash.begin(); it != edges_hash.end(); ++it){
         edges.push_back(new edge(it->v1, it->v2));
     }
