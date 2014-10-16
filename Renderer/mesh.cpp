@@ -10,7 +10,7 @@
 using namespace std;
 
 mesh::mesh(ifstream& infile, string objname){
-    smooth = false;
+    smooth = false; //not smooth by default
     name = objname;
     cout << "Loading STL object \"" << name << "\"" << endl;
     if(infile.fail()){
