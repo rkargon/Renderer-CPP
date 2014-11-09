@@ -11,9 +11,20 @@
 
 #include "geom.h"
 
-class BRDF
+class BSDF
 {
+public:
     virtual color getLight(color incidentColor, vertex incidentDirection, vertex normal, vertex returningDirection) =0;
+};
+
+class EmissionBSDF : BSDF
+{
+public:
+    color col;
+    real intensity;
+    
+    EmissionBSDF(color col=color(1,1,1), real intensity=1);
+    virtual color getLight(color incidentColor, vertex incidentDirection, vertex normal, vertex returningDirection);
 };
 
 #endif /* defined(__Renderer__BRDF__) */

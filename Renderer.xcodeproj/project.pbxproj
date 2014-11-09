@@ -20,7 +20,7 @@
 		D96BB38C1940AE450011583B /* Renderer.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = D96BB38B1940AE450011583B /* Renderer.1 */; };
 		D993672B194514FE005C507C /* scene.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D9936729194514FE005C507C /* scene.cpp */; };
 		D993672E1945230F005C507C /* rendering.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D993672C1945230F005C507C /* rendering.cpp */; };
-		D9AA360B1A0FE4EC00512FA1 /* BRDF.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D9AA36091A0FE4EC00512FA1 /* BRDF.cpp */; };
+		D9AA360B1A0FE4EC00512FA1 /* BSDF.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D9AA36091A0FE4EC00512FA1 /* BSDF.cpp */; };
 		D9BEDABA19410BE7001B0748 /* geom.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D9BEDAB819410BE7001B0748 /* geom.cpp */; };
 		D9E5DB08194B9BF4007979FC /* kdtree.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D9E5DB06194B9BF4007979FC /* kdtree.cpp */; };
 		D9E699D41940FA5A0070422B /* mesh.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D9E699D21940FA5A0070422B /* mesh.cpp */; };
@@ -59,8 +59,8 @@
 		D993672A194514FE005C507C /* scene.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = scene.h; sourceTree = "<group>"; };
 		D993672C1945230F005C507C /* rendering.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = rendering.cpp; sourceTree = "<group>"; };
 		D993672D1945230F005C507C /* rendering.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rendering.h; sourceTree = "<group>"; };
-		D9AA36091A0FE4EC00512FA1 /* BRDF.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BRDF.cpp; sourceTree = "<group>"; };
-		D9AA360A1A0FE4EC00512FA1 /* BRDF.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BRDF.h; sourceTree = "<group>"; };
+		D9AA36091A0FE4EC00512FA1 /* BSDF.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BSDF.cpp; sourceTree = "<group>"; };
+		D9AA360A1A0FE4EC00512FA1 /* BSDF.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BSDF.h; sourceTree = "<group>"; };
 		D9BEDAB819410BE7001B0748 /* geom.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = geom.cpp; sourceTree = "<group>"; };
 		D9BEDAB919410BE7001B0748 /* geom.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = geom.h; sourceTree = "<group>"; };
 		D9E5DB06194B9BF4007979FC /* kdtree.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = kdtree.cpp; sourceTree = "<group>"; };
@@ -122,8 +122,8 @@
 				D9E699D21940FA5A0070422B /* mesh.cpp */,
 				D9E699D31940FA5A0070422B /* mesh.h */,
 				D993672C1945230F005C507C /* rendering.cpp */,
-				D9AA36091A0FE4EC00512FA1 /* BRDF.cpp */,
-				D9AA360A1A0FE4EC00512FA1 /* BRDF.h */,
+				D9AA36091A0FE4EC00512FA1 /* BSDF.cpp */,
+				D9AA360A1A0FE4EC00512FA1 /* BSDF.h */,
 				D993672D1945230F005C507C /* rendering.h */,
 				D9E5DB06194B9BF4007979FC /* kdtree.cpp */,
 				D9E5DB07194B9BF4007979FC /* kdtree.h */,
@@ -189,7 +189,7 @@
 			files = (
 				D993672E1945230F005C507C /* rendering.cpp in Sources */,
 				D930A2FF1944A3B300C51194 /* camera.cpp in Sources */,
-				D9AA360B1A0FE4EC00512FA1 /* BRDF.cpp in Sources */,
+				D9AA360B1A0FE4EC00512FA1 /* BSDF.cpp in Sources */,
 				D9E5DB08194B9BF4007979FC /* kdtree.cpp in Sources */,
 				D91EBF2F19420AE1009FC85B /* common.cpp in Sources */,
 				D96BB38A1940AE450011583B /* main.cpp in Sources */,
