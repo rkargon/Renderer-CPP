@@ -62,7 +62,7 @@ color traceRay(const ray& viewray, int depth, scene* sc){
             n.normalize();
         }
         else n = f->normal;
-        n = sc->obj->mat->getNormal(txu, txv);
+        //n = sc->obj->mat->getNormal(txu, txv);
         
         real ndotray = dot(n, viewray.dir);
         

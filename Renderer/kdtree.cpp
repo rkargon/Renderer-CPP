@@ -533,3 +533,25 @@ void kdtree::calcstats(int& nodes, int& leaf_nodes, int& non_empty_leaf_nodes, i
     if(this->lower!=nullptr) this->lower->calcstats(nodes, leaf_nodes, non_empty_leaf_nodes, triangles_in_leaves, est_traversals, est_leaves_visited, est_tris_intersected, est_cost, rootArea);
     if(this->upper!=nullptr) this->upper->calcstats(nodes, leaf_nodes, non_empty_leaf_nodes, triangles_in_leaves, est_traversals, est_leaves_visited, est_tris_intersected, est_cost, rootArea);
 }
+
+void kdtree::printstats(){
+    clock_t begin = clock();
+    for(int i=1; i<=100000; i++){
+        rayTreeIntersect(this, ray(vertex(), vertex((real)rand()/RAND_MAX, (real)rand()/RAND_MAX, (real)rand()/RAND_MAX)), false, nullptr);
+    }
+    clock_t end = clock();
+    std::cout << "100,000 kdt intersects: " << real(end - begin) / CLOCKS_PER_SEC << std::endl;
+
+    int n=0, ln=0, ln_ne=0, t_tot=0;
+    real est_t=0, est_l=0, est_tr=0, est_c=0;
+    calcstats(n, ln, ln_ne, t_tot, est_t, est_l, est_tr, est_c);
+    std::cout << std::endl << "total nodes: " << n << std::endl;
+    std::cout << "leaf nodes : " << ln << std::endl;
+    std::cout << "non-empty leaf nodes: " << ln_ne << std::endl;
+    std::cout << "avg. faces per leaf node: " << real(t_tot)/ln_ne << std::endl;
+    std::cout << std::endl << "Average, for each ray:" << std::endl;
+    std::cout << "est. num of traversals: " << est_t << std::endl;
+    std::cout << "est. num of leaf nodes visited: " << est_l << std::endl;
+    std::cout << "est. num of triangles intersected: " << est_tr << std::endl;
+    std::cout << "est. cost (using SAH): " << est_c << std::endl;
+}

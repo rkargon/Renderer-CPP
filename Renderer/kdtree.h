@@ -33,6 +33,7 @@ public:
     std::vector<edge*> wireframe();
     std::vector<edge*> wireframe(bool isRoot, int depth);
     void calcstats(int& nodes, int& leaf_nodes, int& non_empty_leaf_nodes, int& triangles_in_leaves, real& est_traversals, real& est_leaves_visited, real& est_tris_intersected, real& est_cost, real rootArea=-1);
+    void printstats();
     static kdtree *buildTree(const std::vector<face*>& faces);
     static face *rayTreeIntersect(kdtree *kdt, const ray& r, bool lazy, vertex *tuv, bool isRoot = true);
     

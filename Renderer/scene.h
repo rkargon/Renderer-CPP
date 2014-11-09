@@ -12,9 +12,8 @@
 #include <QtGui/QImage>
 #include "camera.h"
 #include "geom.h"
+#include "mesh.h"
 #include "kdtree.h"
-
-enum tex_projection_t {TEX_PROJ_SPHERICAL, TEX_PROJ_CUBIC, TEXT_PROJ_CYLINDRICAL};
 
 class material{
 public:
@@ -34,7 +33,17 @@ public:
     QImage *spec_tex;
     QImage *norm_tex;
     
-    material(const color& dc=color(1,1,1), const real di=1, const color& sc=color(1,1,1), const real si=1, const real sh=128, const real ri=0.4, const real a=1, const real indxofrefr=1.3, QImage *c=nullptr, QImage *s=nullptr, QImage *n=nullptr);
+    material(const color& dc=color(1,1,1),
+             const real di=1,
+             const color& sc=color(1,1,1),
+             const real si=1,
+             const real sh=128,
+             const real ri=0.3,
+             const real a=1,
+             const real indxofrefr=1.3,
+             QImage *c=nullptr,
+             QImage *s=nullptr,
+             QImage *n=nullptr);
     
     //Get color, normal vector, and specular color using given texture coordinate
     color getColor(real txu, real txv);

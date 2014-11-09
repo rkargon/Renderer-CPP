@@ -143,9 +143,11 @@ w(nullptr),
 obj(nullptr),
 kdt(nullptr){}
 
+// automatically builds kdtree for object
 scene::scene(camera *c, std::vector<lamp*> l, world* wor, mesh *o)
 :cam(c),
 lamps(l),
 w(wor),
-obj(o),
-kdt(nullptr){}
+obj(o){
+    this->kdt = kdtree::buildTree(obj->faces);
+}

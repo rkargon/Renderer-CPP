@@ -15,7 +15,9 @@
 #include <unordered_map>
 #include <unordered_set>
 #include "geom.h"
-#include "scene.h"
+
+class material;
+enum tex_projection_t {TEX_PROJ_SPHERICAL, TEX_PROJ_CUBIC, TEXT_PROJ_CYLINDRICAL};
 
 class mesh
 {

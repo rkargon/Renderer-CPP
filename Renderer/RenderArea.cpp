@@ -14,19 +14,21 @@ RenderArea::RenderArea(QWidget *parent): QWidget(parent){
     setFocusPolicy(Qt::StrongFocus);
     setFocus(Qt::ActiveWindowFocusReason);
     setLayout(new QHBoxLayout);
-    std::ifstream infile("/Users/raphaelkargon/Documents/Programming/STL Renderer/sphere.stl");
-    sc = new scene(new camera(), std::vector<lamp*>(), new sky(), new mesh(infile, "Object"));
-    clock_t begin = clock();
-    sc->kdt = kdtree::buildTree(sc->obj->faces);
-    clock_t end = clock();
-    std::cout << "KDTree build time: " << real(end - begin) / CLOCKS_PER_SEC << std::endl;
-    sc->lamps.push_back(new lamp(15, 2, vertex(-4, 0,-2.828), RGBToColor(0xFFAAAA)));
-    sc->lamps.push_back(new lamp(15, 2, vertex( 4, 0,-2.828), RGBToColor(0xAAFFAA)));
-    sc->lamps.push_back(new lamp(15, 2, vertex( 0,-4, 2.828), RGBToColor(0xAAAAFF)));
-    sc->lamps.push_back(new lamp(15, 2, vertex( 0, 4, 2.828), RGBToColor(0xFFFFAA)));
-    sc->obj->mat = new material();
-    sc->obj->mat->norm_tex = new QImage("/Users/raphaelkargon/Documents/Programming/STL Renderer/Textures/norm_face.png");
-    sc->obj->project_texture(TEX_PROJ_SPHERICAL);
+    
+    //scene setup
+    std::ifstream infile("/Users/raphaelkargon/Documents/Programming/STL Renderer/suzanneplusplus.stl");
+    camera *cam = new camera();
+    std::vector<lamp*> lamps;
+    lamps.push_back(new lamp(15, 2, vertex(-4, 0,-2.828), RGBToColor(0xFFAAAA)));
+    lamps.push_back(new lamp(15, 2, vertex( 4, 0,-2.828), RGBToColor(0xAAFFAA)));
+    lamps.push_back(new lamp(15, 2, vertex( 0,-4, 2.828), RGBToColor(0xAAAAFF)));
+    lamps.push_back(new lamp(15, 2, vertex( 0, 4, 2.828), RGBToColor(0xFFFFAA)));
+    world* sc_world = new sky();
+    mesh *obj = new mesh(infile, "Object");
+    obj->mat = new material();
+    obj->project_texture(TEX_PROJ_SPHERICAL);
+    sc = new scene(cam, lamps, sc_world, obj);
+    if(sc->kdt != nullptr) sc->kdt->printstats();
     
     //set up images and buffers
     int h = height(), w = width();
@@ -35,33 +37,13 @@ RenderArea::RenderArea(QWidget *parent): QWidget(parent){
     //set up render image
     renderimg = new QImage(w, h, QImage::Format_RGB32);
     
-    begin = clock();
-    for(int i=1; i<=100000; i++){
-        kdtree::rayTreeIntersect(sc->kdt, ray(vertex(), vertex((real)rand()/RAND_MAX, (real)rand()/RAND_MAX, (real)rand()/RAND_MAX)), false, nullptr);
-    }
-    end = clock();
-    std::cout << "100,000 kdt intersects: " << real(end - begin) / CLOCKS_PER_SEC << std::endl;
-    
-    if(sc->kdt!=nullptr){
-        int n=0, ln=0, ln_ne=0, t_tot=0;
-        real est_t=0, est_l=0, est_tr=0, est_c=0;
-        sc->kdt->calcstats(n, ln, ln_ne, t_tot, est_t, est_l, est_tr, est_c);
-        std::cout << std::endl << "total nodes: " << n << std::endl;
-        std::cout << "leaf nodes : " << ln << std::endl;
-        std::cout << "non-empty leaf nodes: " << ln_ne << std::endl;
-        std::cout << "avg. faces per leaf node: " << real(t_tot)/ln_ne << std::endl;
-        std::cout << std::endl << "Average, for each ray:" << std::endl;
-        std::cout << "est. num of traversals: " << est_t << std::endl;
-        std::cout << "est. num of leaf nodes visited: " << est_l << std::endl;
-        std::cout << "est. num of triangles intersected: " << est_tr << std::endl;
-        std::cout << "est. cost (using SAH): " << est_c << std::endl;
-    }
-    
+    //status label
     statuslbl = new QLabel("Raph Renderer 2014");
     statuslbl->setParent(this);
     this->layout()->addWidget(statuslbl);
     statuslbl->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
     statuslbl->setAlignment(Qt::AlignTop);
+    updateText();
     statuslbl->show();
 }
 
@@ -117,7 +99,7 @@ void RenderArea::updateImage(){
             rayTraceUnthreaded();
     }
     clock_t end = clock();
-    std::cout << real(end-begin)/CLOCKS_PER_SEC << std::endl;
+    //std::cout << real(end-begin)/CLOCKS_PER_SEC << std::endl;
 }
 
 /* INPUT LISTENERS */
