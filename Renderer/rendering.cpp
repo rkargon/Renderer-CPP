@@ -70,7 +70,7 @@ color traceRay(const ray& viewray, int depth, scene* sc){
         for(lamp *l : sc->lamps){
             vertex lampvect = l->loc - v;
             vertex lampvnorm = lampvect.unitvect();
-            if(dot(n, lampvect)*ndotray>0) continue;
+            if(dot(n, lampvect)*ndotray>0) continue; //make sure lamp is on same side of face as view
             ray lampray(v, lampvnorm);
             if(kdtree::rayTreeIntersect(sc->kdt, lampray, true, &tuv)!=nullptr) continue;
             real dotprod = dot(lampvnorm, n);
@@ -138,6 +138,36 @@ color traceRay(const ray& viewray, int depth, scene* sc){
             }
         }
         return totcol;
+    }
+}
+
+color tracePath(const ray& viewray, int depth, scene* sc){
+    if(depth > RAY_DEPTH) return color();
+    
+    num_rays_traced++;
+    vertex tuv;
+    face *f = kdtree::rayTreeIntersect(sc->kdt, viewray, false, &tuv);
+    if(f==nullptr) return sc->w->getColor(viewray);
+    else{
+        vertex v = viewray.org + viewray.dir*tuv.t; //calculate vertex location
+    
+        //calculate normal
+        vertex n;
+        if(f->obj->smooth){
+            n = (f->vertices[0]->vertexNormal())*(1-tuv.u-tuv.v) + (f->vertices[1]->vertexNormal())*tuv.u + (f->vertices[2]->vertexNormal())*tuv.v;
+            n.normalize();
+        }
+        else n = f->normal;
+        
+        //calculate incident light
+        vertex inc_dir = sc->obj->bsdf->getIncidentDirection(n, viewray.dir);
+        color inc_col = tracePath(ray(v, inc_dir), depth+1, sc);
+        //calculate returned light
+        color return_col = sc->obj->bsdf->getLight(inc_col, inc_dir, n, viewray.dir);
+        
+        //attenuate returned light
+        //return return_col * (1.0/(tuv.t*tuv.t));
+        return return_col;
     }
 }
 

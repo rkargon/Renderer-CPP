@@ -21,6 +21,8 @@ extern int num_rays_traced; //keeps track of how many rays have been traced, to 
 
 color calcLighting(const vertex& v, const vertex& n, const material& mat, scene* sc);
 color traceRay(const ray& viewray, int depth, scene* sc);
+color tracePath(const ray& viewray, int depth, scene* sc);
 real ambientOcclusion(const ray& viewray, kdtree* kdt, int samples = AMB_OCC_SAMPLES);
+
 
 #endif /* defined(__Renderer__rendering__) */

@@ -15,6 +15,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include "geom.h"
+#include "BSDF.h"
 
 class material;
 enum tex_projection_t {TEX_PROJ_SPHERICAL, TEX_PROJ_CUBIC, TEXT_PROJ_CYLINDRICAL};
@@ -27,6 +28,7 @@ public:
     std::vector<face*> faces;//List of faces in mesh
     std::string name;
     material *mat;
+    BSDF *bsdf;
     bool smooth;
     
     /* mesh(std::ifstream& infile, std::string objname)

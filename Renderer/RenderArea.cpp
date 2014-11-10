@@ -16,7 +16,7 @@ RenderArea::RenderArea(QWidget *parent): QWidget(parent){
     setLayout(new QHBoxLayout);
     
     //scene setup
-    std::ifstream infile("/Users/raphaelkargon/Documents/Programming/STL Renderer/suzanneplusplus.stl");
+    std::ifstream infile("/Users/raphaelkargon/Documents/Programming/STL Renderer/dragonbig.stl");
     camera *cam = new camera();
     std::vector<lamp*> lamps;
     lamps.push_back(new lamp(15, 2, vertex(-4, 0,-2.828), RGBToColor(0xFFAAAA)));
@@ -26,6 +26,7 @@ RenderArea::RenderArea(QWidget *parent): QWidget(parent){
     world* sc_world = new sky();
     mesh *obj = new mesh(infile, "Object");
     obj->mat = new material();
+    obj->bsdf = new TestBSDF();
     obj->project_texture(TEX_PROJ_SPHERICAL);
     sc = new scene(cam, lamps, sc_world, obj);
     if(sc->kdt != nullptr) sc->kdt->printstats();
@@ -77,6 +78,11 @@ void RenderArea::updateText(){
         case 4:
             statuslbl->setText(QString("5. Raytracing") + QString(sc->obj->smooth ? ", smooth" : "") + QString(amboc ? ", ambient occlusion" : ""));
             break;
+        case 5:
+            statuslbl->setText(QString("6. Path Tracing") + QString(sc->obj->smooth ? ", smooth" : ""));
+            break;
+        default:
+            statuslbl->setText("Raph Renderer 2014");
     }
 }
 
@@ -97,6 +103,10 @@ void RenderArea::updateImage(){
             break;
         case 4:
             rayTraceUnthreaded();
+            break;
+        case 5:
+            pathTraceUnthreaded();
+            break;
     }
     clock_t end = clock();
     //std::cout << real(end-begin)/CLOCKS_PER_SEC << std::endl;
@@ -126,7 +136,7 @@ void RenderArea::keyPressEvent(QKeyEvent *event){
         case Qt::Key_Z:
             if(event->modifiers() & Qt::ShiftModifier) --rendermode;
             else ++rendermode;
-            rendermode  = (rendermode+5)%5;
+            rendermode  = (rendermode+6)%6;
             updateText();
             updateImage();
             break;
@@ -393,7 +403,7 @@ void RenderArea::generate_maps_vector(int mapflags){
         maxy = std::max(std::max(p1int.y, p2int.y), p3int.y);
         if(minx > w-1 || maxx<0 || miny>h-1 || maxy<0) continue; //face is off screen
         
-        //clipint to screen
+        //clip to screen
         minx = std::max(minx, 0);
         maxx = std::min(maxx, w-1);
         miny = std::max(miny, 0);
@@ -533,6 +543,44 @@ void RenderArea::rayTraceUnthreaded(){
             if(tilenum%100==0) std::cout << "tile " << tilenum << " of " << totaltiles  << " (" << (int)((100.0*tilenum)/totaltiles) << "%)" << std::endl;
         }
     }
+    std::cout << "all tiles done. " << std::endl;
+    clock_t end = clock();
+    real time_elapsed = real(end - begin) / CLOCKS_PER_SEC;
+    std::cout << num_rays_traced << " rays traced in " << time_elapsed << " seconds, or " << num_rays_traced/time_elapsed << " rays per second." << std::endl;
+}
+
+void RenderArea::pathTraceUnthreaded(){
+    num_rays_traced = 0;
+    clock_t begin = clock();
+    
+    if(pathTracingSamples == 0) return;
+    int i, j, x, y, xmax, ymax, w=width(), h=height(), s;
+    int tilenum=0, totaltiles = ceil((real)w/tilesize) * ceil((real)h/tilesize);
+    color totalcol;
+    int colrgb;
+    ray r;
+    
+    for(i=0; i<w; i+=tilesize){
+        xmax = std::min(w, i+tilesize);
+        for(j=0; j<h; j+=tilesize){
+            ymax = std::min(h, j+tilesize);
+            
+            //for each tile
+            for(x=i; x<xmax; x++){
+                for(y=j; y<ymax; y++){
+                    for(s=1, totalcol=color(); s<=pathTracingSamples; s++){
+                        r = sc->cam->castRay(x, y, w, h);
+                        totalcol += tracePath(r, 1, sc);
+                    }
+                    colrgb = colorToRGB(totalcol*(1.0/pathTracingSamples));
+                    renderimg->setPixel(x, y, colrgb);
+                }
+            }
+            tilenum++;
+            if(tilenum%100==0) std::cout << "tile " << tilenum << " of " << totaltiles  << " (" << (int)((100.0*tilenum)/totaltiles) << "%)" << std::endl;
+        }
+    }
+    
     std::cout << "all tiles done. " << std::endl;
     clock_t end = clock();
     real time_elapsed = real(end - begin) / CLOCKS_PER_SEC;

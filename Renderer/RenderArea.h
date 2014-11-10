@@ -43,6 +43,7 @@ public:
     QLabel *statuslbl;
     
     static const int tilesize = 32;
+    static const int pathTracingSamples = 10;
     
     RenderArea(QWidget *parent = 0);
     QSize minimumSizeHint() const;
@@ -60,6 +61,7 @@ public:
     void SSAO();
     
     void rayTraceUnthreaded();
+    void pathTraceUnthreaded();
     
 protected:
     void paintEvent(QPaintEvent *event);
