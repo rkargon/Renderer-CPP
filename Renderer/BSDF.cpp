@@ -21,13 +21,27 @@ vertex EmissionBSDF::getIncidentDirection(vertex normal, vertex viewDirection){
     return viewDirection.reflection(normal);
 }
 
+GlossyBSDF::GlossyBSDF(color c, real r)
+:col(c),
+roughness(clamp(r, 0, 1)){};
+
+color GlossyBSDF::getLight(color incidentColor, vertex incidentDirection, vertex normal, vertex returningDirection){
+    return col*incidentColor;
+}
+
+vertex GlossyBSDF::getIncidentDirection(vertex normal, vertex viewDirection){
+    //returns a random ray in a cone centered around the reflection of viewDirection
+    //the cone's width depends on the roughness
+    return viewDirection.reflection(normal);
+}
+
 color TestBSDF::getLight(color incidentColor, vertex incidentDirection, vertex normal, vertex returningDirection){
     return incidentColor;
 }
 
 vertex TestBSDF::getIncidentDirection(vertex normal, vertex viewDirection){
     vertex d = randomDirection();
-    d += viewDirection.reflection(normal)*3;
+    d += viewDirection.reflection(normal)*5;
     d.normalize();
     //this keeps it in the proper hemisphere
     if (dot(d, normal) * dot(viewDirection, normal) > 0) d *= -1;

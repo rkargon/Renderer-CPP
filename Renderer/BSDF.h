@@ -24,12 +24,23 @@ public:
     color col;
     real intensity;
     
-    EmissionBSDF(color col=color(1,1,1), real intensity=1);
+    EmissionBSDF(color c=color(1,1,1), real i=1);
     virtual color getLight(color incidentColor, vertex incidentDirection, vertex normal, vertex returningDirection);
     virtual vertex getIncidentDirection(vertex normal, vertex viewDirection);
 };
 
-//A test material. A compeltely rough glossy material.
+class GlossyBSDF : public BSDF
+{
+public:
+    color col;
+    real roughness;
+    
+    GlossyBSDF(color c=color(1,1,1), real r=0);
+    virtual color getLight(color incidentColor, vertex incidentDirection, vertex normal, vertex returningDirection);
+    virtual vertex getIncidentDirection(vertex normal, vertex viewDirection);
+};
+
+//A test material.
 class TestBSDF : public BSDF
 {
     virtual color getLight(color incidentColor, vertex incidentDirection, vertex normal, vertex returningDirection);
