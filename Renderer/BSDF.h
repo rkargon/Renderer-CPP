@@ -18,6 +18,16 @@ public:
     virtual vertex getIncidentDirection(vertex normal, vertex viewDirection) = 0;
 };
 
+class DiffuseBSDF : public BSDF
+{
+public:
+    color col;
+    
+    DiffuseBSDF(color c = color(1,1,1));
+    virtual color getLight(color incidentColor, vertex incidentDirection, vertex normal, vertex returningDirection);
+    virtual vertex getIncidentDirection(vertex normal, vertex viewDirection);
+};
+
 class EmissionBSDF : public BSDF
 {
 public:
@@ -35,7 +45,23 @@ public:
     color col;
     real roughness;
     
-    GlossyBSDF(color c=color(1,1,1), real r=0);
+    GlossyBSDF(color c=color(1,1,1), real r=0.8);
+    virtual color getLight(color incidentColor, vertex incidentDirection, vertex normal, vertex returningDirection);
+    virtual vertex getIncidentDirection(vertex normal, vertex viewDirection);
+};
+
+class MixBSDF : public BSDF
+{
+public:
+    real fac;
+    //uh oh. You know some very nasty people will end up causing infinite loops :-(
+    BSDF *mat1;
+    BSDF *mat2;
+    
+    //whether current sample should come from material 1
+    bool materialCounter;
+    
+    MixBSDF(real f = 0.5, BSDF *m1=nullptr, BSDF *m2=nullptr);
     virtual color getLight(color incidentColor, vertex incidentDirection, vertex normal, vertex returningDirection);
     virtual vertex getIncidentDirection(vertex normal, vertex viewDirection);
 };

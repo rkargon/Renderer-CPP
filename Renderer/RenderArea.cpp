@@ -16,7 +16,7 @@ RenderArea::RenderArea(QWidget *parent): QWidget(parent){
     setLayout(new QHBoxLayout);
     
     //scene setup
-    std::ifstream infile("/Users/raphaelkargon/Documents/Programming/STL Renderer/serenity.stl");
+    std::ifstream infile("/Users/raphaelkargon/Documents/Programming/STL Renderer/dragon.stl");
     camera *cam = new camera();
     std::vector<lamp*> lamps;
     lamps.push_back(new lamp(15, 2, vertex(-4, 0,-2.828), RGBToColor(0xFFAAAA)));
@@ -26,7 +26,7 @@ RenderArea::RenderArea(QWidget *parent): QWidget(parent){
     world* sc_world = new sky();
     mesh *obj = new mesh(infile, "Object");
     obj->mat = new material();
-    obj->bsdf = new TestBSDF();
+    obj->bsdf = new MixBSDF(0.5, new TestBSDF(), new DiffuseBSDF(color(1, 0.5, 0.5)));
     obj->project_texture(TEX_PROJ_SPHERICAL);
     sc = new scene(cam, lamps, sc_world, obj);
     if(sc->kdt != nullptr) sc->kdt->printstats();

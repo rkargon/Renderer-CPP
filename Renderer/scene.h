@@ -89,7 +89,15 @@ public:
     real sunintensity; //Intensity of the sun
     real g; //mean cosine
     
-    sky(vertex betaR = vertex(5.5e-6, 13.0e-6, 22.4e-6), vertex betaM = vertex(21e-6, 21e-6, 21e-6), real Hr = 7994, real Hm = 1200, real radiusEarth=6360e3, real radiusAtmo=6420e3, vertex sundirection=vertex(0,1,0.2), real sunintensity=20, real g = 0.76);
+    sky(vertex betaR = vertex(5.5e-6, 13.0e-6, 22.4e-6),
+        vertex betaM = vertex(21e-6, 21e-6, 21e-6),
+        real Hr = 7994,
+        real Hm = 1200,
+        real radiusEarth=6360e3,
+        real radiusAtmo=6420e3,
+        vertex sundirection=vertex(0,-1,0.2).unitvect(),
+        real sunintensity=20,
+        real g = 0.76);
     color getColor(const ray& r);
 };
 
