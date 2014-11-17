@@ -16,7 +16,7 @@ RenderArea::RenderArea(QWidget *parent): QWidget(parent){
     setLayout(new QHBoxLayout);
     
     //scene setup
-    std::ifstream infile("/Users/raphaelkargon/Documents/Programming/STL Renderer/dragon.stl");
+    std::ifstream infile("/Users/raphaelkargon/Documents/Programming/STL Renderer/dragonbig.stl");
     camera *cam = new camera();
     std::vector<lamp*> lamps;
     lamps.push_back(new lamp(15, 2, vertex(-4, 0,-2.828), RGBToColor(0xFFAAAA)));

@@ -43,7 +43,7 @@ public:
     QLabel *statuslbl;
     
     static const int tilesize = 32;
-    static const int pathTracingSamples = 100;
+    static const int pathTracingSamples = 10;
     
     RenderArea(QWidget *parent = 0);
     QSize minimumSizeHint() const;
