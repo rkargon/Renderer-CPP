@@ -9,6 +9,7 @@ Loads and displays STL files in a variety of modes, including:
   - Triangle rasterization
   - Raytracing
   - Ambient occlusion
+  - Path Tracing
   
 Also supports:
   - Smooth shading

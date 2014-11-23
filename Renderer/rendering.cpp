@@ -160,10 +160,10 @@ color tracePath(const ray& viewray, int depth, scene* sc){
         else n = f->normal;
         
         //calculate incident light
-        vertex inc_dir = sc->obj->bsdf->getIncidentDirection(n, viewray.dir);
+        vertex inc_dir = f->obj->bsdf->getIncidentDirection(n, viewray.dir);
         color inc_col = tracePath(ray(v, inc_dir), depth+1, sc);
         //calculate returned light
-        color return_col = sc->obj->bsdf->getLight(inc_col, inc_dir, n, viewray.dir);
+        color return_col = f->obj->bsdf->getLight(inc_col, inc_dir, n, viewray.dir);
         
         //attenuate returned light
         //return return_col * (1.0/(tuv.t*tuv.t));

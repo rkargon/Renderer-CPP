@@ -106,10 +106,10 @@ public:
     camera *cam;
     std::vector<lamp*> lamps;
     world *w;
-    mesh *obj;
+    std::vector<mesh*> objects;
     kdtree *kdt;
     
-    scene(camera *c, std::vector<lamp*> l, world* wor, mesh *obj);
+    scene(camera *c, std::vector<lamp*> l, world* wor, std::vector<mesh*> objects);
     scene();
 };
 
