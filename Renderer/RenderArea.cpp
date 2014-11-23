@@ -34,8 +34,10 @@ RenderArea::RenderArea(QWidget *parent): QWidget(parent){
     
     mesh *sphereobj = new mesh(spherefile, "Sphere");
     sphereobj->mat = new material();
-    sphereobj->bsdf = new EmissionBSDF();
+    sphereobj->bsdf = new EmissionBSDF(vertex(1,1,1), 15);
     sphereobj->project_texture(TEX_PROJ_SPHERICAL);
+    sphereobj->scale_centered(vertex(0.5, 0.5, 0.5));
+    sphereobj->move(vertex(5, 0, 0));
     
     objects.push_back(dragonobj);
     objects.push_back(sphereobj);

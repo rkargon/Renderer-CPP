@@ -102,6 +102,9 @@ mesh::mesh(ifstream& infile, string objname){
         edges.push_back(new edge(it->v1, it->v2));
     }
     
+    //generate object origin
+    origin = centroid();
+    
     cout << vertices.size() << " vertices." << endl;
     cout << edges.size() << " edges." << endl;
     cout << faces.size() << " faces." << endl;
@@ -126,4 +129,34 @@ void mesh::project_texture(tex_projection_t proj){
                 break;
         }
     }
+}
+
+void mesh::move(const vertex& dv){
+    for(vertex *v: vertices){
+        (*v) += dv;
+    }
+    origin += dv;
+}
+
+void mesh::scale(const vertex& ds, const vertex& scale_center){
+    vertex dv;
+    for(vertex *v: vertices){
+        dv = *v - scale_center; //get vertex relative to center
+        dv *= ds; //scale vertex relative to center
+        *v = scale_center + dv; //return new vertex
+    }
+    dv = origin - scale_center;
+    dv *= ds;
+    origin = scale_center + dv;
+}
+void mesh::scale_centered(const vertex& ds){
+    scale(ds, origin);
+}
+
+vertex mesh::centroid(){
+    vertex mean;
+    for(vertex* v: vertices){
+        mean += v;
+    }
+    return mean * (1.0/vertices.size());
 }

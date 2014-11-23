@@ -157,7 +157,8 @@ struct edgePtrEquality{
     template<typename X, typename Y>
     bool operator()(X const &lhs, Y const &rhs) const;
 };
-//NOTE: be careful with arguments, as you should know, cross(A,B) != cross(B,A)
+
+//vertex functions
 inline vertex cross(const vertex& A, const vertex& B){ return vertex(A.y*B.z - A.z*B.y, A.z*B.x - A.x*B.z, A.x*B.y - A.y*B.x); }
 inline real dot(const vertex& A, const vertex& B){ return (A.x*B.x + A.y*B.y + A.z*B.z); }
 vertex lerp(const vertex& v1, const vertex& v2, const real r);
