@@ -16,7 +16,7 @@ RenderArea::RenderArea(QWidget *parent): QWidget(parent){
     setLayout(new QHBoxLayout);
     
     //scene setup
-    std::ifstream dragonfile("/Users/raphaelkargon/Documents/Programming/STL Renderer/dragon.stl");
+    std::ifstream dragonfile("/Users/raphaelkargon/Documents/Programming/STL Renderer/dragonsmall.stl");
     std::ifstream spherefile("/Users/raphaelkargon/Documents/Programming/STL Renderer/sphere.stl");
     camera *cam = new camera();
     std::vector<lamp*> lamps;
@@ -34,6 +34,7 @@ RenderArea::RenderArea(QWidget *parent): QWidget(parent){
     
     mesh *sphereobj = new mesh(spherefile, "Sphere");
     sphereobj->mat = new material();
+    //sphereobj->bsdf = new DiffuseBSDF();
     sphereobj->bsdf = new EmissionBSDF(vertex(1,1,1), 15);
     sphereobj->project_texture(TEX_PROJ_SPHERICAL);
     sphereobj->scale_centered(vertex(0.5, 0.5, 0.5));
@@ -94,8 +95,11 @@ void RenderArea::updateText(){
         case 5:
             statuslbl->setText("6. Path Tracing");
             break;
+        case 6:
+            statuslbl->setText("7. Stereogram");
+            break;
         default:
-            statuslbl->setText("Raph Renderer 2014");
+            statuslbl->setText("Raph Renderer 2015 Happy New Year!");
     }
 }
 
@@ -120,8 +124,11 @@ void RenderArea::updateImage(){
         case 5:
             pathTraceUnthreaded();
             break;
+        case 6:
+            drawStereoGram();
+            break;
     }
-    clock_t end = clock();
+    //clock_t end = clock();
     //std::cout << real(end-begin)/CLOCKS_PER_SEC << std::endl;
 }
 
@@ -149,7 +156,7 @@ void RenderArea::keyPressEvent(QKeyEvent *event){
         case Qt::Key_Z:
             if(event->modifiers() & Qt::ShiftModifier) --rendermode;
             else ++rendermode;
-            rendermode  = (rendermode+6)%6;
+            rendermode  = (rendermode+7)%7;
             updateText();
             updateImage();
             break;
@@ -605,6 +612,30 @@ void RenderArea::pathTraceUnthreaded(){
     clock_t end = clock();
     real time_elapsed = real(end - begin) / CLOCKS_PER_SEC;
     std::cout << num_rays_traced << " rays traced in " << time_elapsed << " seconds, or " << num_rays_traced/time_elapsed << " rays per second." << std::endl;
+}
+
+void RenderArea::drawStereoGram(){
+    int w = width(), h=height(), x, y;
+    real z;
+    int r, color, shift;
+    sc->cam->maxdist = 10;
+    generate_maps_vector(1);
+    int tilesize = 100;
+    int *pattern = new int[tilesize*tilesize];
+    for(int i=0; i<tilesize*tilesize; i++){
+            pattern[i] = rand();
+    }
+    
+    for(y=0; y<h; y++){
+        for(x=0; x<w; x++){
+            z = zbuffer[y*w + x];
+            shift = 31.0 - z*31.0;
+            color = pattern[(y%tilesize) * tilesize + (x%(tilesize-shift))];
+            renderimg->setPixel(x, y, color);
+        }
+    }
+    
+    delete pattern;
 }
 
 QColor colorToQColor(const color& c){

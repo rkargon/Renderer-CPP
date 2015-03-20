@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <fstream>
+#include <thread>
 #include <QtCore/QTimer>
 #include <QtGui/QColor>
 #include <QtGui/QKeyEvent>
@@ -32,18 +33,17 @@ public:
     std::vector<edge*> kdedges;
     scene *sc;
     
+    static const int tilesize = 32;
+    static const int pathTracingSamples = 10;
+    
     bool amboc=false;
     QImage *renderimg;
     unsigned int rendermode=0;
-    
     real *zbuffer;
     int *normalmap;
     
     QPoint prevpos; //for mouse movement tracking
     QLabel *statuslbl;
-    
-    static const int tilesize = 32;
-    static const int pathTracingSamples = 50;
     
     RenderArea(QWidget *parent = 0);
     QSize minimumSizeHint() const;
@@ -59,6 +59,7 @@ public:
     void zBufferDraw_vector();
     void paintNormalMap();
     void SSAO();
+    void drawStereoGram();
     
     void rayTraceUnthreaded();
     void pathTraceUnthreaded();
@@ -71,8 +72,6 @@ protected:
     void wheelEvent(QWheelEvent *event);
     void resizeEvent(QResizeEvent *event);
 };
-
-void rayTraceTile(QImage *renderimg);
 
 QColor colorToQColor(const color& c);
 
@@ -87,5 +86,6 @@ typedef struct EdgeVect{
     
     __v4si init(const point2D<int>& v0, const point2D<int>& v1, const point2D<int>& origin);
 } EdgeVect;
+
 
 #endif /* defined(__Renderer__RenderArea__) */

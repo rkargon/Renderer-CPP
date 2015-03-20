@@ -14,7 +14,7 @@ mesh::mesh(ifstream& infile, string objname){
     name = objname;
     cout << "Loading STL object \"" << name << "\"" << endl;
     if(infile.fail()){
-        cout << "Reading of " << name << "failed, creating an empty object." << endl;
+        cout << "Reading of " << name << " failed, creating an empty object." << endl;
         return;
     }
     

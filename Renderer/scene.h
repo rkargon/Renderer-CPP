@@ -95,7 +95,7 @@ public:
         real Hm = 1200,
         real radiusEarth=6360e3,
         real radiusAtmo=6420e3,
-        vertex sundirection=vertex(0,-1,0.2).unitvect(),
+        vertex sundirection=vertex(0,-1,0.4).unitvect(),
         real sunintensity=20,
         real g = 0.76);
     color getColor(const ray& r);
