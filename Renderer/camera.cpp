@@ -11,7 +11,7 @@
 camera::camera() :center(vertex(-5,0,0)), focus(vertex()), normal(vertex(1,0,0)), vert(vertex(0,0,1)), fov(0.75), mindist(0.01),  maxdist(100), ortho(false) {
     calcImageVectors();
 }
-camera::camera(const vertex& center, const vertex& focus, const vertex& normal, const vertex& vert, const real fov, const real mindist, const real maxdist, const bool ortho){
+camera::camera(const vertex& center, const vertex& focus, const vertex& normal, const vertex& vert, const double fov, const double mindist, const double maxdist, const bool ortho){
     this->center = center;
     this->focus = focus;
     this->normal = normal;
@@ -26,22 +26,22 @@ camera::camera(const vertex& center, const vertex& focus, const vertex& normal, 
 //projections
 
 /*  
- ray camera::castRay(const real px, const real py, const int w, const int h) const
+ ray camera::castRay(const double px, const double py, const int w, const int h) const
  
  Casts a ray from a given point on a screen with given dimensions.
  
  Parameters:
- px, py - real - The coordinates of the point the ray should be cast from
- w, h - real - the dimensions of the screen from which the ray is being cast.
+ px, py - double - The coordinates of the point the ray should be cast from
+ w, h - double - the dimensions of the screen from which the ray is being cast.
  
  Returns:
  A normalized ray pointing into the 3D scene from the camera.
  */
-ray camera::castRay(const real px, const real py, const real w, const real h) const{
-    real img_w = 2*tan(fov/2);
-    real img_h = (img_w * h / w);
-    real x= px/w - 0.5;
-    real y = py/h - 0.5;
+ray camera::castRay(const double px, const double py, const double w, const double h) const{
+    double img_w = 2*tan(fov/2);
+    double img_h = (img_w * h / w);
+    double x= px/w - 0.5;
+    double y = py/h - 0.5;
     ray castray;
     
     if(ortho){
@@ -58,36 +58,36 @@ ray camera::castRay(const real px, const real py, const real w, const real h) co
 }
 
 /*
- point2D<real> camera::projectVertex(const vertex& v, const int w, const int h) const
+ point2D<double> camera::projectVertex(const vertex& v, const int w, const int h) const
  
  Projects a 3D vertex onto a 2D screen.
  
  Parameters:
  v - vertex - the point being projected.
- w,h - real - the dimensions of the screen being projected onto.
+ w,h - double - the dimensions of the screen being projected onto.
  
  Returns:
- point2D<real> - The x and y screen coordiantes of the projected point. The coordinates are not integers to allow for sub-pixel precision.
+ point2D<double> - The x and y screen coordiantes of the projected point. The coordinates are not integers to allow for sub-pixel precision.
  */
-point2D<real> camera::projectVertex(const vertex& v, const real w, const real h) const{
+point2D<double> camera::projectVertex(const vertex& v, const double w, const double h) const{
     vertex dv = v-center;
-    real x,y;
+    double x,y;
     if(!ortho) dv.normalize();
-    real dvdotnorm = dot(dv, normal);
-    if(dvdotnorm<=mindist || dvdotnorm > maxdist) return point2D<real>(_nan(""), _nan(""));
+    double dvdotnorm = dot(dv, normal);
+    if(dvdotnorm<=mindist || dvdotnorm > maxdist) return point2D<double>(nan(""), nan(""));
     x = dot(dv, cx);
     y = dot(dv, cy);
-    real px = (0.5+x/fov)*w;
-    real py = (0.5-y*w/(h*fov))*h;
-    return point2D<real>(px,py);
+    double px = (0.5+x/fov)*w;
+    double py = (0.5-y*w/(h*fov))*h;
+    return point2D<double>(px,py);
 }
 
 /*
- real camera::vertexDepth(const vertex& v)const
+ double camera::vertexDepth(const vertex& v)const
  
  Finds the distance from the camera to the vertex. When camera is orthographic, the distance is from the vertex to the *image plane*, not the camera's center.
  */
-real camera::vertexDepth(const vertex& v)const{
+double camera::vertexDepth(const vertex& v)const{
     vertex dv = v - center;
     if(ortho) return dot(dv, normal);
     else return dv.len() * (dot(dv, normal)<0 ? -1 : 1);
@@ -104,11 +104,11 @@ vertex camera::viewVector(const vertex& v) const{
 
 
 /*
- real camera::faceDepth(const face& f) const
+ double camera::faceDepth(const face& f) const
  
  An approximation of the distance of from a face to the camera, using the vertexDepth of the center of the face.
  */
-real camera::faceDepth(const face& f) const{
+double camera::faceDepth(const face& f) const{
     return vertexDepth(f.center());
 }
 
@@ -125,58 +125,58 @@ void camera::centerFocus(){
 }
 
 /*
- void camera::shiftFocus(const real dx, const real dy)
+ void camera::shiftFocus(const double dx, const double dy)
  
  Moves the focus of the camera the given dx and dy, relative to the image plane. 
  This is used to pan the camera with the mouse. 
  
  Parameters:
- dx, dy - real - the x and y distances, relative to the image plane (ie perpendicular to this->normal) ti move the focus of the camera.
+ dx, dy - double - the x and y distances, relative to the image plane (ie perpendicular to this->normal) ti move the focus of the camera.
  */
-void camera::shiftFocus(const real dx, const real dy){
+void camera::shiftFocus(const double dx, const double dy){
     focus += cx*dx + cy*dy;
 }
 
 /*
- void camera::zoom(const real zoomfactor)
+ void camera::zoom(const double zoomfactor)
  
  Moves the camera away or towards the focus while preserving it's orientation.
  Basically zooms in on the focus.
  
  Parameters:
- zoomfactor - real - the amount to scale to distance form the focus of the camera. i.e. how much to zoom in.
+ zoomfactor - double - the amount to scale to distance form the focus of the camera. i.e. how much to zoom in.
  */
-void camera::zoom(const real zoomfactor){
+void camera::zoom(const double zoomfactor){
     center = focus + (center - focus)*zoomfactor;
 }
 
 /*
- vertex camera::getImagePlaneVector(const real dx, const real dy)
+ vertex camera::getImagePlaneVector(const double dx, const double dy)
  
  Returns the 3D vector (relative to the camera's center) that corresponds to the given 2D coordaintes relative to the image plane.
  
  Parameters:
- dx, dy - real - The 2D coordinates relative to the iamge plane
+ dx, dy - double - The 2D coordinates relative to the iamge plane
  
  Returns:
  vertex - The 3D vector corresponding to the point (dx, dy) relative to the image plane.
  */
-vertex camera::getImagePlaneVector(const real dx, const real dy){
+vertex camera::getImagePlaneVector(const double dx, const double dy){
     return cx*dx + cy*dy;
 }
 
-/* void camera::rotateAxis(const vertex& axis, const real dtheta)
+/* void camera::rotateAxis(const vertex& axis, const double dtheta)
  
  Rotates the camera by a given amount (in radians) along a given axis.
  
  Parameters:
  axis - vertex - The axis around which the camera should be rotated
- dtheta - real - the amount, in radians, to be rotated
+ dtheta - double - the amount, in radians, to be rotated
  */
-void camera::rotateAxis(const vertex& axis, const real dtheta){
+void camera::rotateAxis(const vertex& axis, const double dtheta){
     vertex a = axis.unitvect();
-    real l = a.x, m = a.y, n= a.z;
-    real s=_sin(dtheta), c=_cos(dtheta);
+    double l = a.x, m = a.y, n= a.z;
+    double s=sin(dtheta), c=cos(dtheta);
     
     //columns of rotation matrix
     vertex col1(l*l*(1-c) + c, l*m*(1-c) + n*s, l*n*(1-c) - m*s);
@@ -190,25 +190,25 @@ void camera::rotateAxis(const vertex& axis, const real dtheta){
 }
 
 // These functions call rotateAxis with the given dtheta and the corresponding local axes.
-void camera::rotateLocalX(const real dtheta){
+void camera::rotateLocalX(const double dtheta){
     rotateAxis(cross(normal, vert), dtheta);
 }
-void camera::rotateLocalY(const real dtheta){
+void camera::rotateLocalY(const double dtheta){
     rotateAxis(vert, dtheta);
 }
-void camera::rotateLocalZ(const real dtheta){
+void camera::rotateLocalZ(const double dtheta){
     rotateAxis(normal, dtheta);
 }
 
-/* void camera::setGlobalRotation(const real theta, const real rho, const real psi)
+/* void camera::setGlobalRotation(const double theta, const double rho, const double psi)
 
  Uses a rotation matrix with given global angles to set up axis vectors
 
  Parameters:
- theta, rho, psi - real - the global angles, in radians, of the local x,y,z vectors (cx, vert, normal)
+ theta, rho, psi - double - the global angles, in radians, of the local x,y,z vectors (cx, vert, normal)
 */
-void camera::setGlobalRotation(const real theta, const real rho, const real psi){
-    real st = _sin(theta), ct = _cos(theta), sr = _sin(rho), cr=_cos(rho), sp=_sin(psi), cp=_cos(psi);
+void camera::setGlobalRotation(const double theta, const double rho, const double psi){
+    double st = sin(theta), ct = cos(theta), sr = sin(rho), cr=cos(rho), sp=sin(psi), cp=cos(psi);
     vert = vertex(-sr, cr*sp, cr*cp);
     normal = vertex(ct*cr, ct*sr*sp-cp*st, st*sp+ct*cp*sr);
     calcImageVectors();

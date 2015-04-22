@@ -16,11 +16,11 @@ color calcLighting(const vertex& v, const vertex& n, const material& mat, scene*
     for(lamp *l : sc->lamps){
         vertex lampvect = l->loc - v;
         vertex lampvnorm = lampvect.unitvect();
-        real dotprod = dot(n,lampvnorm);
+        double dotprod = dot(n,lampvnorm);
         vertex view = sc->cam->viewVector(v).unitvect();
         //if lamp and view are on different sides of face, then one is looking at underside of face)
         if(dotprod * dot(n, view) > 0) continue;
-        real dstsqr = lampvect.lensqr();
+        double dstsqr = lampvect.lensqr();
         if(dstsqr==0){
             if(l->col.r) lightcol.r++;
             if(l->col.g) lightcol.g++;
@@ -29,8 +29,8 @@ color calcLighting(const vertex& v, const vertex& n, const material& mat, scene*
         }
         //Phong specular reflection
         vertex refl = lampvnorm.reflection(n);
-        real spec_intensity = l->intensity * mat.spec_intensity * _max(0, _pow(dot(view, refl), mat.spec_hardness));
-        real diff_intensity = l->intensity * _abs(dotprod)*mat.diff_intensity;
+        double spec_intensity = l->intensity * mat.spec_intensity * fmax(0, pow(dot(view, refl), mat.spec_hardness));
+        double diff_intensity = l->intensity * fabs(dotprod)*mat.diff_intensity;
         //calc falloff
         diff_intensity /= dstsqr;
         spec_intensity /= dstsqr;
@@ -51,7 +51,7 @@ color traceRay(const ray& viewray, int depth, scene* sc){
         vertex v = viewray.org + viewray.dir*tuv.t; //calculate vertex location
         
         //interpolate texture coordinates
-        real txu,txv;
+        double txu,txv;
         txu = f->vertices[0]->tex_u*(1-tuv.u-tuv.v) + f->vertices[1]->tex_u*tuv.u + f->vertices[2]->tex_u*tuv.v;
         txv = f->vertices[0]->tex_v*(1-tuv.u-tuv.v) + f->vertices[1]->tex_v*tuv.u + f->vertices[2]->tex_v*tuv.v;
         
@@ -64,7 +64,7 @@ color traceRay(const ray& viewray, int depth, scene* sc){
         else n = f->normal;
         //n = sc->obj->mat->getNormal(txu, txv);
         
-        real ndotray = dot(n, viewray.dir);
+        double ndotray = dot(n, viewray.dir);
         
         color lightcol, speclightcol;
         for(lamp *l : sc->lamps){
@@ -73,8 +73,8 @@ color traceRay(const ray& viewray, int depth, scene* sc){
             if(dot(n, lampvect)*ndotray>0) continue; //make sure lamp is on same side of face as view
             ray lampray(v, lampvnorm);
             if(kdtree::rayTreeIntersect(sc->kdt, lampray, true, &tuv)!=nullptr) continue;
-            real dotprod = dot(lampvnorm, n);
-            real dstsqr = lampvect.lensqr();
+            double dotprod = dot(lampvnorm, n);
+            double dstsqr = lampvect.lensqr();
             if(dstsqr==0){
                 //if lamp is on the face's center, add full brightness to each color that the lamp emits
                 if(l->col.r) lightcol.r++;
@@ -84,8 +84,8 @@ color traceRay(const ray& viewray, int depth, scene* sc){
             }
             //Phong shading
             vertex lamprefl = lampvnorm.reflection(n);
-            real spec_intensity = l->intensity * f->obj->mat->spec_intensity * _max(0, _pow(dot(viewray.dir, lamprefl), f->obj->mat->spec_hardness));
-            real diff_intensity = l->intensity *_abs(dotprod) * f->obj->mat->diff_intensity;
+            double spec_intensity = l->intensity * f->obj->mat->spec_intensity * fmax(0, pow(dot(viewray.dir, lamprefl), f->obj->mat->spec_hardness));
+            double diff_intensity = l->intensity *fabs(dotprod) * f->obj->mat->diff_intensity;
             //calculate falloff
             switch(l->falloff){
                 case 2:
@@ -93,8 +93,8 @@ color traceRay(const ray& viewray, int depth, scene* sc){
                     spec_intensity /= dstsqr;
                     break;
                 case 1:
-					diff_intensity /= _sqrt(dstsqr);
-					spec_intensity /= _sqrt(dstsqr);
+					diff_intensity /= sqrt(dstsqr);
+					spec_intensity /= sqrt(dstsqr);
                     break;
                 case 0:
                     break;
@@ -110,7 +110,7 @@ color traceRay(const ray& viewray, int depth, scene* sc){
         if(depth < RAY_DEPTH){
             vertex refl = viewray.dir.reflection(n);
             if(f->obj->mat->alpha < 1){
-                real n1, n2;
+                double n1, n2;
                 vertex transray;
                 if(ndotray < 0){
                     n1 = 1;
@@ -123,10 +123,10 @@ color traceRay(const ray& viewray, int depth, scene* sc){
                 vertex raynorm = n * ndotray;
                 vertex raytang = viewray.dir - raynorm;
                 vertex transtang = raytang * (n1/n2);
-                real transsinsquared = transtang.lensqr();
+                double transsinsquared = transtang.lensqr();
                 if(transsinsquared > 1) transray = refl; //total reflection
                 else{
-                    vertex transnorm = n * signum(ndotray) *_sqrt(1-transsinsquared);
+                    vertex transnorm = n * signum(ndotray) *sqrt(1-transsinsquared);
                     transray = transnorm + transtang;
                 }
                 color transcol = traceRay(ray(v, transray), depth+1, sc);
@@ -171,7 +171,7 @@ color tracePath(const ray& viewray, int depth, scene* sc){
     }
 }
 
-real ambientOcclusion(const ray& viewray, kdtree *kdt, int samples){
+double ambientOcclusion(const ray& viewray, kdtree *kdt, int samples){
     //srand(0);
     vertex tuv;
     face *f = kdtree::rayTreeIntersect(kdt, viewray, false, &tuv);
@@ -185,9 +185,9 @@ real ambientOcclusion(const ray& viewray, kdtree *kdt, int samples){
             n.normalize();
         }
         else n = f->normal;
-        //real ndotray = dot(n, viewray.dir);
+        //double ndotray = dot(n, viewray.dir);
         
-        real occ_amount = 0; //amount of ambient occlusion, ie how much current point is illuminated by the background.
+        double occ_amount = 0; //amount of ambient occlusion, ie how much current point is illuminated by the background.
         ray testray(v, vertex(0,0,0));
         for(int i=1; i<=samples; i++){
             testray.dir = randomDirection();

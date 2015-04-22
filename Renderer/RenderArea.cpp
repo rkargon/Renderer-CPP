@@ -47,7 +47,7 @@ RenderArea::RenderArea(QWidget *parent): QWidget(parent){
     
     //set up images and buffers
     int h = height(), w = width();
-    zbuffer = new real[h*w];
+    zbuffer = new double[h*w];
     normalmap = new int[h*w];
     //set up render image
     renderimg = new QImage(w, h, QImage::Format_RGB32);
@@ -129,7 +129,7 @@ void RenderArea::updateImage(){
             break;
     }
     //clock_t end = clock();
-    //std::cout << real(end-begin)/CLOCKS_PER_SEC << std::endl;
+    //std::cout << double(end-begin)/CLOCKS_PER_SEC << std::endl;
 }
 
 /* INPUT LISTENERS */
@@ -199,8 +199,8 @@ void RenderArea::mousePressEvent(QMouseEvent *event){
 }
 
 void RenderArea::wheelEvent(QWheelEvent *event){
-    real zoomfactor = pow(1.005, -event->delta());
-    sc->cam->zoom((real)zoomfactor);
+    double zoomfactor = pow(1.005, -event->delta());
+    sc->cam->zoom((double)zoomfactor);
     updateImage();
     repaint();
 }
@@ -211,7 +211,7 @@ void RenderArea::resizeEvent(QResizeEvent *event){
     delete renderimg;
     
     int h = height(), w = width();
-    zbuffer = new real[h*w];
+    zbuffer = new double[h*w];
     normalmap = new int[h*w];
     renderimg = new QImage(w,h,QImage::Format_RGB32);
     updateImage();
@@ -223,7 +223,7 @@ void RenderArea::drawWireFrame(){
     renderimg->fill(0xffffff);
     QPainter painter(renderimg);
     int w = width(), h = height();
-    point2D<real> p1,p2;
+    point2D<double> p1,p2;
     painter.setPen(QColor(255,0,0));
     for(edge *e : kdedges){
         p1 = sc->cam->projectVertex(*e->v1, w, h);
@@ -246,13 +246,13 @@ void RenderArea::drawWireFrame(){
 void RenderArea::zBufferDraw(){
     renderimg->fill(0xffffff);
     int w = width(), h = height();
-    real z, z1, z2, z3, dz21, dz31;
+    double z, z1, z2, z3, dz21, dz31;
     int minx, miny, maxx, maxy;
     int A12, A23, A31, B12, B23, B31;
     int w0, w1, w2, w3, w1_row, w2_row, w3_row;
     int wsgn;
     vertex fcenter;
-    point2D<real> p1, p2, p3, p;
+    point2D<double> p1, p2, p3, p;
     point2D<int> p1int, p2int, p3int, pint;
     color col;
     uint colrgb;
@@ -372,7 +372,7 @@ void RenderArea::generate_maps_vector(int mapflags){
     __v4si w0, w1, w2, w3, w1_row, w2_row, w3_row, wsgn;
     __v4si pxmask; //whether each pixel is inside the triangle
     vertex fcenter;
-    point2D<real> p1, p2, p3;
+    point2D<double> p1, p2, p3;
     point2D<int> p1int, p2int, p3int, pint;
     color col, col2, col3;
     vertex norm, norm2, norm3, normtmp;
@@ -467,12 +467,12 @@ void RenderArea::generate_maps_vector(int mapflags){
                     for(i=0; i<4; i++){
                         if(pint.x+i<w && pxmask[i]!=0 && z[i] < zbuffer[w*pint.y+pint.x+i]){
                             if(mapflags & 2){
-                                if(f->obj->smooth) normtmp = lerp(norm, norm2, norm3, real(w1[i])/w0[i], real(w2[i])/w0[i], real(w3[i])/w0[i]);
+                                if(f->obj->smooth) normtmp = lerp(norm, norm2, norm3, double(w1[i])/w0[i], double(w2[i])/w0[i], double(w3[i])/w0[i]);
                                 else normtmp = f->normal;
                                 normalmap[pint.y*w + pint.x+i] = normalToRGB(normtmp);
                             }
                             if(mapflags & 4){
-                                if(f->obj->smooth) colrgb = colorToRGB(lerp(col, col2, col3, real(w1[i])/w0[i], real(w2[i])/w0[i], real(w3[i])/w0[i]));
+                                if(f->obj->smooth) colrgb = colorToRGB(lerp(col, col2, col3, double(w1[i])/w0[i], double(w2[i])/w0[i], double(w3[i])/w0[i]));
                                 else if(colrgb>>24) colrgb = colorToRGB(calcLighting(fcenter, f->normal, *f->obj->mat, sc));
                                 renderimg->setPixel(pint.x+i, pint.y, colrgb);
                             }
@@ -498,7 +498,7 @@ void RenderArea::SSAO()
     int w=width(), h=height();
     generate_maps_vector(7); //generate depth and normal maps
     //renderimg->fill(0xffffff);
-    real ao, d, z, ztmp;
+    double ao, d, z, ztmp;
     vertex v, dv, vtmp, n;
     ray r, rtmp;
     int x, y, dy, dx, dir, nsamples;
@@ -529,10 +529,10 @@ void RenderArea::SSAO()
                 vtmp = rtmp.org + rtmp.dir*ztmp;
                 dv = vtmp-v;
                 d = dv.len();
-                ao += _abs(dot(n, dv))*(1.0/(1.0+d))/d; //divide by d at the end to normalize dot product
+                ao += fabs(dot(n, dv))*(1.0/(1.0+d))/d; //divide by d at the end to normalize dot product
                 nsamples++;
             }
-            ao /= _max(1, nsamples);
+            ao /= fmax(1, nsamples);
             renderimg->setPixel(x, y, colorToRGB(RGBToColor(renderimg->pixel(x, y)) * color(1,1,1)*clamp(ao*2, 0, 1)));
         }
     }
@@ -542,7 +542,7 @@ void RenderArea::SSAO()
 void RenderArea::rayTraceUnthreaded(){
     num_rays_traced = 0;
     int i, j, x, y, xmax, ymax, w=width(), h=height();
-    int tilenum=0, totaltiles = ceil((real)w/tilesize) * ceil((real)h/tilesize);
+    int tilenum=0, totaltiles = ceil((double)w/tilesize) * ceil((double)h/tilesize);
     int colrgb;
     vertex col;
     ray r;
@@ -557,7 +557,7 @@ void RenderArea::rayTraceUnthreaded(){
                 for(y=j; y<ymax; y++){
                     r = sc->cam->castRay(x, y, w, h);
                     if(amboc){
-                        real occamount = ambientOcclusion(r, sc->kdt);
+                        double occamount = ambientOcclusion(r, sc->kdt);
                         occamount = clamp(occamount, 0, 0.5)*2;
                         col.set(occamount, occamount, occamount);
                     }
@@ -572,7 +572,7 @@ void RenderArea::rayTraceUnthreaded(){
     }
     std::cout << "all tiles done. " << std::endl;
     clock_t end = clock();
-    real time_elapsed = real(end - begin) / CLOCKS_PER_SEC;
+    double time_elapsed = double(end - begin) / CLOCKS_PER_SEC;
     std::cout << num_rays_traced << " rays traced in " << time_elapsed << " seconds, or " << num_rays_traced/time_elapsed << " rays per second." << std::endl;
 }
 
@@ -582,7 +582,7 @@ void RenderArea::pathTraceUnthreaded(){
     
     if(pathTracingSamples == 0) return;
     int i, j, x, y, xmax, ymax, w=width(), h=height(), s;
-    int tilenum=0, totaltiles = ceil((real)w/tilesize) * ceil((real)h/tilesize);
+    int tilenum=0, totaltiles = ceil((double)w/tilesize) * ceil((double)h/tilesize);
     color totalcol;
     int colrgb;
     ray r;
@@ -610,13 +610,13 @@ void RenderArea::pathTraceUnthreaded(){
     
     std::cout << "all tiles done. " << std::endl;
     clock_t end = clock();
-    real time_elapsed = real(end - begin) / CLOCKS_PER_SEC;
+    double time_elapsed = double(end - begin) / CLOCKS_PER_SEC;
     std::cout << num_rays_traced << " rays traced in " << time_elapsed << " seconds, or " << num_rays_traced/time_elapsed << " rays per second." << std::endl;
 }
 
 void RenderArea::drawStereoGram(){
     int w = width(), h=height(), x, y;
-    real z;
+    double z;
     int r, color, shift;
     sc->cam->maxdist = 10;
     generate_maps_vector(1);

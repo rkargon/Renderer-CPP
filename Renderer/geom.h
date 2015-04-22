@@ -35,12 +35,12 @@ class vertex
 {
 public:
     vertex();
-    vertex(real a, real b, real c);
+    vertex(double a, double b, double c);
     
-    inline real len() const {return _sqrt(x*x+y*y+z*z);}
-    inline real lensqr() const {return (x*x+y*y+z*z);}
+    inline double len() const {return sqrt(x*x+y*y+z*z);}
+    inline double lensqr() const {return (x*x+y*y+z*z);}
     void normalize();
-    void set(const real a, const real b, const real c);
+    void set(const double a, const double b, const double c);
     vertex reflection(const vertex& n) const;
     vertex unitvect() const;
     
@@ -48,7 +48,7 @@ public:
     void operator+= (const vertex *v2);
     void operator-= (const vertex& v2);
     void operator-= (const vertex *v2);
-    void operator*= (const real r);
+    void operator*= (const double r);
     void operator*= (const vertex& v2);
     void operator*= (const vertex *v2);
     vertex operator-();
@@ -56,8 +56,8 @@ public:
     friend vertex operator+ (const vertex& v1, const vertex *v2);
     friend vertex operator- (const vertex& v1, const vertex& v2);
     friend vertex operator- (const vertex& v1, const vertex *v2);
-    friend vertex operator* (const vertex& v1, real r);
-    friend vertex operator* (const real r, vertex& v1);
+    friend vertex operator* (const vertex& v1, double r);
+    friend vertex operator* (const double r, vertex& v1);
     friend vertex operator* (const vertex& v1, const vertex& v2);
     friend bool operator== (const vertex& v1, const vertex& v2);
     friend bool operator!= (const vertex& v1, const vertex& v2);
@@ -65,10 +65,10 @@ public:
     
     //data
     union{
-        struct{real r, g, b;};
-        struct{real t, u, v;};
-        struct{real x, y, z;};
-        struct{real vec[3];};
+        struct{double r, g, b;};
+        struct{double t, u, v;};
+        struct{double x, y, z;};
+        struct{double vec[3];};
         //ok so maybe I'm lazy
     };
 };
@@ -89,10 +89,10 @@ class meshvertex : public vertex
 {
 public:
     std::vector<face*> faces;
-    real tex_u,tex_v;
+    double tex_u,tex_v;
     
     meshvertex();
-    meshvertex(real x, real y, real z);
+    meshvertex(double x, double y, double z);
     vertex vertexNormal();
     void operator=(const meshvertex& v);
     friend bool operator==(const meshvertex& v1, const meshvertex& v2);
@@ -108,9 +108,9 @@ struct bounds{
     bounds();
     bounds(const vertex& a, const vertex& b);
     
-    real area() const;
-    inline real volume() const{return (max.x-min.x)*(max.y-min.y)*(max.z-min.z);}
-    inline real d(const int k) const{return max.vec[k]-min.vec[k];} //doesn't check axis indices for validity. Be careful.
+    double area() const;
+    inline double volume() const{return (max.x-min.x)*(max.y-min.y)*(max.z-min.z);}
+    inline double d(const int k) const{return max.vec[k]-min.vec[k];} //doesn't check axis indices for validity. Be careful.
 };
 
 class face
@@ -127,11 +127,11 @@ public:
     vertex generateNormal();
     bool intersectRayTriangle(const ray& r, vertex *tuv);
     bool isPerpendicular(const vertex& normal);
-    inline real minCoord(int axis) const{
-        return _min(_min(vertices[0]->vec[axis],vertices[1]->vec[axis]),vertices[2]->vec[axis]);
+    inline double minCoord(int axis) const{
+        return fmin(fmin(vertices[0]->vec[axis],vertices[1]->vec[axis]),vertices[2]->vec[axis]);
     }
-    inline real maxCoord(int axis) const{
-        return _max(_max(vertices[0]->vec[axis],vertices[1]->vec[axis]),vertices[2]->vec[axis]);
+    inline double maxCoord(int axis) const{
+        return fmax(fmax(vertices[0]->vec[axis],vertices[1]->vec[axis]),vertices[2]->vec[axis]);
     }
 };
 
@@ -142,7 +142,7 @@ public:
     edge();
     edge(vertex *vert1, vertex *vert2);
     vertex getVector();
-    real length();
+    double length();
     
     void operator=(const edge& e);
     friend bool operator==(const edge& e1, const edge& e2);
@@ -160,9 +160,9 @@ struct edgePtrEquality{
 
 //vertex functions
 inline vertex cross(const vertex& A, const vertex& B){ return vertex(A.y*B.z - A.z*B.y, A.z*B.x - A.x*B.z, A.x*B.y - A.y*B.x); }
-inline real dot(const vertex& A, const vertex& B){ return (A.x*B.x + A.y*B.y + A.z*B.z); }
-vertex lerp(const vertex& v1, const vertex& v2, const real r);
-vertex lerp(const vertex& v1, const vertex& v2, const vertex& v3, real w1, real w2, real w3);
+inline double dot(const vertex& A, const vertex& B){ return (A.x*B.x + A.y*B.y + A.z*B.z); }
+vertex lerp(const vertex& v1, const vertex& v2, const double r);
+vertex lerp(const vertex& v1, const vertex& v2, const vertex& v3, double w1, double w2, double w3);
 vertex min3(const vertex& v1, const vertex& v2);
 vertex max3(const vertex& v1, const vertex& v2);
 vertex randomDirection(); //picks a random point on the unit sphere (uniformly)
@@ -181,6 +181,6 @@ void listBounds(bounds& newbounds, int nverts, const vertex* vertices ...);
 //geometry intersections
 bool rayAABBIntersect(const bounds& AABB, const ray& r);
 face *rayFacesIntersect(const std::vector<face*>& faces, const ray& r, bool lazy, vertex *tuv);
-bool raySphereIntersect(const ray& r, const real rad, real& t); //intersects a ray with a sphere centered on the origin. Assumes ray direction is normalized
+bool raySphereIntersect(const ray& r, const double rad, double& t); //intersects a ray with a sphere centered on the origin. Assumes ray direction is normalized
 
 #endif /* defined(__Renderer__geom__) */

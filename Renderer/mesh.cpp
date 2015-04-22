@@ -119,10 +119,10 @@ void mesh::project_texture(tex_projection_t proj){
         vn = v->unitvect();
         switch (proj) {
             case TEX_PROJ_SPHERICAL:
-                v->tex_u = _atan2(vn.x,vn.y);
+                v->tex_u = atan2(vn.x,vn.y);
                 if(v->tex_u<0) v->tex_u += M_PI*2;
                 v->tex_u /= (2*M_PI);
-                v->tex_v = _acos(vn.z)/M_PI;
+                v->tex_v = acos(vn.z)/M_PI;
                 break;
                 
             default:

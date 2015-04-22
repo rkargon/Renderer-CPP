@@ -13,8 +13,8 @@
 #include <iomanip>
 #include "geom.h"
 
-#define KDT_MIN_FACES 1
-#define KDT_MAX_DEPTH 20
+#define KDTfMIN_FACES 1
+#define KDTfMAX_DEPTH 20
 //used for SAH calculations
 #define KDT_CTRAVERSAL 1
 #define KDT_CINTERSECT 1.5
@@ -24,15 +24,15 @@ public:
     kdtree *lower = nullptr;
     kdtree *upper = nullptr;
     std::vector<face *> faces;
-    real pos;
+    double pos;
     int axis = -1;
     bool planarside; //whether or not faces on the split plane go to the right (upper) child node
     bounds boundingbox;
-    static real completion;
+    static double completion;
     
     std::vector<edge*> wireframe();
     std::vector<edge*> wireframe(bool isRoot, int depth);
-    void calcstats(int& nodes, int& leaf_nodes, int& non_empty_leaf_nodes, int& triangles_in_leaves, real& est_traversals, real& est_leaves_visited, real& est_tris_intersected, real& est_cost, real rootArea=-1);
+    void calcstats(int& nodes, int& leaf_nodes, int& non_empty_leaf_nodes, int& triangles_in_leaves, double& est_traversals, double& est_leaves_visited, double& est_tris_intersected, double& estcost, double rootArea=-1);
     void printstats();
     static kdtree *buildTree(const std::vector<face*>& faces);
     static face *rayTreeIntersect(kdtree *kdt, const ray& r, bool lazy, vertex *tuv, bool isRoot = true);
@@ -40,9 +40,9 @@ public:
 private:
 
     typedef struct planedata{
-        real plane_pos;
+        double plane_pos;
         int plane_axis;
-        real split_cost;
+        double splitcost;
         bool planar_side; //true if planar faces go to the right
     } planedata;
     
@@ -68,7 +68,7 @@ private:
     public:
         static int i; //keeps track of how many objects are created, for debugging purposes.
         faceWrapper * fw;
-        real pos;
+        double pos;
         
         //should probably use enums for these
         // 0 - x
@@ -81,7 +81,7 @@ private:
 		// 2 - f starts at p
         int type;
         
-        planarEvent(faceWrapper *fw, real p, int k, int type);
+        planarEvent(faceWrapper *fw, double p, int k, int type);
         ~planarEvent();
         
         class planarEventComparator{
@@ -92,11 +92,11 @@ private:
     
     kdtree(std::vector<planarEvent*>& events, const bounds& facebounds, int depth);
     static std::vector<planarEvent*> buildEventList(const std::vector<faceWrapper*>& faces);
-    static planedata findOptimalPlane(int nfaces, const std::vector<planarEvent*>& events, bounds& boundingbox, real area);
-    static inline real lambda(real lowerarea, real upperarea, real Nl, real Nr){
+    static planedata findOptimalPlane(int nfaces, const std::vector<planarEvent*>& events, bounds& boundingbox, double area);
+    static inline double lambda(double lowerarea, double upperarea, double Nl, double Nr){
         return ((Nl==0||Nr==0) && !(lowerarea==1 || upperarea==1)) ? 0.8 : 1;
     }
-    static std::pair<real, bool> SAH(const bounds& boundingbox, real position, int axis, real area, int Nl, int Np, int Nr);
-    static void generateClippedEvents(faceWrapper *fw, real pos, int axis, const bounds& boundingbox, std::vector<planarEvent*>& newevents_left, std::vector<planarEvent*>& newevents_right);
+    static std::pair<double, bool> SAH(const bounds& boundingbox, double position, int axis, double area, int Nl, int Np, int Nr);
+    static void generateClippedEvents(faceWrapper *fw, double pos, int axis, const bounds& boundingbox, std::vector<planarEvent*>& newevents_left, std::vector<planarEvent*>& newevents_right);
 };
 #endif /* defined(__Renderer__kdtree__) */

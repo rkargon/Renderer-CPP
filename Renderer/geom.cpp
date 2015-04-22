@@ -10,20 +10,20 @@
 
 /* VERTEX */
 vertex::vertex() :x(0),y(0),z(0){};
-vertex::vertex(real a, real b, real c) :x(a),y(b),z(c) {};
+vertex::vertex(double a, double b, double c) :x(a),y(b),z(c) {};
 
 //Scales the vector such that its magnitude is one, while keeping its orientation the same.
 //If the vector is 0, it is unchanged.
 void vertex::normalize(){
-    real len = x * x + y * y + z * z;
+    double len = x * x + y * y + z * z;
     if (len != 0 && len != 1) {
-        len = 1.0/_sqrt(len);
+        len = 1.0/sqrt(len);
         x *= len;
         y *= len;
         z *= len;
     }
 }
-void vertex::set(const real a, const real b, const real c){x=a;y=b;z=c;}
+void vertex::set(const double a, const double b, const double c){x=a;y=b;z=c;}
 
 //Calculates the refelction of this vertex across a normal vector n.
 //REFL = V - N*(2(V.N))
@@ -31,9 +31,9 @@ vertex vertex::reflection(const vertex& n) const {return *this - n*(2*dot(*this,
 
 //Returns the corresponding unit vector of this vertex, but this vertex is not modified.
 vertex vertex::unitvect() const{
-    real len = x*x+y*y+z*z;
+    double len = x*x+y*y+z*z;
     if(len!=0 && len!=1){
-        len = 1.0/_sqrt(len);
+        len = 1.0/sqrt(len);
         return vertex(x*len, y*len, z*len);
     }
     return vertex(x,y,z);
@@ -43,7 +43,7 @@ void vertex::operator+= (const vertex& v2){x+=v2.x; y+=v2.y; z+=v2.z;}
 void vertex::operator+= (const vertex *v2){x+=v2->x; y+=v2->y; z+=v2->z;}
 void vertex::operator-= (const vertex& v2){x-=v2.x; y-=v2.y; z-=v2.z;}
 void vertex::operator-= (const vertex *v2){x-=v2->x; y-=v2->y; z-=v2->z;}
-void vertex::operator*= (const real r){x*=r; y*=r; z*=r;} //scalar multiplication
+void vertex::operator*= (const double r){x*=r; y*=r; z*=r;} //scalar multiplication
 void vertex::operator*= (const vertex& v2){x*=v2.x; y*=v2.y; z*=v2.z;} //coordinate-wise multiplication
 void vertex::operator*= (const vertex *v2){x*=v2->x; y*=v2->y; z*=v2->z;}
 vertex vertex::operator-() {return vertex(-x, -y, -z);}
@@ -52,8 +52,8 @@ vertex operator+ (const vertex& v1, const vertex& v2) {return vertex(v1.x+v2.x, 
 vertex operator+ (const vertex& v1, const vertex *v2) {return vertex(v1.x+v2->x, v1.y+v2->y, v1.z+v2->z);}
 vertex operator- (const vertex& v1, const vertex& v2) {return vertex(v1.x-v2.x, v1.y-v2.y, v1.z-v2.z);}
 vertex operator- (const vertex& v1, const vertex *v2) {return vertex(v1.x-v2->x, v1.y-v2->y, v1.z-v2->z);}
-vertex operator* (const vertex& v1, real r){return vertex(v1.x*r, v1.y*r, v1.z*r);}
-vertex operator* (const real r, vertex& v1){return vertex(v1.x*r, v1.y*r, v1.z*r);}
+vertex operator* (const vertex& v1, double r){return vertex(v1.x*r, v1.y*r, v1.z*r);}
+vertex operator* (const double r, vertex& v1){return vertex(v1.x*r, v1.y*r, v1.z*r);}
 vertex operator* (const vertex& v1, const vertex& v2) {return vertex(v1.x*v2.x, v1.y*v2.y, v1.z*v2.z);} //coordinate-wise multiplication
 bool operator== (const vertex& v1, const vertex& v2){return v1.x==v2.x && v1.y==v2.y && v1.z==v2.z;}
 bool operator!= (const vertex& v1, const vertex& v2){return !(v1==v2);}
@@ -124,8 +124,8 @@ vertex face::center() const{
 //Muller-Trumbore algorithm
 bool face::intersectRayTriangle(const ray& r, vertex *tuv){
     vertex edge1, edge2, tvec, pvec, qvec;
-    real det, inv_det;
-    real t, u, v;
+    double det, inv_det;
+    double t, u, v;
     
     edge1 = (*vertices[1]-*vertices[0]);
     edge2 = (*vertices[2]-*vertices[0]);
@@ -171,10 +171,10 @@ bounds::bounds() :min(0,0,0),max(0,0,0){}
 bounds::bounds(const vertex& a, const vertex& b) :min(a),max(b){}
 
 //surface area
-real bounds::area() const{
-    real dx = _abs(max.x - min.x);
-    real dy = _abs(max.y - min.y);
-    real dz = _abs(max.z - min.z);
+double bounds::area() const{
+    double dx = fabs(max.x - min.x);
+    double dy = fabs(max.y - min.y);
+    double dz = fabs(max.z - min.z);
     return 2*(dx*dy + dy*dz + dz*dx);
 }
 
@@ -184,7 +184,7 @@ meshvertex::meshvertex(){
     y=0;
     z=0;
 }
-meshvertex::meshvertex(real a, real b, real c){
+meshvertex::meshvertex(double a, double b, double c){
     x=a; y=b; z=c;
 }
 //sum the normal of each adjacent face, and normalize.
@@ -210,7 +210,7 @@ bool operator==(const meshvertex& v1, const meshvertex& v2){return v1.x==v2.x &&
 edge::edge(){}
 edge::edge(vertex *vert1, vertex *vert2)  :v1(vert1), v2(vert2) {}
 vertex edge::getVector() {return (*v2) - (*v1);}
-real edge::length() {return (*v2-*v1).len();}
+double edge::length() {return (*v2-*v1).len();}
 void edge::operator=(const edge& e){
     v1 = e.v1;
     v2 = e.v2;
@@ -270,20 +270,20 @@ bool edgePtrEquality::operator()(X const &lhs, Y const &rhs) const{
 }
 
 //linearly interpolate two 3d vertices
-vertex lerp(const vertex& v1, const vertex& v2, const real r){return vertex(v1.x+r*(v2.x-v1.x), v1.y+r*(v2.y-v1.y), v1.z+r*(v2.z-v1.z));}
+vertex lerp(const vertex& v1, const vertex& v2, const double r){return vertex(v1.x+r*(v2.x-v1.x), v1.y+r*(v2.y-v1.y), v1.z+r*(v2.z-v1.z));}
 //linearly interpolate 3 vertices based on barycentric coordinates.
-vertex lerp(const vertex& v1, const vertex& v2, const vertex& v3, real w1, real w2, real w3){return v1*w1 + v2*w2 + v3*w3;}
+vertex lerp(const vertex& v1, const vertex& v2, const vertex& v3, double w1, double w2, double w3){return v1*w1 + v2*w2 + v3*w3;}
 //The maximum of each coordainte of the two vertices
-vertex max3(const vertex& v1, const vertex& v2){return vertex(_max(v1.x,v2.x), _max(v1.y,v2.y), _max(v1.z,v2.z));}
-vertex min3(const vertex& v1, const vertex& v2){return vertex(_min(v1.x,v2.x), _min(v1.y,v2.y), _min(v1.z,v2.z));}
+vertex max3(const vertex& v1, const vertex& v2){return vertex(fmax(v1.x,v2.x), fmax(v1.y,v2.y), fmax(v1.z,v2.z));}
+vertex min3(const vertex& v1, const vertex& v2){return vertex(fmin(v1.x,v2.x), fmin(v1.y,v2.y), fmin(v1.z,v2.z));}
 //A random unit vector.
 vertex randomDirection(){
-    real theta = (real)rand()/RAND_MAX;
+    double theta = (double)rand()/RAND_MAX;
     theta *= M_PI*2;
-    real z = (real)rand()/RAND_MAX;
+    double z = (double)rand()/RAND_MAX;
     z = z*2 - 1;
-    real w = _sqrt(1-z*z);
-    return vertex(w*_cos(theta), w*_sin(theta), z);
+    double w = sqrt(1-z*z);
+    return vertex(w*cos(theta), w*sin(theta), z);
 }
 
 //color functions
@@ -312,8 +312,8 @@ color RGBToNormal(const uint n){
 
 //THe bounding box of a set of faces.
 bounds calcBoundingBox(const std::vector<face *>& faces){
-    real minx, miny, minz, maxx, maxy, maxz, tmp;
-    minx = miny = minz = maxx = maxy = maxz = _nan("");
+    double minx, miny, minz, maxx, maxy, maxz, tmp;
+    minx = miny = minz = maxx = maxy = maxz = nan("");
     for(face *f: faces){
         tmp = f->minCoord(0);
         if(isnan(minx) || minx>tmp) minx = tmp;
@@ -362,17 +362,17 @@ void listBounds(bounds& newbounds, int nverts, const vertex *v1 ...){
 
 //Intersect a ray with a bounding box (AABB = Axis Aligned Bounding Box)
 bool rayAABBIntersect(const bounds& AABB, const ray& r){
-    real tmp;
-    real tmin = (AABB.min.x-r.org.x) / r.dir.x;
-    real tmax = (AABB.max.x-r.org.x) / r.dir.x;
+    double tmp;
+    double tmin = (AABB.min.x-r.org.x) / r.dir.x;
+    double tmax = (AABB.max.x-r.org.x) / r.dir.x;
     if(tmin>tmax){
         tmp = tmin;
         tmin = tmax;
         tmax = tmp;
     }
     
-    real tymin = (AABB.min.y-r.org.y) / r.dir.y;
-    real tymax = (AABB.max.y-r.org.y) / r.dir.y;
+    double tymin = (AABB.min.y-r.org.y) / r.dir.y;
+    double tymax = (AABB.max.y-r.org.y) / r.dir.y;
     if (tymin > tymax) {
         tmp = tymin;
         tymin = tymax;
@@ -382,8 +382,8 @@ bool rayAABBIntersect(const bounds& AABB, const ray& r){
     if (tymin > tmin) tmin = tymin;
     if (tymax < tmax) tmax = tymax;
     
-    real tzmin = (AABB.min.z-r.org.z) / r.dir.z;
-    real tzmax = (AABB.max.z-r.org.z) / r.dir.z;
+    double tzmin = (AABB.min.z-r.org.z) / r.dir.z;
+    double tzmax = (AABB.max.z-r.org.z) / r.dir.z;
     if (tzmin > tzmax) {
         tmp = tzmin;
         tzmin = tzmax;
@@ -401,7 +401,7 @@ bool rayAABBIntersect(const bounds& AABB, const ray& r){
 face *rayFacesIntersect(const std::vector<face*>& faces, const ray& r, bool lazy, vertex *tuv){
     face *f = nullptr;
     vertex tuvtmp;
-    real zmin = _nan("");
+    double zmin = nan("");
     for(face *ftmp : faces){
         if(ftmp->intersectRayTriangle(r, &tuvtmp) && (tuvtmp.t < zmin || isnan(zmin))){
             zmin = tuvtmp.t;
@@ -413,10 +413,10 @@ face *rayFacesIntersect(const std::vector<face*>& faces, const ray& r, bool lazy
     return f;
 }
 //Intersect a ray with a sphere, t stores distance from ray origin to intersect
-bool raySphereIntersect(const ray& r, const real rad, real& t){
-    real DdotO = dot(r.dir, r.org);
-    real lensq = r.org.lensqr();
-    real disc = DdotO*DdotO - (lensq-rad*rad);
+bool raySphereIntersect(const ray& r, const double rad, double& t){
+    double DdotO = dot(r.dir, r.org);
+    double lensq = r.org.lensqr();
+    double disc = DdotO*DdotO - (lensq-rad*rad);
     if(disc<0) return false; //no intersect
     else if (disc==0){ //one intersect
         t = -DdotO;
@@ -424,15 +424,15 @@ bool raySphereIntersect(const ray& r, const real rad, real& t){
     }
     else{
         //return nearest intersection, that is not behind ray origin
-        disc = _sqrt(disc);
+        disc = sqrt(disc);
         //two intersection points.
-        real t1=disc-DdotO, t2=(-disc)-DdotO;
+        double t1=disc-DdotO, t2=(-disc)-DdotO;
         if(t1>=0 && t2>=0){
-            t = _min(t1,t2);
+            t = fmin(t1,t2);
             return true;
         }
         else if (t1>=0 || t2>=0){
-            t=_max(t1,t2);
+            t=fmax(t1,t2);
             return true;
         }
         else return false;

@@ -8,7 +8,7 @@
 
 #include "BSDF.h"
 
-EmissionBSDF::EmissionBSDF(color c, real i)
+EmissionBSDF::EmissionBSDF(color c, double i)
 :col(c),
 intensity(i){};
 
@@ -30,19 +30,19 @@ color DiffuseBSDF::getLight(color incidentColor, vertex incidentDirection, verte
 
 vertex DiffuseBSDF::getIncidentDirection(vertex normal, vertex viewDirection){
     vertex d;
-    real cos=1, r=0;
+    double cos=1, r=0;
     int i=0;
     while(cos > r){
         i++;
         d = randomDirection();
         cos = dot(normal, d);
-        r = real(rand())/real(RAND_MAX);
+        r = double(rand())/double(RAND_MAX);
     }
     if (dot(d, normal) * dot(viewDirection, normal) > 0) d *= -1;
     return d;
 }
 
-GlossyBSDF::GlossyBSDF(color c, real r)
+GlossyBSDF::GlossyBSDF(color c, double r)
 :col(c),
 roughness(clamp(r, 0, 1)){};
 
@@ -56,7 +56,7 @@ vertex GlossyBSDF::getIncidentDirection(vertex normal, vertex viewDirection){
     return (viewDirection.reflection(normal) + randomDirection()*roughness).unitvect();
 }
 
-MixBSDF::MixBSDF(real f, BSDF *m1, BSDF *m2)
+MixBSDF::MixBSDF(double f, BSDF *m1, BSDF *m2)
 :fac(f),
 mat1(m1),
 mat2(m2){

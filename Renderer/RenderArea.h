@@ -39,7 +39,7 @@ public:
     bool amboc=false;
     QImage *renderimg;
     unsigned int rendermode=0;
-    real *zbuffer;
+    double *zbuffer;
     int *normalmap;
     
     QPoint prevpos; //for mouse movement tracking
@@ -54,7 +54,7 @@ public:
     void drawWireFrame();
     void zBufferDraw();
     
-    // The functions below all rely on generate_maps_vector, where the real work is done
+    // The functions below all rely on generate_maps_vector, where the double work is done
     void generate_maps_vector(int mapflags);
     void zBufferDraw_vector();
     void paintNormalMap();
