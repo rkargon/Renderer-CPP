@@ -175,7 +175,7 @@ kdtree::planedata kdtree::findOptimalPlane(int nfaces, const std::vector<planarE
     
     int Nleft[3] = {0}, Nplanar[3] = {0}, Nright[3] = {nfaces, nfaces, nfaces};
     int axis_best = 0;
-    double pos_best=0, cost_best = _INFINITY;
+    double pos_best=0, cost_best = HUGE_VAL;
     bool p_side=0;
     
     //temp variables
@@ -255,7 +255,7 @@ std::pair<double, bool> kdtree::SAH(const bounds& boundingbox, double position, 
     double lowerarea = lowerbounds.area() / area;
     double upperarea = upperbounds.area() / area;
     //if bounding box has no area, or split cuts off just a plane,
-    if(area==0 || boundingbox.d(axis)==0 || lowerarea==0 || upperarea==0) return std::pair<double, bool>(_INFINITY, false);
+    if(area==0 || boundingbox.d(axis)==0 || lowerarea==0 || upperarea==0) return std::pair<double, bool>(HUGE_VAL, false);
     
     double costleftbias = (lowerarea*(Nl+Np) + upperarea*Nr) * lambda(lowerarea, upperarea, Nl+Np, Nr);
     double costrightbias = lowerarea*Nl + upperarea*(Np+Nr) * lambda(lowerarea, upperarea, Nl, Np+Nr);

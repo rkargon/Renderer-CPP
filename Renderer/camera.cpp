@@ -18,7 +18,7 @@ camera::camera(const vertex& center, const vertex& focus, const vertex& normal, 
     this->vert = vert;
     this->fov = fov;
     this->mindist = mindist;
-    this->maxdist = maxdist > 0 ? maxdist : _INFINITY;
+    this->maxdist = maxdist > 0 ? maxdist : HUGE_VAL;
     this->ortho = ortho;
     calcImageVectors();
 }

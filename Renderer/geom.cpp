@@ -63,23 +63,23 @@ std::ostream& operator<< (std::ostream &os, const vertex *&v){return os << "(" <
 //two vertex*'s or two vertex's are equal in these hash functions if they represent the same point in space.
 std::size_t vertexPtrHasher::operator()(const vertex* v) const{
     size_t result = 1;
-    unsigned realsize bits = *(realsize *)&v->x;
-    result = 31 * result + (size_t) (bits ^ (bits >> realbytes*4));
-    bits  = *(realsize *)&v->y;
-    result = 31 * result + (size_t) (bits ^ (bits >> realbytes*4));
-    bits = *(realsize *)&v->z;
-    result = 31 * result + (size_t) (bits ^ (bits >> realbytes*4));
+    unsigned long bits = *(long *)&v->x;
+    result = 31 * result + (size_t) (bits ^ (bits >> 8*4));
+    bits  = *(long *)&v->y;
+    result = 31 * result + (size_t) (bits ^ (bits >> 8*4));
+    bits = *(long *)&v->z;
+    result = 31 * result + (size_t) (bits ^ (bits >> 8*4));
     return result;
 }
 
 std::size_t vertexHasher::operator()(const vertex v) const{
     size_t result = 1;
-    unsigned realsize bits = *(realsize *)&v.x;
-    result = 31 * result + (size_t) (bits ^ (bits >> realbytes*4));
-    bits  = *(realsize *)&v.y;
-    result = 31 * result + (size_t) (bits ^ (bits >> realbytes*4));
-    bits = *(realsize *)&v.z;
-    result = 31 * result + (size_t) (bits ^ (bits >> realbytes*4));
+    unsigned long bits = *(long *)&v.x;
+    result = 31 * result + (size_t) (bits ^ (bits >> 8*4));
+    bits  = *(long *)&v.y;
+    result = 31 * result + (size_t) (bits ^ (bits >> 8*4));
+    bits = *(long *)&v.z;
+    result = 31 * result + (size_t) (bits ^ (bits >> 8*4));
     return result;
 }
 
@@ -225,19 +225,19 @@ bool operator==(const edge& e1, const edge& e2){
 // (but in any order, edge(v1,v2) and edge(v2, v1) have same hash
 std::size_t edgeHasher::operator()(const edge &e) const{
     size_t result1 = 1;
-    unsigned realsize bits = *(realsize *)&e.v1->x;
-    result1 = 31 * result1 + (size_t) (bits ^ (bits >> realbytes*4));
-    bits = *(realsize *)&e.v1->y;
-    result1 = 31 * result1 + (size_t) (bits ^ (bits >> realbytes*4));
-    bits = *(realsize *)&e.v1->z;
-    result1 = 31 * result1 + (size_t) (bits ^ (bits >> realbytes*4));
+    unsigned long bits = *(long *)&e.v1->x;
+    result1 = 31 * result1 + (size_t) (bits ^ (bits >> 8*4));
+    bits = *(long *)&e.v1->y;
+    result1 = 31 * result1 + (size_t) (bits ^ (bits >> 8*4));
+    bits = *(long *)&e.v1->z;
+    result1 = 31 * result1 + (size_t) (bits ^ (bits >> 8*4));
     size_t result2 = 1;
-    bits = *(realsize *)&e.v2->x;
-    result2 = 31 * result2 + (size_t) (bits ^ (bits >> realbytes*4));
-    bits = *(realsize *)&e.v2->y;
-    result2 = 31 * result2 + (size_t) (bits ^ (bits >> realbytes*4));
-    bits = *(realsize *)&e.v2->z;
-    result2 = 31 * result2 + (size_t) (bits ^ (bits >> realbytes*4));
+    bits = *(long *)&e.v2->x;
+    result2 = 31 * result2 + (size_t) (bits ^ (bits >> 8*4));
+    bits = *(long *)&e.v2->y;
+    result2 = 31 * result2 + (size_t) (bits ^ (bits >> 8*4));
+    bits = *(long *)&e.v2->z;
+    result2 = 31 * result2 + (size_t) (bits ^ (bits >> 8*4));
     size_t result;
     if(result1>result2) result = 31 * (31+result1) +result2;
     else result = 31 * (31+result2) + result1;
@@ -246,19 +246,19 @@ std::size_t edgeHasher::operator()(const edge &e) const{
 
 std::size_t edgePtrHasher::operator()(edge* const& e) const{
     size_t result1 = 1;
-    unsigned realsize bits = *(realsize *)&e->v1->x;
-    result1 = 31 * result1 + (size_t) (bits ^ (bits >> realbytes*4));
-    bits = *(realsize *)&e->v1->y;
-    result1 = 31 * result1 + (size_t) (bits ^ (bits >> realbytes*4));
-    bits = *(realsize *)&e->v1->z;
-    result1 = 31 * result1 + (size_t) (bits ^ (bits >> realbytes*4));
+    unsigned long bits = *(long *)&e->v1->x;
+    result1 = 31 * result1 + (size_t) (bits ^ (bits >> 8*4));
+    bits = *(long *)&e->v1->y;
+    result1 = 31 * result1 + (size_t) (bits ^ (bits >> 8*4));
+    bits = *(long *)&e->v1->z;
+    result1 = 31 * result1 + (size_t) (bits ^ (bits >> 8*4));
     size_t result2 = 1;
-    bits = *(realsize *)&e->v2->x;
-    result2 = 31 * result2 + (size_t) (bits ^ (bits >> realbytes*4));
-    bits = *(realsize *)&e->v2->y;
-    result2 = 31 * result2 + (size_t) (bits ^ (bits >> realbytes*4));
-    bits = *(realsize *)&e->v2->z;
-    result2 = 31 * result2 + (size_t) (bits ^ (bits >> realbytes*4));
+    bits = *(long *)&e->v2->x;
+    result2 = 31 * result2 + (size_t) (bits ^ (bits >> 8*4));
+    bits = *(long *)&e->v2->y;
+    result2 = 31 * result2 + (size_t) (bits ^ (bits >> 8*4));
+    bits = *(long *)&e->v2->z;
+    result2 = 31 * result2 + (size_t) (bits ^ (bits >> 8*4));
     size_t result;
     if(result1>result2) result = 31 * (31+result1) +result2;
     else result = 31 * (31+result2) + result1;

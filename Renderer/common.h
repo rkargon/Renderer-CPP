@@ -14,14 +14,7 @@
 #include <math.h>
 #include <random>
 
-#define HIPRECISION //whether to use floats or doubles
 #define EPSILON 0.00000001
-
-# ifdef HIPRECISION
-#   define realsize long
-#   define realbytes 8
-#   define _INFINITY HUGE_VAL
-# endif
 
 /* MATH UTILITY FUNCTIONS */
 
