@@ -21,6 +21,7 @@
 		D993672B194514FE005C507C /* scene.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D9936729194514FE005C507C /* scene.cpp */; };
 		D993672E1945230F005C507C /* rendering.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D993672C1945230F005C507C /* rendering.cpp */; };
 		D9AA360B1A0FE4EC00512FA1 /* BSDF.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D9AA36091A0FE4EC00512FA1 /* BSDF.cpp */; };
+		D9B4F3601AEBC35000FC7FE4 /* raster.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D9B4F35E1AEBC35000FC7FE4 /* raster.cpp */; };
 		D9BEDABA19410BE7001B0748 /* geom.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D9BEDAB819410BE7001B0748 /* geom.cpp */; };
 		D9E5DB08194B9BF4007979FC /* kdtree.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D9E5DB06194B9BF4007979FC /* kdtree.cpp */; };
 		D9E699D41940FA5A0070422B /* mesh.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D9E699D21940FA5A0070422B /* mesh.cpp */; };
@@ -61,6 +62,8 @@
 		D993672D1945230F005C507C /* rendering.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rendering.h; sourceTree = "<group>"; };
 		D9AA36091A0FE4EC00512FA1 /* BSDF.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BSDF.cpp; sourceTree = "<group>"; };
 		D9AA360A1A0FE4EC00512FA1 /* BSDF.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = BSDF.h; sourceTree = "<group>"; };
+		D9B4F35E1AEBC35000FC7FE4 /* raster.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = raster.cpp; sourceTree = "<group>"; };
+		D9B4F35F1AEBC35000FC7FE4 /* raster.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = raster.h; sourceTree = "<group>"; };
 		D9BEDAB819410BE7001B0748 /* geom.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = geom.cpp; sourceTree = "<group>"; };
 		D9BEDAB919410BE7001B0748 /* geom.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = geom.h; sourceTree = "<group>"; };
 		D9E5DB06194B9BF4007979FC /* kdtree.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = kdtree.cpp; sourceTree = "<group>"; };
@@ -129,6 +132,8 @@
 				D9E5DB07194B9BF4007979FC /* kdtree.h */,
 				D92DFC4C1942324F00CA4882 /* RenderArea.cpp */,
 				D92DFC4D1942324F00CA4882 /* RenderArea.h */,
+				D9B4F35E1AEBC35000FC7FE4 /* raster.cpp */,
+				D9B4F35F1AEBC35000FC7FE4 /* raster.h */,
 				D96BB38B1940AE450011583B /* Renderer.1 */,
 				D92DFC4919422F9E00CA4882 /* RenderWindow.cpp */,
 				D92DFC4A19422F9E00CA4882 /* RenderWindow.h */,
@@ -195,6 +200,7 @@
 				D96BB38A1940AE450011583B /* main.cpp in Sources */,
 				D92DFC4B19422F9E00CA4882 /* RenderWindow.cpp in Sources */,
 				D993672B194514FE005C507C /* scene.cpp in Sources */,
+				D9B4F3601AEBC35000FC7FE4 /* raster.cpp in Sources */,
 				D9E699D41940FA5A0070422B /* mesh.cpp in Sources */,
 				D92DFC4E1942324F00CA4882 /* RenderArea.cpp in Sources */,
 				D9BEDABA19410BE7001B0748 /* geom.cpp in Sources */,

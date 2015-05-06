@@ -47,10 +47,8 @@ RenderArea::RenderArea(QWidget *parent): QWidget(parent){
     
     //set up images and buffers
     int h = height(), w = width();
-    zbuffer = new double[h*w];
-    normalmap = new int[h*w];
-    //set up render image
-    renderimg = new QImage(w, h, QImage::Format_RGB32);
+    imgrasters = new raster(w, h);
+    renderimg = new QImage((uchar*) imgrasters->colbuffer, width(), height(), QImage::Format_RGB32);
     
     //status label
     statuslbl = new QLabel("Raph Renderer 2014");
@@ -104,7 +102,6 @@ void RenderArea::updateText(){
 }
 
 void RenderArea::updateImage(){
-    clock_t begin = clock();
     switch(rendermode){
         case 0:
             drawWireFrame();
@@ -128,8 +125,6 @@ void RenderArea::updateImage(){
             drawStereoGram();
             break;
     }
-    //clock_t end = clock();
-    //std::cout << double(end-begin)/CLOCKS_PER_SEC << std::endl;
 }
 
 /* INPUT LISTENERS */
@@ -206,14 +201,8 @@ void RenderArea::wheelEvent(QWheelEvent *event){
 }
 
 void RenderArea::resizeEvent(QResizeEvent *event){
-    delete zbuffer;
-    delete normalmap;
-    delete renderimg;
-    
-    int h = height(), w = width();
-    zbuffer = new double[h*w];
-    normalmap = new int[h*w];
-    renderimg = new QImage(w,h,QImage::Format_RGB32);
+    imgrasters->resize(width(), height());
+    renderimg = new QImage((uchar*) imgrasters->colbuffer, width(), height(), QImage::Format_RGB32);
     updateImage();
 }
 
@@ -258,7 +247,7 @@ void RenderArea::zBufferDraw(){
     uint colrgb;
     
     //set up z buffer
-    for(int i=0; i<w*h; i++) zbuffer[i] = 1;
+    for(int i=0; i<w*h; i++) imgrasters->zbuffer[i] = 1;
     
     for(mesh *obj: sc->objects){
         for(face *f : obj->faces){
@@ -328,8 +317,8 @@ void RenderArea::zBufferDraw(){
                     if((signum(w1) == wsgn || !w1) && (signum(w2) == wsgn || !w2) && (signum(w3) == wsgn || !w3)){
                         //interpolate z value
                         z = z1 + w2*dz21/w0 + w3*dz31/w0;
-                        if(z < zbuffer[w*pint.y+pint.x]){
-                            zbuffer[w*pint.y+pint.x] = z;
+                        if(z < imgrasters->zbuffer[w*pint.y+pint.x]){
+                            imgrasters->zbuffer[w*pint.y+pint.x] = z;
                             renderimg->setPixel(pint.x, pint.y, colrgb);
                         }
                     }
@@ -354,7 +343,7 @@ void RenderArea::paintNormalMap(){
     renderimg->fill(0xffffff);
     for(int y=0; y<height(); y++){
         for(int x=0; x<width(); x++){
-            renderimg->setPixel(x, y, normalmap[y*width()+x]);
+            renderimg->setPixel(x, y, imgrasters->normbuffer[y*width()+x]);
         }
     }
 }
@@ -379,8 +368,8 @@ void RenderArea::generate_maps_vector(int mapflags){
     uint colrgb;
     std::map<meshvertex*, color> vertexcols;
     
-    for(i=0; i<w*h; i++) zbuffer[i] = 1;
-    if(mapflags & 2) for(i=0; i<w*h; i++) normalmap[i] = 0xffffff;
+    for(i=0; i<w*h; i++) imgrasters->zbuffer[i] = 1;
+    if(mapflags & 2) for(i=0; i<w*h; i++) imgrasters->normbuffer[i] = 0xffffff;
     if(mapflags & 4) renderimg->fill(0xffffff);
     
     for(mesh *obj: sc->objects){
@@ -465,18 +454,18 @@ void RenderArea::generate_maps_vector(int mapflags){
                     z = z1 + _mm_div_ps(_mm_mul_ps(_mm_cvtepi32_ps(w2),dz21),_mm_cvtepi32_ps(w0)) + _mm_div_ps(_mm_mul_ps(_mm_cvtepi32_ps(w3),dz31),_mm_cvtepi32_ps(w0));
                     
                     for(i=0; i<4; i++){
-                        if(pint.x+i<w && pxmask[i]!=0 && z[i] < zbuffer[w*pint.y+pint.x+i]){
+                        if(pint.x+i<w && pxmask[i]!=0 && z[i] < imgrasters->zbuffer[w*pint.y+pint.x+i]){
                             if(mapflags & 2){
                                 if(f->obj->smooth) normtmp = lerp(norm, norm2, norm3, double(w1[i])/w0[i], double(w2[i])/w0[i], double(w3[i])/w0[i]);
                                 else normtmp = f->normal;
-                                normalmap[pint.y*w + pint.x+i] = normalToRGB(normtmp);
+                                imgrasters->normbuffer[pint.y*w + pint.x+i] = normalToRGB(normtmp);
                             }
                             if(mapflags & 4){
                                 if(f->obj->smooth) colrgb = colorToRGB(lerp(col, col2, col3, double(w1[i])/w0[i], double(w2[i])/w0[i], double(w3[i])/w0[i]));
                                 else if(colrgb>>24) colrgb = colorToRGB(calcLighting(fcenter, f->normal, *f->obj->mat, sc));
                                 renderimg->setPixel(pint.x+i, pint.y, colrgb);
                             }
-                            zbuffer[w*pint.y+pint.x+i] = z[i];
+                            imgrasters->zbuffer[w*pint.y+pint.x+i] = z[i];
                         }
                     }
                     
@@ -507,12 +496,12 @@ void RenderArea::SSAO()
     
     for(y=0; y<h; y++){
         for(x=0; x<w; x++){
-            z = zbuffer[y*w + x];
+            z = imgrasters->zbuffer[y*w + x];
             if(z==1) continue;
             z = z * (sc->cam->maxdist-sc->cam->mindist) + sc->cam->mindist;
             r = sc->cam->castRay(x, y, w, h);
             v = r.org + r.dir*z;
-            n = RGBToNormal(normalmap[y*w+x]);
+            n = RGBToNormal(imgrasters->normbuffer[y*w+x]);
             
             ao = 0;
             nsamples=0;
@@ -522,7 +511,7 @@ void RenderArea::SSAO()
                 if(x+dx < 0 || x+dx >= w) continue;
                 if(y+dy < 0 || y+dy >= h) continue;
                 
-                ztmp = zbuffer[(y+dy)*w + (x+dx)];
+                ztmp = imgrasters->zbuffer[(y+dy)*w + (x+dx)];
                 if(ztmp==1) continue;
                 ztmp  = ztmp * (sc->cam->maxdist-sc->cam->mindist) + sc->cam->mindist;
                 rtmp = sc->cam->castRay(x, y, w, h);
@@ -628,7 +617,7 @@ void RenderArea::drawStereoGram(){
     
     for(y=0; y<h; y++){
         for(x=0; x<w; x++){
-            z = zbuffer[y*w + x];
+            z = imgrasters->zbuffer[y*w + x];
             shift = 31.0 - z*31.0;
             color = pattern[(y%tilesize) * tilesize + (x%(tilesize-shift))];
             renderimg->setPixel(x, y, color);

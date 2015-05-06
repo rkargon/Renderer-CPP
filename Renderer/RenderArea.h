@@ -25,6 +25,7 @@
 #include "camera.h"
 #include "kdtree.h"
 #include "mesh.h"
+#include "raster.h"
 #include "rendering.h"
 
 class RenderArea : public QWidget
@@ -37,10 +38,9 @@ public:
     static const int pathTracingSamples = 10;
     
     bool amboc=false;
-    QImage *renderimg;
     unsigned int rendermode=0;
-    double *zbuffer;
-    int *normalmap;
+    raster *imgrasters;
+    QImage *renderimg;
     
     QPoint prevpos; //for mouse movement tracking
     QLabel *statuslbl;
@@ -54,7 +54,7 @@ public:
     void drawWireFrame();
     void zBufferDraw();
     
-    // The functions below all rely on generate_maps_vector, where the double work is done
+    // The functions below all rely on generate_maps_vector, where the real work is done
     void generate_maps_vector(int mapflags);
     void zBufferDraw_vector();
     void paintNormalMap();

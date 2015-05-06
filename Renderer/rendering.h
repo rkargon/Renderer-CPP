@@ -25,4 +25,7 @@ color tracePath(const ray& viewray, int depth, scene* sc);
 double ambientOcclusion(const ray& viewray, kdtree* kdt, int samples = AMB_OCC_SAMPLES);
 
 
+/* Rasterization */
+
+
 #endif /* defined(__Renderer__rendering__) */
