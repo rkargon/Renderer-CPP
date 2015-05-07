@@ -55,7 +55,6 @@ public:
     void zBufferDraw();
     
     // The functions below all rely on generate_maps_vector, where the real work is done
-    void generate_maps_vector(int mapflags);
     void zBufferDraw_vector();
     void paintNormalMap();
     void SSAO();
@@ -74,18 +73,6 @@ protected:
 };
 
 QColor colorToQColor(const color& c);
-
-
-//stores increment values of barycentric coordinates for 4 pixel values at once
-typedef struct EdgeVect{
-    static const int stepX = 4;
-    static const int stepY = 1;
-    
-    __v4si oneStepX;
-    __v4si oneStepY;
-    
-    __v4si init(const point2D<int>& v0, const point2D<int>& v1, const point2D<int>& origin);
-} EdgeVect;
 
 
 #endif /* defined(__Renderer__RenderArea__) */

@@ -21,6 +21,9 @@ public:
     ~raster();
     
     void resize(const int w, const int h);
+    int width() const {return w;}
+    int height() const {return h;}
+    
 private:
     int w, h;
 };

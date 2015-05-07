@@ -11,7 +11,7 @@
 raster::raster(const int w, const int h){
     this->w = w;
     this->h = h;
-    colbuffer = new int[w*4*h];
+    colbuffer = new int[w*h];
     zbuffer = new double[w*h];
     normbuffer = new int[w*h];
 }
@@ -23,11 +23,14 @@ raster::~raster(){
 }
 
 void raster::resize(const int w, const int h){
+    this->w = w;
+    this->h = h;
+    
     delete[] colbuffer;
     delete[] zbuffer;
     delete[] normbuffer;
     
-    colbuffer = new int[w*4*h];
+    colbuffer = new int[w*h];
     zbuffer = new double[w*h];
     normbuffer = new int[w*h];
 }

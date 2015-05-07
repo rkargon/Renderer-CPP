@@ -10,8 +10,9 @@
 #define __Renderer__rendering__
 
 #include "camera.h"
-#include "mesh.h"
 #include "kdtree.h"
+#include "mesh.h"
+#include "raster.h"
 #include "scene.h"
 
 #define AMB_OCC_SAMPLES 100
@@ -26,6 +27,17 @@ double ambientOcclusion(const ray& viewray, kdtree* kdt, int samples = AMB_OCC_S
 
 
 /* Rasterization */
+void generate_maps_vector(int mapfalgs, raster *imgrasters, scene *sc);
 
+//stores increment values of barycentric coordinates for 4 pixel values at once
+typedef struct EdgeVect{
+    static const int stepX = 4;
+    static const int stepY = 1;
+    
+    __v4si oneStepX;
+    __v4si oneStepY;
+    
+    __v4si init(const point2D<int>& v0, const point2D<int>& v1, const point2D<int>& origin);
+} EdgeVect;
 
 #endif /* defined(__Renderer__rendering__) */

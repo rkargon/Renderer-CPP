@@ -199,3 +199,257 @@ double ambientOcclusion(const ray& viewray, kdtree *kdt, int samples){
     }
     srand(time(0));
 }
+
+/* Rasterization */
+//reference implementation, no vector operations
+void zBufferDraw(raster *imgrasters, scene *sc){
+    int w = imgrasters->width(), h = imgrasters->height();
+    double z, z1, z2, z3, dz21, dz31;
+    int minx, miny, maxx, maxy;
+    int A12, A23, A31, B12, B23, B31;
+    int w0, w1, w2, w3, w1_row, w2_row, w3_row;
+    int wsgn;
+    vertex fcenter;
+    point2D<double> p1, p2, p3, p;
+    point2D<int> p1int, p2int, p3int, pint;
+    color col;
+    uint colrgb;
+    
+    //set up z buffer
+    std::fill_n(imgrasters->zbuffer, w*h, 1);
+    std::fill_n(imgrasters->colbuffer, w*h, 0xffffff);
+    
+    for(mesh *obj: sc->objects){
+        for(face *f : obj->faces){
+            //get pixels of vertices
+            p1 = sc->cam->projectVertex(*f->vertices[0], w, h);
+            p2 = sc->cam->projectVertex(*f->vertices[1], w, h);
+            p3 = sc->cam->projectVertex(*f->vertices[2], w, h);
+            if(isnan(p1.x)||isnan(p1.y) || isnan(p2.x)||isnan(p2.y) || isnan(p3.x)||isnan(p3.y)) continue;
+            p1int.x=(int)p1.x;
+            p1int.y=(int)p1.y;
+            p2int.x=(int)p2.x;
+            p2int.y=(int)p2.y;
+            p3int.x=(int)p3.x;
+            p3int.y=(int)p3.y;
+            
+            //z values = (z-min)/(max-min)
+            z1 = (sc->cam->vertexDepth(*f->vertices[0])-sc->cam->mindist)/(sc->cam->maxdist-sc->cam->mindist);
+            z2 = (sc->cam->vertexDepth(*f->vertices[1])-sc->cam->mindist)/(sc->cam->maxdist-sc->cam->mindist);
+            z3 = (sc->cam->vertexDepth(*f->vertices[2])-sc->cam->mindist)/(sc->cam->maxdist-sc->cam->mindist);
+            
+            //store difference values. Makes interpolation later on slightly faster
+            dz21 = z2-z1;
+            dz31 = z3-z1;
+            
+            fcenter = f->center();
+            col = calcLighting(fcenter, f->normal, *f->obj->mat, sc);
+            colrgb = colorToRGB(col);
+            
+            //TODO smooth shading
+            
+            //triangle bounding box
+            minx = std::min(std::min(p1int.x, p2int.x), p3int.x);
+            miny = std::min(std::min(p1int.y, p2int.y), p3int.y);
+            maxx = std::max(std::max(p1int.x, p2int.x), p3int.x);
+            maxy = std::max(std::max(p1int.y, p2int.y), p3int.y);
+            if(minx > w-1 || maxx<0 || miny>h-1 || maxy<0) continue; //face is off screen
+            
+            //clipint to screen
+            minx = std::max(minx, 0);
+            maxx = std::min(maxx, w-1);
+            miny = std::max(miny, 0);
+            maxy = std::min(maxy, h-1);
+            
+            
+            //triangle edge setupint
+            A12 = p1int.y-p2int.y;
+            A23 = p2int.y-p3int.y;
+            A31 = p3int.y-p1int.y;
+            B12 = p2int.x-p1int.x;
+            B23 = p3int.x-p2int.x;
+            B31 = p1int.x-p3int.x;
+            
+            //initial barycentric coordinates at corner
+            pint = point2D<int>(minx, miny);
+            w1_row = orient2D(p2int,p3int,pint);
+            w2_row = orient2D(p3int,p1int,pint);
+            w3_row = orient2D(p1int,p2int,pint);
+            w0 = orient2D(p1int, p2int, p3int);
+            if(w0==0) continue;
+            wsgn = signum(w0);
+            //rasterize
+            for(pint.y=miny; pint.y<=maxy; pint.y++){
+                w1=w1_row;
+                w2=w2_row;
+                w3=w3_row;
+                for(pint.x=minx; pint.x<=maxx; pint.x++){
+                    if((signum(w1) == wsgn || !w1) && (signum(w2) == wsgn || !w2) && (signum(w3) == wsgn || !w3)){
+                        //interpolate z value
+                        z = z1 + w2*dz21/w0 + w3*dz31/w0;
+                        if(z < imgrasters->zbuffer[w*pint.y+pint.x]){
+                            imgrasters->zbuffer[w*pint.y+pint.x] = z;
+                            imgrasters->colbuffer[w*pint.y + pint.x] = colrgb;
+                        }
+                    }
+                    w1+=A23;
+                    w2+=A31;
+                    w3+=A12;
+                }
+                w1_row += B23;
+                w2_row += B31;
+                w3_row += B12;
+            }
+        }
+    }
+}
+
+//generates color, normal, and depth maps
+// mapflags bit flags:
+// 1 - depth map - (will always be generated anyway, needed for other maps)
+// 2 - normal map
+// 4 - color map
+void generate_maps_vector(int mapflags, raster *imgrasters, scene *sc){
+    int i;
+    int w = imgrasters->width(), h = imgrasters->height();
+    int minx, miny, maxx, maxy;
+    __v4sf z, z1, z2, z3, dz21, dz31; //interpolated z values
+    __v4si w0, w1, w2, w3, w1_row, w2_row, w3_row, wsgn;
+    __v4si pxmask; //whether each pixel is inside the triangle
+    vertex fcenter;
+    point2D<double> p1, p2, p3;
+    point2D<int> p1int, p2int, p3int, pint;
+    color col, col2, col3;
+    vertex norm, norm2, norm3, normtmp;
+    uint colrgb = 1;
+    std::map<meshvertex*, color> vertexcols;
+    
+    std::fill_n(imgrasters->zbuffer, w*h, 1);
+    if(mapflags & 2) std::fill_n(imgrasters->normbuffer, w*h, 0xffffff);
+    if(mapflags & 4) std::fill_n(imgrasters->colbuffer, w*h, 0xffffff);
+    
+    for(mesh *obj: sc->objects){
+        for(face *f : obj->faces){
+            //get pixels of vertices
+            p1 = sc->cam->projectVertex(*f->vertices[0], w, h);
+            p2 = sc->cam->projectVertex(*f->vertices[1], w, h);
+            p3 = sc->cam->projectVertex(*f->vertices[2], w, h);
+            
+            if(isnan(p1.x)||isnan(p1.y) || isnan(p2.x)||isnan(p2.y) || isnan(p3.x)||isnan(p3.y)) continue;
+            p1int.x=(int)p1.x;
+            p1int.y=(int)p1.y;
+            p2int.x=(int)p2.x;
+            p2int.y=(int)p2.y;
+            p3int.x=(int)p3.x;
+            p3int.y=(int)p3.y;
+            
+            //z values
+            z1 = _mm_set1_ps((sc->cam->vertexDepth(*f->vertices[0])-sc->cam->mindist)/(sc->cam->maxdist-sc->cam->mindist));
+            z2 = _mm_set1_ps((sc->cam->vertexDepth(*f->vertices[1])-sc->cam->mindist)/(sc->cam->maxdist-sc->cam->mindist));
+            z3 = _mm_set1_ps((sc->cam->vertexDepth(*f->vertices[2])-sc->cam->mindist)/(sc->cam->maxdist-sc->cam->mindist));
+            
+            //store difference values. Makes interpolation later on slightly faster
+            dz21 = z2-z1;
+            dz31 = z3-z1;
+            
+            if (mapflags & 4){
+                fcenter = f->center();
+                colrgb = 1<<24; //unitialized color, largest byte is non-zero
+            }
+            
+            //smooth shading, get vertex colors
+            if((mapflags & (4+2)) && f->obj->smooth){
+                norm = f->vertices[0]->vertexNormal();
+                norm2 = f->vertices[1]->vertexNormal();
+                norm3 = f->vertices[2]->vertexNormal();
+                col = calcLighting(*f->vertices[0], norm, *f->obj->mat, sc);
+                col2 = calcLighting(*f->vertices[1], norm2, *f->obj->mat, sc);
+                col3 = calcLighting(*f->vertices[2], norm3, *f->obj->mat, sc);
+            }
+            
+            //triangle bounding box
+            minx = std::min(std::min(p1int.x, p2int.x), p3int.x);
+            miny = std::min(std::min(p1int.y, p2int.y), p3int.y);
+            maxx = std::max(std::max(p1int.x, p2int.x), p3int.x);
+            maxy = std::max(std::max(p1int.y, p2int.y), p3int.y);
+            if(minx > w-1 || maxx<0 || miny>h-1 || maxy<0) continue; //face is off screen
+            
+            //clip to screen
+            minx = std::max(minx, 0);
+            maxx = std::min(maxx, w-1);
+            miny = std::max(miny, 0);
+            maxy = std::min(maxy, h-1);
+            
+            
+            //triangle edge setup
+            pint = point2D<int>(minx, miny);
+            EdgeVect e12, e23, e31;
+            
+            //initial barycentric coordinates at corner
+            w1_row = e23.init(p2int, p3int, pint);
+            w2_row = e31.init(p3int, p1int, pint);
+            w3_row = e12.init(p1int, p2int, pint);
+            w0 = _mm_set1_epi32(orient2D(p1int, p2int, p3int));
+            //if w0 is zero continue
+            if(_mm_movemask_epi8(_mm_cmpeq_epi32(w0,zeroveci))>0) { continue; }
+            wsgn = _mm_cmpgt_epi32(w0, zeroveci);
+            
+            //rasterize
+            for(pint.y=miny; pint.y<=maxy; pint.y+=EdgeVect::stepY){
+                w1=w1_row;
+                w2=w2_row;
+                w3=w3_row;
+                for(pint.x=minx; pint.x<=maxx; pint.x+=EdgeVect::stepX){
+                    //each item in pxmask vector is >0 iff corresponding pixel should be drawn
+                    //check if w1,2,3 have the same sign as w0, or are 0 themselves
+                    pxmask = _mm_or_si128(_mm_cmpeq_epi32(_mm_cmpgt_epi32(w1, zeroveci), wsgn), _mm_cmpeq_epi32(w1,zeroveci));
+                    pxmask = _mm_and_si128(pxmask, _mm_or_si128(_mm_cmpeq_epi32(_mm_cmpgt_epi32(w2, zeroveci), wsgn), _mm_cmpeq_epi32(w2,zeroveci)));
+                    pxmask = _mm_and_si128(pxmask, _mm_or_si128(_mm_cmpeq_epi32(_mm_cmpgt_epi32(w3, zeroveci), wsgn), _mm_cmpeq_epi32(w3,zeroveci)));
+                    //interpolate z value
+                    //z = z1 + w2*dz21/w0 + w3*dz31/w0
+                    z = z1 + _mm_div_ps(_mm_mul_ps(_mm_cvtepi32_ps(w2),dz21),_mm_cvtepi32_ps(w0)) + _mm_div_ps(_mm_mul_ps(_mm_cvtepi32_ps(w3),dz31),_mm_cvtepi32_ps(w0));
+                    
+                    for(i=0; i<4; i++){
+                        if(pint.x+i<w && pxmask[i]!=0 && z[i] < imgrasters->zbuffer[w*pint.y+pint.x+i]){
+                            if(mapflags & 2){
+                                if(f->obj->smooth) normtmp = lerp(norm, norm2, norm3, double(w1[i])/w0[i], double(w2[i])/w0[i], double(w3[i])/w0[i]);
+                                else normtmp = f->normal;
+                                imgrasters->normbuffer[pint.y*w + pint.x+i] = normalToRGB(normtmp);
+                            }
+                            if(mapflags & 4){
+                                if(f->obj->smooth) colrgb = colorToRGB(lerp(col, col2, col3, double(w1[i])/w0[i], double(w2[i])/w0[i], double(w3[i])/w0[i]));
+                                else if(colrgb>>24) colrgb = colorToRGB(calcLighting(fcenter, f->normal, *f->obj->mat, sc));
+                                imgrasters->colbuffer[pint.y*w + pint.x+i] = colrgb;
+                            }
+                            imgrasters->zbuffer[w*pint.y+pint.x+i] = z[i];
+                        }
+                    }
+                    
+                    w1+=e23.oneStepX;
+                    w2+=e31.oneStepX;
+                    w3+=e12.oneStepX;
+                }
+                w1_row += e23.oneStepY;
+                w2_row += e31.oneStepY;
+                w3_row += e12.oneStepY;
+            }
+        }
+    }
+}
+
+__v4si EdgeVect::init(const point2D<int> &v0, const point2D<int> &v1, const point2D<int> &origin){
+    // Edge setup
+    int A = v0.y - v1.y, B = v1.x - v0.x;
+    int C = v0.x*v1.y - v0.y*v1.x;
+    
+    //step deltas
+    oneStepX = _mm_set1_epi32(A*stepX);
+    oneStepY = _mm_set1_epi32(B*stepY);
+    
+    __v4si x = _mm_set1_epi32(origin.x) + _mm_set_epi32(3,2,1,0);
+    __v4si y = _mm_set1_epi32(origin.y);
+    
+    //barycentric coordinates at edges:
+    __v4si out = muli32(_mm_set1_epi32(A),x) + muli32(_mm_set1_epi32(B),y) + _mm_set1_epi32(C);
+    return out;
+}
