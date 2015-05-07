@@ -27,7 +27,12 @@ double ambientOcclusion(const ray& viewray, kdtree* kdt, int samples = AMB_OCC_S
 
 
 /* Rasterization */
-void generate_maps_vector(int mapfalgs, raster *imgrasters, scene *sc);
+void generate_maps_vector(int mapflags, raster *imgrasters, scene *sc);
+void zBufferDraw_vector(raster *imgrasters, scene *sc);
+void paintNormalMap(raster *imgrasters, scene *sc);
+void SSAO(raster *imgrasters, scene *sc);
+void rayTraceUnthreaded(raster *imgrasters, scene *sc, int tilesize, bool amboc);
+void pathTraceUnthreaded(raster *imgrasters, scene *sc, int tilesize, int pathTracingSamples);
 
 //stores increment values of barycentric coordinates for 4 pixel values at once
 typedef struct EdgeVect{

@@ -52,16 +52,6 @@ public:
     void updateText();
     void updateImage();
     void drawWireFrame();
-    void zBufferDraw();
-    
-    // The functions below all rely on generate_maps_vector, where the real work is done
-    void zBufferDraw_vector();
-    void paintNormalMap();
-    void SSAO();
-    void drawStereoGram();
-    
-    void rayTraceUnthreaded();
-    void pathTraceUnthreaded();
     
 protected:
     void paintEvent(QPaintEvent *event);

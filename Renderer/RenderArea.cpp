@@ -107,22 +107,19 @@ void RenderArea::updateImage(){
             drawWireFrame();
             break;
         case 1:
-            zBufferDraw_vector();
+            zBufferDraw_vector(imgrasters, sc);
             break;
         case 2:
-            SSAO();
+            SSAO(imgrasters, sc);
             break;
         case 3:
-            paintNormalMap();
+            paintNormalMap(imgrasters, sc);
             break;
         case 4:
-            rayTraceUnthreaded();
+            rayTraceUnthreaded(imgrasters, sc, tilesize, amboc);
             break;
         case 5:
-            pathTraceUnthreaded();
-            break;
-        case 6:
-            drawStereoGram();
+            pathTraceUnthreaded(imgrasters, sc, tilesize, pathTracingSamples);
             break;
     }
 }
@@ -151,7 +148,7 @@ void RenderArea::keyPressEvent(QKeyEvent *event){
         case Qt::Key_Z:
             if(event->modifiers() & Qt::ShiftModifier) --rendermode;
             else ++rendermode;
-            rendermode  = (rendermode+7)%7;
+            rendermode  = (rendermode+6)%6;
             updateText();
             updateImage();
             break;
@@ -230,162 +227,6 @@ void RenderArea::drawWireFrame(){
             painter.drawLine(p1.x, p1.y, p2.x, p2.y);
         }
     }
-}
-
-void RenderArea::zBufferDraw_vector(){
-    generate_maps_vector(5, imgrasters, sc);
-}
-
-void RenderArea::paintNormalMap(){
-    generate_maps_vector(3, imgrasters, sc);
-    std::fill_n(imgrasters->colbuffer, width()*height(), 0xffffff);
-    std::copy(imgrasters->normbuffer, imgrasters->normbuffer+(width()*height()), imgrasters->colbuffer);
-}
-
-//not really SSAO, should probably fix some tweaks
-void RenderArea::SSAO()
-{
-    int w=width(), h=height();
-    generate_maps_vector(7, imgrasters, sc); //generate depth and normal maps
-    //renderimg->fill(0xffffff);
-    double ao, d, z, ztmp;
-    vertex v, dv, vtmp, n;
-    ray r, rtmp;
-    int x, y, dy, dx, dir, nsamples;
-    int dx_arr[4] = {-3, 3, 0, 0};
-    int dy_arr[4] = {0, 0, -3, 3};
-    
-    for(y=0; y<h; y++){
-        for(x=0; x<w; x++){
-            z = imgrasters->zbuffer[y*w + x];
-            if(z==1) continue;
-            z = z * (sc->cam->maxdist-sc->cam->mindist) + sc->cam->mindist;
-            r = sc->cam->castRay(x, y, w, h);
-            v = r.org + r.dir*z;
-            n = RGBToNormal(imgrasters->normbuffer[y*w+x]);
-            
-            ao = 0;
-            nsamples=0;
-            for(dir=0; dir<4; dir++){
-                dx = dx_arr[dir];
-                dy = dy_arr[dir];
-                if(x+dx < 0 || x+dx >= w) continue;
-                if(y+dy < 0 || y+dy >= h) continue;
-                
-                ztmp = imgrasters->zbuffer[(y+dy)*w + (x+dx)];
-                if(ztmp==1) continue;
-                ztmp  = ztmp * (sc->cam->maxdist-sc->cam->mindist) + sc->cam->mindist;
-                rtmp = sc->cam->castRay(x, y, w, h);
-                vtmp = rtmp.org + rtmp.dir*ztmp;
-                dv = vtmp-v;
-                d = dv.len();
-                ao += fabs(dot(n, dv))*(1.0/(1.0+d))/d; //divide by d at the end to normalize dot product
-                nsamples++;
-            }
-            ao /= fmax(1, nsamples);
-            renderimg->setPixel(x, y, colorToRGB(RGBToColor(renderimg->pixel(x, y)) * color(1,1,1)*clamp(ao*2, 0, 1)));
-        }
-    }
-    
-}
-
-void RenderArea::rayTraceUnthreaded(){
-    num_rays_traced = 0;
-    int i, j, x, y, xmax, ymax, w=width(), h=height();
-    int tilenum=0, totaltiles = ceil((double)w/tilesize) * ceil((double)h/tilesize);
-    int colrgb;
-    vertex col;
-    ray r;
-    
-    clock_t begin = clock();
-    for(i=0; i<w; i+=tilesize){
-        xmax = std::min(w, i+tilesize);
-        for(j=0; j<h; j+=tilesize){
-            ymax = std::min(h, j+tilesize);
-            //for each tile
-            for(x=i; x<xmax; x++){
-                for(y=j; y<ymax; y++){
-                    r = sc->cam->castRay(x, y, w, h);
-                    if(amboc){
-                        double occamount = ambientOcclusion(r, sc->kdt);
-                        occamount = clamp(occamount, 0, 0.5)*2;
-                        col.set(occamount, occamount, occamount);
-                    }
-                    else col = traceRay(r, 1, sc);
-                    colrgb = colorToRGB(col);
-                    renderimg->setPixel(x, y, colrgb);
-                }
-            }
-            tilenum++;
-            if(tilenum%100==0) std::cout << "tile " << tilenum << " of " << totaltiles  << " (" << (int)((100.0*tilenum)/totaltiles) << "%)" << std::endl;
-        }
-    }
-    std::cout << "all tiles done. " << std::endl;
-    clock_t end = clock();
-    double time_elapsed = double(end - begin) / CLOCKS_PER_SEC;
-    std::cout << num_rays_traced << " rays traced in " << time_elapsed << " seconds, or " << num_rays_traced/time_elapsed << " rays per second." << std::endl;
-}
-
-void RenderArea::pathTraceUnthreaded(){
-    num_rays_traced = 0;
-    clock_t begin = clock();
-    
-    if(pathTracingSamples == 0) return;
-    int i, j, x, y, xmax, ymax, w=width(), h=height(), s;
-    int tilenum=0, totaltiles = ceil((double)w/tilesize) * ceil((double)h/tilesize);
-    color totalcol;
-    int colrgb;
-    ray r;
-    
-    for(i=0; i<w; i+=tilesize){
-        xmax = std::min(w, i+tilesize);
-        for(j=0; j<h; j+=tilesize){
-            ymax = std::min(h, j+tilesize);
-            
-            //for each tile
-            for(x=i; x<xmax; x++){
-                for(y=j; y<ymax; y++){
-                    for(s=1, totalcol=color(); s<=pathTracingSamples; s++){
-                        r = sc->cam->castRay(x, y, w, h);
-                        totalcol += tracePath(r, 1, sc);
-                    }
-                    colrgb = colorToRGB(totalcol*(1.0/pathTracingSamples));
-                    renderimg->setPixel(x, y, colrgb);
-                }
-            }
-            tilenum++;
-            if(tilenum%100==0) std::cout << "tile " << tilenum << " of " << totaltiles  << " (" << (int)((100.0*tilenum)/totaltiles) << "%)" << std::endl;
-        }
-    }
-    
-    std::cout << "all tiles done. " << std::endl;
-    clock_t end = clock();
-    double time_elapsed = double(end - begin) / CLOCKS_PER_SEC;
-    std::cout << num_rays_traced << " rays traced in " << time_elapsed << " seconds, or " << num_rays_traced/time_elapsed << " rays per second." << std::endl;
-}
-
-void RenderArea::drawStereoGram(){
-    int w = width(), h=height(), x, y;
-    double z;
-    int r, color, shift;
-    sc->cam->maxdist = 10;
-    generate_maps_vector(1, imgrasters, sc);
-    int tilesize = 100;
-    int *pattern = new int[tilesize*tilesize];
-    for(int i=0; i<tilesize*tilesize; i++){
-            pattern[i] = rand();
-    }
-    
-    for(y=0; y<h; y++){
-        for(x=0; x<w; x++){
-            z = imgrasters->zbuffer[y*w + x];
-            shift = 31.0 - z*31.0;
-            color = pattern[(y%tilesize) * tilesize + (x%(tilesize-shift))];
-            renderimg->setPixel(x, y, color);
-        }
-    }
-    
-    delete pattern;
 }
 
 QColor colorToQColor(const color& c){

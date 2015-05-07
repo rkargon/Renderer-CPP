@@ -437,6 +437,139 @@ void generate_maps_vector(int mapflags, raster *imgrasters, scene *sc){
     }
 }
 
+void zBufferDraw_vector(raster *imgrasters, scene *sc){
+    generate_maps_vector(5, imgrasters, sc);
+}
+
+void paintNormalMap(raster *imgrasters, scene *sc){
+    generate_maps_vector(3, imgrasters, sc);
+    std::fill_n(imgrasters->colbuffer, imgrasters->width()*imgrasters->height(), 0xffffff);
+    std::copy(imgrasters->normbuffer, imgrasters->normbuffer+(imgrasters->width()*imgrasters->height()), imgrasters->colbuffer);
+}
+
+//not really SSAO, should probably fix some tweaks
+void SSAO(raster *imgrasters, scene *sc)
+{
+    int w=imgrasters->width(), h=imgrasters->height();
+    generate_maps_vector(7, imgrasters, sc); //generate depth and normal maps
+    //renderimg->fill(0xffffff);
+    double ao, d, z, ztmp;
+    vertex v, dv, vtmp, n;
+    ray r, rtmp;
+    int x, y, dy, dx, dir, nsamples;
+    int dx_arr[4] = {-3, 3, 0, 0};
+    int dy_arr[4] = {0, 0, -3, 3};
+    
+    for(y=0; y<h; y++){
+        for(x=0; x<w; x++){
+            z = imgrasters->zbuffer[y*w + x];
+            if(z==1) continue;
+            z = z * (sc->cam->maxdist-sc->cam->mindist) + sc->cam->mindist;
+            r = sc->cam->castRay(x, y, w, h);
+            v = r.org + r.dir*z;
+            n = RGBToNormal(imgrasters->normbuffer[y*w+x]);
+            
+            ao = 0;
+            nsamples=0;
+            for(dir=0; dir<4; dir++){
+                dx = dx_arr[dir];
+                dy = dy_arr[dir];
+                if(x+dx < 0 || x+dx >= w) continue;
+                if(y+dy < 0 || y+dy >= h) continue;
+                
+                ztmp = imgrasters->zbuffer[(y+dy)*w + (x+dx)];
+                if(ztmp==1) continue;
+                ztmp  = ztmp * (sc->cam->maxdist-sc->cam->mindist) + sc->cam->mindist;
+                rtmp = sc->cam->castRay(x, y, w, h);
+                vtmp = rtmp.org + rtmp.dir*ztmp;
+                dv = vtmp-v;
+                d = dv.len();
+                ao += fabs(dot(n, dv))*(1.0/(1.0+d))/d; //divide by d at the end to normalize dot product
+                nsamples++;
+            }
+            ao /= fmax(1, nsamples);
+            // * color(1,1,1) *
+            imgrasters->colbuffer[y*w + x] = colorToRGB(RGBToColor(imgrasters->colbuffer[y*w+x])*clamp(ao*2, 0, 1));
+        }
+    }
+    
+}
+
+void rayTraceUnthreaded(raster *imgrasters, scene *sc, int tilesize, bool amboc){
+    num_rays_traced = 0;
+    int i, j, x, y, xmax, ymax, w=imgrasters->width(), h=imgrasters->height();
+    int tilenum=0, totaltiles = ceil((double)w/tilesize) * ceil((double)h/tilesize);
+    int colrgb;
+    vertex col;
+    ray r;
+    
+    clock_t begin = clock();
+    for(i=0; i<w; i+=tilesize){
+        xmax = std::min(w, i+tilesize);
+        for(j=0; j<h; j+=tilesize){
+            ymax = std::min(h, j+tilesize);
+            //for each tile
+            for(x=i; x<xmax; x++){
+                for(y=j; y<ymax; y++){
+                    r = sc->cam->castRay(x, y, w, h);
+                    if(amboc){
+                        double occamount = ambientOcclusion(r, sc->kdt);
+                        occamount = clamp(occamount, 0, 0.5)*2;
+                        col.set(occamount, occamount, occamount);
+                    }
+                    else col = traceRay(r, 1, sc);
+                    colrgb = colorToRGB(col);
+                    imgrasters->colbuffer[y*w + x] = colrgb;
+                }
+            }
+            tilenum++;
+            if(tilenum%100==0) std::cout << "tile " << tilenum << " of " << totaltiles  << " (" << (int)((100.0*tilenum)/totaltiles) << "%)" << std::endl;
+        }
+    }
+    std::cout << "all tiles done. " << std::endl;
+    clock_t end = clock();
+    double time_elapsed = double(end - begin) / CLOCKS_PER_SEC;
+    std::cout << num_rays_traced << " rays traced in " << time_elapsed << " seconds, or " << num_rays_traced/time_elapsed << " rays per second." << std::endl;
+}
+
+void pathTraceUnthreaded(raster *imgrasters, scene *sc, int tilesize, int pathTracingSamples){
+    num_rays_traced = 0;
+    clock_t begin = clock();
+    
+    if(pathTracingSamples == 0) return;
+    int i, j, x, y, xmax, ymax, w=imgrasters->width(), h=imgrasters->height(), s;
+    int tilenum=0, totaltiles = ceil((double)w/tilesize) * ceil((double)h/tilesize);
+    color totalcol;
+    int colrgb;
+    ray r;
+    
+    for(i=0; i<w; i+=tilesize){
+        xmax = std::min(w, i+tilesize);
+        for(j=0; j<h; j+=tilesize){
+            ymax = std::min(h, j+tilesize);
+            
+            //for each tile
+            for(x=i; x<xmax; x++){
+                for(y=j; y<ymax; y++){
+                    for(s=1, totalcol=color(); s<=pathTracingSamples; s++){
+                        r = sc->cam->castRay(x, y, w, h);
+                        totalcol += tracePath(r, 1, sc);
+                    }
+                    colrgb = colorToRGB(totalcol*(1.0/pathTracingSamples));
+                    imgrasters->colbuffer[y*w + x] = colrgb;
+                }
+            }
+            tilenum++;
+            if(tilenum%100==0) std::cout << "tile " << tilenum << " of " << totaltiles  << " (" << (int)((100.0*tilenum)/totaltiles) << "%)" << std::endl;
+        }
+    }
+    
+    std::cout << "all tiles done. " << std::endl;
+    clock_t end = clock();
+    double time_elapsed = double(end - begin) / CLOCKS_PER_SEC;
+    std::cout << num_rays_traced << " rays traced in " << time_elapsed << " seconds, or " << num_rays_traced/time_elapsed << " rays per second." << std::endl;
+}
+
 __v4si EdgeVect::init(const point2D<int> &v0, const point2D<int> &v1, const point2D<int> &origin){
     // Edge setup
     int A = v0.y - v1.y, B = v1.x - v0.x;
