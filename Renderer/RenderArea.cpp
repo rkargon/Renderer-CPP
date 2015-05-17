@@ -8,6 +8,8 @@
 
 #include "RenderArea.h"
 
+const int RenderArea::pathTracingSamples = 10;
+
 RenderArea::RenderArea(QWidget *parent): QWidget(parent){
     setBackgroundRole(QPalette::Base);
     setAutoFillBackground(true);
@@ -49,6 +51,7 @@ RenderArea::RenderArea(QWidget *parent): QWidget(parent){
     int h = height(), w = width();
     imgrasters = new raster(w, h);
     renderimg = new QImage((uchar*) imgrasters->colbuffer, width(), height(), QImage::Format_ARGB32);
+    manager = new thread_manager(2, &imgrasters, sc);
     
     //status label
     statuslbl = new QLabel("Raph Renderer 2015");
@@ -58,6 +61,14 @@ RenderArea::RenderArea(QWidget *parent): QWidget(parent){
     statuslbl->setAlignment(Qt::AlignTop);
     updateText();
     statuslbl->show();
+}
+
+RenderArea::~RenderArea(){
+    //TODO actually set up destructors for 3d data
+    delete sc;
+    delete imgrasters;
+    delete renderimg;
+    delete manager;
 }
 
 QSize RenderArea::minimumSizeHint() const{
@@ -88,20 +99,20 @@ void RenderArea::updateText(){
             statuslbl->setText("4. Normal map");
             break;
         case 4:
-            statuslbl->setText(QString("5. Raytracing")  + QString(amboc ? ", ambient occlusion" : ""));
+            statuslbl->setText("5. Raytracing");
             break;
         case 5:
             statuslbl->setText("6. Path Tracing");
             break;
-        case 6:
-            statuslbl->setText("7. Stereogram");
-            break;
         default:
-            statuslbl->setText("Raph Renderer 2015 Happy New Year!");
+            statuslbl->setText("Raph Renderer 2015");
     }
 }
 
 void RenderArea::updateImage(){
+    manager->stop();
+    manager->fill_tile_queue();
+    
     switch(rendermode){
         case 0:
             drawWireFrame();
@@ -116,10 +127,12 @@ void RenderArea::updateImage(){
             paintNormalMap(imgrasters, sc);
             break;
         case 4:
-            rayTraceUnthreaded(imgrasters, sc, tilesize, amboc);
+            manager->set_render_method(traceRay);
+            manager->start();
             break;
         case 5:
-            pathTraceUnthreaded(imgrasters, sc, tilesize, pathTracingSamples);
+            manager->set_render_method(tracePath);
+            manager->start();
             break;
     }
 }
@@ -132,11 +145,11 @@ void RenderArea::keyPressEvent(QKeyEvent *event){
             sc->cam->ortho = !sc->cam->ortho;
             updateImage();
             break;
-        case Qt::Key_O:
-            amboc = !amboc;
-            updateText();
-            updateImage();
-            break;
+//        case Qt::Key_O:
+//            amboc = !amboc;
+//            updateText();
+//            updateImage();
+//            break;
         case Qt::Key_S:
             //TODO: add per-object smoothing and, in general, selection
             for(mesh *o : sc->objects){
@@ -210,13 +223,6 @@ void RenderArea::drawWireFrame(){
     QPainter painter(renderimg);
     int w = width(), h = height();
     point2D<double> p1,p2;
-    painter.setPen(QColor(255,0,0));
-    for(edge *e : kdedges){
-        p1 = sc->cam->projectVertex(*e->v1, w, h);
-        p2 = sc->cam->projectVertex(*e->v2, w, h);
-        if(isnan(p1.x)||isnan(p2.x)||isnan(p1.y)||isnan(p2.y)) continue;
-        painter.drawLine(p1.x, p1.y, p2.x, p2.y);
-    }
     painter.setPen(QColor(0,0,0));
     
     for(mesh *obj: sc->objects){

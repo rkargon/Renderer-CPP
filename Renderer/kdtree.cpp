@@ -103,8 +103,8 @@ kdtree::kdtree(std::vector<planarEvent*>& events, const bounds& facebounds, int 
     std::merge(oldevents_left.begin(), oldevents_left.end(), newevents_left.begin(), newevents_left.end(), std::back_inserter(totalevents_left), kdtree::planarEvent::planarEventComparator());
     std::merge(oldevents_right.begin(), oldevents_right.end(), newevents_right.begin(), newevents_right.end(), std::back_inserter(totalevents_right), kdtree::planarEvent::planarEventComparator());
     
-    double lowerboundsarea = lowerbounds.area();
-    double upperboundsarea = upperbounds.area();
+//    double lowerboundsarea = lowerbounds.area();
+//    double upperboundsarea = upperbounds.area();
     
     if(!totalevents_left.empty()) this->lower = new kdtree(totalevents_left, lowerbounds, depth+1);
     if(!totalevents_right.empty()) this->upper = new kdtree(totalevents_right, upperbounds, depth+1);

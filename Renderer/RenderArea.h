@@ -27,25 +27,25 @@
 #include "mesh.h"
 #include "raster.h"
 #include "rendering.h"
+#include "renderthreads.h"
 
 class RenderArea : public QWidget
 {
 public:
-    std::vector<edge*> kdedges;
+    static const int pathTracingSamples;
+
     scene *sc;
     
-    static const int tilesize = 32;
-    static const int pathTracingSamples = 10;
-    
-    bool amboc=false;
     unsigned int rendermode=0;
     raster *imgrasters;
     QImage *renderimg;
+    thread_manager *manager;
     
     QPoint prevpos; //for mouse movement tracking
     QLabel *statuslbl;
     
     RenderArea(QWidget *parent = 0);
+    ~RenderArea();
     QSize minimumSizeHint() const;
     QSize sizeHint() const;
     

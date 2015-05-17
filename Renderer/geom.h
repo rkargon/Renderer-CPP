@@ -18,8 +18,8 @@ class meshvertex;
 class face;
 class edge;
 class mesh;
+class bounds;
 typedef vertex color;
-typedef struct bounds bounds;
 typedef bounds ray;
 
 template <typename T> struct point2D{
@@ -98,7 +98,8 @@ public:
     friend bool operator==(const meshvertex& v1, const meshvertex& v2);
 };
 
-struct bounds{
+class bounds{
+public:
     union{
         struct{vertex min, max;};
         struct{vertex org, dir;};

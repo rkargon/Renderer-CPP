@@ -6,8 +6,8 @@
 //  Copyright (c) 2014 Raphael Kargon. All rights reserved.
 //
 
-#ifndef __Renderer__BRDF__
-#define __Renderer__BRDF__
+#ifndef __Renderer__BSDF__
+#define __Renderer__BSDF__
 
 #include "geom.h"
 
@@ -54,7 +54,6 @@ class MixBSDF : public BSDF
 {
 public:
     double fac;
-    //uh oh. You know some very nasty people will end up causing infinite loops :-(
     BSDF *mat1;
     BSDF *mat2;
     
@@ -73,4 +72,4 @@ class TestBSDF : public BSDF
     virtual vertex getIncidentDirection(vertex normal, vertex viewDirection);
 };
 
-#endif /* defined(__Renderer__BRDF__) */
+#endif /* defined(__Renderer__BSDF__) */

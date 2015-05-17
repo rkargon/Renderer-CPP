@@ -164,9 +164,6 @@ color tracePath(const ray& viewray, int depth, scene* sc){
         color inc_col = tracePath(ray(v, inc_dir), depth+1, sc);
         //calculate returned light
         color return_col = f->obj->bsdf->getLight(inc_col, inc_dir, n, viewray.dir);
-        
-        //attenuate returned light
-        //return return_col * (1.0/(tuv.t*tuv.t));
         return return_col;
     }
 }
@@ -495,7 +492,7 @@ void SSAO(raster *imgrasters, scene *sc)
     
 }
 
-void rayTraceUnthreaded(raster *imgrasters, scene *sc, int tilesize, bool amboc){
+void rayTraceUnthreaded(raster *imgrasters, scene *sc, int tilesize){
     num_rays_traced = 0;
     int i, j, x, y, xmax, ymax, w=imgrasters->width(), h=imgrasters->height();
     int tilenum=0, totaltiles = ceil((double)w/tilesize) * ceil((double)h/tilesize);
@@ -512,12 +509,7 @@ void rayTraceUnthreaded(raster *imgrasters, scene *sc, int tilesize, bool amboc)
             for(x=i; x<xmax; x++){
                 for(y=j; y<ymax; y++){
                     r = sc->cam->castRay(x, y, w, h);
-                    if(amboc){
-                        double occamount = ambientOcclusion(r, sc->kdt);
-                        occamount = clamp(occamount, 0, 0.5)*2;
-                        col.set(occamount, occamount, occamount);
-                    }
-                    else col = traceRay(r, 1, sc);
+                    col = traceRay(r, 1, sc);
                     colrgb = colorToRGB(col);
                     imgrasters->colbuffer[y*w + x] = colrgb;
                 }
