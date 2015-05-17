@@ -33,7 +33,7 @@ public:
     void start();
     void stop();
     void fill_tile_queue();
-    void set_render_method(color (*render_method)(const ray&, int, scene*));
+    void set_render_method(color (*render_method)(const int, const int, const int, const int, scene*));
     
     friend class worker_thread;
     
@@ -45,7 +45,7 @@ private:
     //a double pointer, in case actual pointer changes when image is resized
     raster **raster_ref;
     scene *sc;
-    color (*render_method)(const ray&, int, scene*);
+    color (*render_method)(const int, const int, const int, const int, scene*);
 };
 
 class worker_thread {
@@ -60,6 +60,6 @@ private:
     thread_manager *manager;
 };
 
-void render_tiles(std::queue<tile> &tiles, std::mutex &tile_queue_lock, bool &is_running, raster **raster_ref, scene *sc, color (*render_method)(const ray&, int, scene*));
+void render_tiles(std::queue<tile> &tiles, std::mutex &tile_queue_lock, bool &is_running, raster **raster_ref, scene *sc, color (*render_method)(const int, const int, const int, const int, scene*));
 
 #endif /* defined(__Renderer__renderthreads__) */

@@ -524,11 +524,10 @@ void rayTraceUnthreaded(raster *imgrasters, scene *sc, int tilesize){
     std::cout << num_rays_traced << " rays traced in " << time_elapsed << " seconds, or " << num_rays_traced/time_elapsed << " rays per second." << std::endl;
 }
 
-void pathTraceUnthreaded(raster *imgrasters, scene *sc, int tilesize, int pathTracingSamples){
+void pathTraceUnthreaded(raster *imgrasters, scene *sc, int tilesize){
     num_rays_traced = 0;
     clock_t begin = clock();
     
-    if(pathTracingSamples == 0) return;
     int i, j, x, y, xmax, ymax, w=imgrasters->width(), h=imgrasters->height(), s;
     int tilenum=0, totaltiles = ceil((double)w/tilesize) * ceil((double)h/tilesize);
     color totalcol;
@@ -543,11 +542,11 @@ void pathTraceUnthreaded(raster *imgrasters, scene *sc, int tilesize, int pathTr
             //for each tile
             for(x=i; x<xmax; x++){
                 for(y=j; y<ymax; y++){
-                    for(s=1, totalcol=color(); s<=pathTracingSamples; s++){
+                    for(s=1, totalcol=color(); s<=PATH_TRACE_SAMPLES; s++){
                         r = sc->cam->castRay(x, y, w, h);
                         totalcol += tracePath(r, 1, sc);
                     }
-                    colrgb = colorToRGB(totalcol*(1.0/pathTracingSamples));
+                    colrgb = colorToRGB(totalcol*(1.0/PATH_TRACE_SAMPLES));
                     imgrasters->colbuffer[y*w + x] = colrgb;
                 }
             }
@@ -560,6 +559,19 @@ void pathTraceUnthreaded(raster *imgrasters, scene *sc, int tilesize, int pathTr
     clock_t end = clock();
     double time_elapsed = double(end - begin) / CLOCKS_PER_SEC;
     std::cout << num_rays_traced << " rays traced in " << time_elapsed << " seconds, or " << num_rays_traced/time_elapsed << " rays per second." << std::endl;
+}
+
+color rayTracePixel(int x, int y, int w, int h, scene *sc){
+    return traceRay(sc->cam->castRay(x, y, w, h), 1, sc);
+}
+
+color pathTracePixel(int x, int y, int w, int h, scene *sc){
+    int s;
+    color totalcol;
+    for(s=1, totalcol=color(); s<=PATH_TRACE_SAMPLES; s++){
+        totalcol += tracePath(sc->cam->castRay(x, y, w, h), 1, sc);
+    }
+    return totalcol*(1.0/PATH_TRACE_SAMPLES);
 }
 
 __v4si EdgeVect::init(const point2D<int> &v0, const point2D<int> &v1, const point2D<int> &origin){

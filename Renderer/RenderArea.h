@@ -32,8 +32,6 @@
 class RenderArea : public QWidget
 {
 public:
-    static const int pathTracingSamples;
-
     scene *sc;
     
     unsigned int rendermode=0;
@@ -45,7 +43,7 @@ public:
     QLabel *statuslbl;
     
     RenderArea(QWidget *parent = 0);
-    ~RenderArea();
+    //~RenderArea();
     QSize minimumSizeHint() const;
     QSize sizeHint() const;
     

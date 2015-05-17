@@ -45,7 +45,7 @@ public:
     color col;
     double roughness;
     
-    GlossyBSDF(color c=color(1,1,1), double r=0.8);
+    GlossyBSDF(color c=color(1,1,1), double r=0.2);
     virtual color getLight(color incidentColor, vertex incidentDirection, vertex normal, vertex returningDirection);
     virtual vertex getIncidentDirection(vertex normal, vertex viewDirection);
 };
@@ -61,13 +61,6 @@ public:
     bool materialCounter;
     
     MixBSDF(double f = 0.5, BSDF *m1=nullptr, BSDF *m2=nullptr);
-    virtual color getLight(color incidentColor, vertex incidentDirection, vertex normal, vertex returningDirection);
-    virtual vertex getIncidentDirection(vertex normal, vertex viewDirection);
-};
-
-//A test material.
-class TestBSDF : public BSDF
-{
     virtual color getLight(color incidentColor, vertex incidentDirection, vertex normal, vertex returningDirection);
     virtual vertex getIncidentDirection(vertex normal, vertex viewDirection);
 };

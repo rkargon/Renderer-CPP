@@ -8,8 +8,6 @@
 
 #include "RenderArea.h"
 
-const int RenderArea::pathTracingSamples = 10;
-
 RenderArea::RenderArea(QWidget *parent): QWidget(parent){
     setBackgroundRole(QPalette::Base);
     setAutoFillBackground(true);
@@ -31,7 +29,7 @@ RenderArea::RenderArea(QWidget *parent): QWidget(parent){
     
     mesh *dragonobj = new mesh(dragonfile, "Dragon");
     dragonobj->mat = new material();
-    dragonobj->bsdf = new DiffuseBSDF();
+    dragonobj->bsdf = new GlossyBSDF();
     dragonobj->project_texture(TEX_PROJ_SPHERICAL);
     
     mesh *sphereobj = new mesh(spherefile, "Sphere");
@@ -51,7 +49,7 @@ RenderArea::RenderArea(QWidget *parent): QWidget(parent){
     int h = height(), w = width();
     imgrasters = new raster(w, h);
     renderimg = new QImage((uchar*) imgrasters->colbuffer, width(), height(), QImage::Format_ARGB32);
-    manager = new thread_manager(2, &imgrasters, sc);
+    manager = new thread_manager(6, &imgrasters, sc);
     
     //status label
     statuslbl = new QLabel("Raph Renderer 2015");
@@ -63,13 +61,13 @@ RenderArea::RenderArea(QWidget *parent): QWidget(parent){
     statuslbl->show();
 }
 
-RenderArea::~RenderArea(){
-    //TODO actually set up destructors for 3d data
-    delete sc;
-    delete imgrasters;
-    delete renderimg;
-    delete manager;
-}
+//RenderArea::~RenderArea(){
+//    //TODO actually set up destructors for 3d data
+//    delete sc;
+//    delete imgrasters;
+//    delete renderimg;
+//    delete manager;
+//}
 
 QSize RenderArea::minimumSizeHint() const{
     return QSize(400,400);
@@ -127,11 +125,11 @@ void RenderArea::updateImage(){
             paintNormalMap(imgrasters, sc);
             break;
         case 4:
-            manager->set_render_method(traceRay);
+            manager->set_render_method(rayTracePixel);
             manager->start();
             break;
         case 5:
-            manager->set_render_method(tracePath);
+            manager->set_render_method(pathTracePixel);
             manager->start();
             break;
     }

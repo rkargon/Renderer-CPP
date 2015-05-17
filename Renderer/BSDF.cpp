@@ -72,16 +72,4 @@ vertex MixBSDF::getIncidentDirection(vertex normal, vertex viewDirection){
     return (materialCounter ? mat1 : mat2)->getIncidentDirection(normal, viewDirection);
 }
 
-color TestBSDF::getLight(color incidentColor, vertex incidentDirection, vertex normal, vertex returningDirection){
-    return incidentColor;
-}
-
-vertex TestBSDF::getIncidentDirection(vertex normal, vertex viewDirection){
-    vertex d = randomDirection();
-    d += viewDirection.reflection(normal)*5;
-    d.normalize();
-    //this keeps it in the proper hemisphere
-    if (dot(d, normal) * dot(viewDirection, normal) > 0) d *= -1;
-    return d;
-}
 

@@ -34,7 +34,7 @@ void thread_manager::stop(){
     }
 }
 
-void thread_manager::set_render_method(color (*render_method)(const ray &, int, scene *)){
+void thread_manager::set_render_method(color (*render_method)(const int, const int, const int, const int, scene*)){
     this->render_method = render_method;
 }
 
@@ -73,7 +73,7 @@ void worker_thread::stop(){
     }
 }
 
-void render_tiles(std::queue<tile> &tiles, std::mutex &tile_queue_lock, bool &is_running, raster **raster_ref, scene *sc, color (*render_method)(const ray&, int, scene*)){
+void render_tiles(std::queue<tile> &tiles, std::mutex &tile_queue_lock, bool &is_running, raster **raster_ref, scene *sc, color (*render_method)(const int, const int, const int, const int, scene*)){
     while(is_running){
         //get next tile (or stop if no tiles left)
         tile current_tile;
@@ -101,10 +101,8 @@ void render_tiles(std::queue<tile> &tiles, std::mutex &tile_queue_lock, bool &is
                 if(!is_running){
                     return;
                 }
-                ray r = sc->cam->castRay(x, y, img_width, img_height);
-                color col = render_method(r, 1, sc);
-                int colrgb = colorToRGB(col);
-                (*raster_ref)->colbuffer[y*img_width + x] = colrgb;
+                color col = render_method(x, y, img_width, img_height, sc);
+                (*raster_ref)->colbuffer[y*img_width + x] = colorToRGB(col);
             }
         }
     }

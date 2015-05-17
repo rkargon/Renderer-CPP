@@ -16,6 +16,7 @@
 #include "scene.h"
 
 #define AMB_OCC_SAMPLES 100
+#define PATH_TRACE_SAMPLES 50
 #define RAY_DEPTH 5
 
 extern int num_rays_traced; //keeps track of how many rays have been traced, to measure performance
@@ -25,14 +26,18 @@ color traceRay(const ray& viewray, int depth, scene* sc);
 color tracePath(const ray& viewray, int depth, scene* sc);
 double ambientOcclusion(const ray& viewray, kdtree* kdt, int samples = AMB_OCC_SAMPLES);
 
-
 /* Rasterization */
 void generate_maps_vector(int mapflags, raster *imgrasters, scene *sc);
 void zBufferDraw_vector(raster *imgrasters, scene *sc);
 void paintNormalMap(raster *imgrasters, scene *sc);
 void SSAO(raster *imgrasters, scene *sc);
+
+/* Unthreaded Rendering */
 void rayTraceUnthreaded(raster *imgrasters, scene *sc, int tilesize);
-void pathTraceUnthreaded(raster *imgrasters, scene *sc, int tilesize, int pathTracingSamples);
+void pathTraceUnthreaded(raster *imgrasters, scene *sc, int tilesize);
+
+color rayTracePixel(int x, int y, int w, int h, scene *sc);
+color pathTracePixel(int x, int y, int w, int h, scene *sc);
 
 //stores increment values of barycentric coordinates for 4 pixel values at once
 typedef struct EdgeVect{
