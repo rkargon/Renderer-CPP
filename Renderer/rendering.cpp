@@ -42,7 +42,7 @@ color calcLighting(const vertex& v, const vertex& n, const material& mat, scene*
     return col+spcol;
 }
 
-color traceRay(const ray& viewray, int depth, scene* sc){
+color traceRay(const ray& viewray, scene* sc, int depth){
     num_rays_traced++;
     vertex tuv;
     face *f = kdtree::rayTreeIntersect(sc->kdt, viewray, false, &tuv);
@@ -129,11 +129,11 @@ color traceRay(const ray& viewray, int depth, scene* sc){
                     vertex transnorm = n * signum(ndotray) *sqrt(1-transsinsquared);
                     transray = transnorm + transtang;
                 }
-                color transcol = traceRay(ray(v, transray), depth+1, sc);
+                color transcol = traceRay(ray(v, transray), sc, depth+1);
                 totcol = lerp(transcol, totcol, f->obj->mat->alpha);
             }
             if(f->obj->mat->refl_intensity > 0){
-                color refcol = traceRay(ray(v, refl), depth+1, sc);
+                color refcol = traceRay(ray(v, refl), sc, depth+1);
                 totcol = lerp(totcol, refcol, f->obj->mat->refl_intensity);
             }
         }
@@ -141,7 +141,7 @@ color traceRay(const ray& viewray, int depth, scene* sc){
     }
 }
 
-color tracePath(const ray& viewray, int depth, scene* sc){
+color tracePath(const ray& viewray, scene* sc, int depth){
     if(depth > RAY_DEPTH) return color();
     
     num_rays_traced++;
@@ -161,17 +161,16 @@ color tracePath(const ray& viewray, int depth, scene* sc){
         
         //calculate incident light
         vertex inc_dir = f->obj->bsdf->getIncidentDirection(n, viewray.dir);
-        color inc_col = tracePath(ray(v, inc_dir), depth+1, sc);
+        color inc_col = tracePath(ray(v, inc_dir), sc, depth+1);
         //calculate returned light
         color return_col = f->obj->bsdf->getLight(inc_col, inc_dir, n, viewray.dir);
         return return_col;
     }
 }
 
-double ambientOcclusion(const ray& viewray, kdtree *kdt, int samples){
-    //srand(0);
+double ambientOcclusion(const ray& viewray, scene *sc){
     vertex tuv;
-    face *f = kdtree::rayTreeIntersect(kdt, viewray, false, &tuv);
+    face *f = kdtree::rayTreeIntersect(sc->kdt, viewray, false, &tuv);
     if(f==nullptr) return 1;
     else{
         vertex v = viewray.org + viewray.dir*tuv.t; //calculate vertex location
@@ -186,15 +185,14 @@ double ambientOcclusion(const ray& viewray, kdtree *kdt, int samples){
         
         double occ_amount = 0; //amount of ambient occlusion, ie how much current point is illuminated by the background.
         ray testray(v, vertex(0,0,0));
-        for(int i=1; i<=samples; i++){
+        for(int i=1; i<=AMB_OCC_SAMPLES; i++){
             testray.dir = randomDirection();
             if(dot(testray.dir, n) < 0) continue;
-            else if (kdtree::rayTreeIntersect(kdt, testray, true, nullptr)==nullptr) occ_amount++;
+            else if (kdtree::rayTreeIntersect(sc->kdt, testray, true, nullptr)==nullptr) occ_amount++;
         }
-        occ_amount /= samples;
+        occ_amount /= AMB_OCC_SAMPLES;
         return occ_amount;
     }
-    srand(time(0));
 }
 
 /* Rasterization */
@@ -509,7 +507,7 @@ void rayTraceUnthreaded(raster *imgrasters, scene *sc, int tilesize){
             for(x=i; x<xmax; x++){
                 for(y=j; y<ymax; y++){
                     r = sc->cam->castRay(x, y, w, h);
-                    col = traceRay(r, 1, sc);
+                    col = traceRay(r, sc);
                     colrgb = colorToRGB(col);
                     imgrasters->colbuffer[y*w + x] = colrgb;
                 }
@@ -544,7 +542,7 @@ void pathTraceUnthreaded(raster *imgrasters, scene *sc, int tilesize){
                 for(y=j; y<ymax; y++){
                     for(s=1, totalcol=color(); s<=PATH_TRACE_SAMPLES; s++){
                         r = sc->cam->castRay(x, y, w, h);
-                        totalcol += tracePath(r, 1, sc);
+                        totalcol += tracePath(r, sc);
                     }
                     colrgb = colorToRGB(totalcol*(1.0/PATH_TRACE_SAMPLES));
                     imgrasters->colbuffer[y*w + x] = colrgb;
@@ -562,16 +560,23 @@ void pathTraceUnthreaded(raster *imgrasters, scene *sc, int tilesize){
 }
 
 color rayTracePixel(int x, int y, int w, int h, scene *sc){
-    return traceRay(sc->cam->castRay(x, y, w, h), 1, sc);
+    return traceRay(sc->cam->castRay(x, y, w, h), sc);
 }
 
 color pathTracePixel(int x, int y, int w, int h, scene *sc){
     int s;
     color totalcol;
     for(s=1, totalcol=color(); s<=PATH_TRACE_SAMPLES; s++){
-        totalcol += tracePath(sc->cam->castRay(x, y, w, h), 1, sc);
+        totalcol += tracePath(sc->cam->castRay(x, y, w, h), sc);
     }
     return totalcol*(1.0/PATH_TRACE_SAMPLES);
+}
+
+color ambOccPixel(int x, int y, int w, int h, scene *sc){
+    ray r = sc->cam->castRay(x, y, w, h);
+    double ao = ambientOcclusion(r, sc);
+    ao = clamp(ao*2, 0, 1);
+    return color(ao, ao, ao);
 }
 
 __v4si EdgeVect::init(const point2D<int> &v0, const point2D<int> &v1, const point2D<int> &origin){

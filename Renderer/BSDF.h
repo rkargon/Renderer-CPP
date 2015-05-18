@@ -64,5 +64,4 @@ public:
     virtual color getLight(color incidentColor, vertex incidentDirection, vertex normal, vertex returningDirection);
     virtual vertex getIncidentDirection(vertex normal, vertex viewDirection);
 };
-
 #endif /* defined(__Renderer__BSDF__) */

@@ -153,7 +153,7 @@ void mesh::scale_centered(const vertex& ds){
     scale(ds, origin);
 }
 
-vertex mesh::centroid(){
+vertex mesh::centroid() const{
     vertex mean;
     for(vertex* v: vertices){
         mean += v;

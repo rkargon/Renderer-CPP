@@ -27,14 +27,17 @@ RenderArea::RenderArea(QWidget *parent): QWidget(parent){
     world* sc_world = new sky();
     std::vector<mesh*> objects;
     
+    //dragon
     mesh *dragonobj = new mesh(dragonfile, "Dragon");
+    dragonfile.close();
     dragonobj->mat = new material();
     dragonobj->bsdf = new GlossyBSDF();
     dragonobj->project_texture(TEX_PROJ_SPHERICAL);
-    
+
+    //sphere
     mesh *sphereobj = new mesh(spherefile, "Sphere");
+    spherefile.close();
     sphereobj->mat = new material();
-    //sphereobj->bsdf = new DiffuseBSDF();
     sphereobj->bsdf = new EmissionBSDF(vertex(1,1,1), 15);
     sphereobj->project_texture(TEX_PROJ_SPHERICAL);
     sphereobj->scale_centered(vertex(0.5, 0.5, 0.5));
@@ -102,6 +105,9 @@ void RenderArea::updateText(){
         case 5:
             statuslbl->setText("6. Path Tracing");
             break;
+        case 6:
+            statuslbl->setText("6. Ambient Occlusion");
+            break;
         default:
             statuslbl->setText("Raph Renderer 2015");
     }
@@ -132,6 +138,10 @@ void RenderArea::updateImage(){
             manager->set_render_method(pathTracePixel);
             manager->start();
             break;
+        case 6:
+            manager->set_render_method(ambOccPixel);
+            manager->start();
+            break;
     }
 }
 
@@ -143,11 +153,6 @@ void RenderArea::keyPressEvent(QKeyEvent *event){
             sc->cam->ortho = !sc->cam->ortho;
             updateImage();
             break;
-//        case Qt::Key_O:
-//            amboc = !amboc;
-//            updateText();
-//            updateImage();
-//            break;
         case Qt::Key_S:
             //TODO: add per-object smoothing and, in general, selection
             for(mesh *o : sc->objects){
@@ -159,7 +164,7 @@ void RenderArea::keyPressEvent(QKeyEvent *event){
         case Qt::Key_Z:
             if(event->modifiers() & Qt::ShiftModifier) --rendermode;
             else ++rendermode;
-            rendermode  = (rendermode+6)%6;
+            rendermode  = (rendermode+7)%7;
             updateText();
             updateImage();
             break;

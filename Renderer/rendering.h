@@ -22,9 +22,9 @@
 extern int num_rays_traced; //keeps track of how many rays have been traced, to measure performance
 
 color calcLighting(const vertex& v, const vertex& n, const material& mat, scene* sc);
-color traceRay(const ray& viewray, int depth, scene* sc);
-color tracePath(const ray& viewray, int depth, scene* sc);
-double ambientOcclusion(const ray& viewray, kdtree* kdt, int samples = AMB_OCC_SAMPLES);
+color traceRay(const ray& viewray, scene* sc, int depth=1);
+color tracePath(const ray& viewray, scene* sc, int depth=1);
+double ambientOcclusion(const ray& viewray, kdtree* kdt);
 
 /* Rasterization */
 void generate_maps_vector(int mapflags, raster *imgrasters, scene *sc);
@@ -36,8 +36,10 @@ void SSAO(raster *imgrasters, scene *sc);
 void rayTraceUnthreaded(raster *imgrasters, scene *sc, int tilesize);
 void pathTraceUnthreaded(raster *imgrasters, scene *sc, int tilesize);
 
+/* Used in multithreaded rendering */
 color rayTracePixel(int x, int y, int w, int h, scene *sc);
 color pathTracePixel(int x, int y, int w, int h, scene *sc);
+color ambOccPixel(int x, int y, int w, int h, scene *sc);
 
 //stores increment values of barycentric coordinates for 4 pixel values at once
 typedef struct EdgeVect{

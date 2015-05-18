@@ -71,5 +71,3 @@ color MixBSDF::getLight(color incidentColor, vertex incidentDirection, vertex no
 vertex MixBSDF::getIncidentDirection(vertex normal, vertex viewDirection){
     return (materialCounter ? mat1 : mat2)->getIncidentDirection(normal, viewDirection);
 }
-
-

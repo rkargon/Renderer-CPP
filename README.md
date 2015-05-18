@@ -15,3 +15,4 @@ Also supports:
   - Smooth shading
   - Atmospheric scattering
   - Limited texture support
+  - Multithreading
