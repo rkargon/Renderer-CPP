@@ -594,7 +594,7 @@ color pathTracePixel(int x, int y, int w, int h, scene *sc){
     for(s=1, totalcol=color(); s<=PATH_TRACE_SAMPLES; s++){
         totalcol += tracePath(sc->cam->castRay(x, y, w, h), sc);
     }
-    return totalcol*(1.0/PATH_TRACE_SAMPLES);
+    return totalcol*(1.0/s);
 }
 
 color ambOccPixel(int x, int y, int w, int h, scene *sc){

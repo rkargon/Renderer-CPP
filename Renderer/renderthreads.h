@@ -53,13 +53,13 @@ public:
     worker_thread(thread_manager *manager);
     void start();
     void stop();
+    void render_tiles();
+
     
 private:
     bool is_running;
     std::thread render_thread;
     thread_manager *manager;
 };
-
-void render_tiles(std::queue<tile> &tiles, std::mutex &tile_queue_lock, bool &is_running, raster **raster_ref, scene *sc, color (*render_method)(const int, const int, const int, const int, scene*));
 
 #endif /* defined(__Renderer__renderthreads__) */

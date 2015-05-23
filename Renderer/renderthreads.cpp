@@ -64,7 +64,7 @@ worker_thread::worker_thread(thread_manager *manager){
 void worker_thread::start() {
     if(!is_running){
         is_running = true;
-        render_thread = std::thread(render_tiles, std::ref(manager->tiles), std::ref(manager->tile_queue_lock), std::ref(is_running), manager->raster_ref, manager->sc, manager->render_method);
+        render_thread = std::thread(&worker_thread::render_tiles, this);
         render_thread.detach();
     }
 }
@@ -75,23 +75,23 @@ void worker_thread::stop(){
     }
 }
 
-void render_tiles(std::queue<tile> &tiles, std::mutex &tile_queue_lock, bool &is_running, raster **raster_ref, scene *sc, color (*render_method)(const int, const int, const int, const int, scene*)){
+void worker_thread::render_tiles(){
     while(is_running){
         //get next tile (or stop if no tiles left)
         tile current_tile;
-        tile_queue_lock.lock();
-        if(!tiles.empty()){
-            current_tile = tiles.front();
-            tiles.pop();
-            tile_queue_lock.unlock();
+        manager->tile_queue_lock.lock();
+        if(!manager->tiles.empty()){
+            current_tile = manager->tiles.front();
+            manager->tiles.pop();
+            manager->tile_queue_lock.unlock();
         }
         else{
-            tile_queue_lock.unlock();
+            manager->tile_queue_lock.unlock();
             return;
         }
         
-        int img_width = (*raster_ref)->width();
-        int img_height = (*raster_ref)->height();
+        int img_width = (*manager->raster_ref)->width();
+        int img_height = (*manager->raster_ref)->height();
         //check if tile is valid (ie in case of image resize)
         if(current_tile.x+current_tile.w > img_width || current_tile.y + current_tile.h > img_height){
             continue;
@@ -103,8 +103,8 @@ void render_tiles(std::queue<tile> &tiles, std::mutex &tile_queue_lock, bool &is
                 if(!is_running){
                     return;
                 }
-                color col = render_method(x, y, img_width, img_height, sc);
-                (*raster_ref)->colbuffer[y*img_width + x] = colorToRGB(col);
+                color col = manager->render_method(x, y, img_width, img_height, manager->sc);
+                (*manager->raster_ref)->colbuffer[y*img_width + x] = colorToRGB(col);
             }
         }
     }
