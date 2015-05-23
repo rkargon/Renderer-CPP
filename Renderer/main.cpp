@@ -20,7 +20,6 @@ using namespace std;
 
 int main(int argc, char **argv)
 {
-    //srand((unsigned int)time(0));
     QApplication app(argc, argv);
     RenderWindow win;
     win.resize(400, 400);

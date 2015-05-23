@@ -38,20 +38,22 @@ void thread_manager::set_render_method(color (*render_method)(const int, const i
     this->render_method = render_method;
 }
 
-//not thread safe, so worker threads must be stopped while this works.
 void thread_manager::fill_tile_queue(){
     int w = (*raster_ref)->width();
     int h = (*raster_ref)->height();
     
     //clear tiles
+    this->tile_queue_lock.lock();
     std::queue<tile>().swap(tiles);
     
     //fill queue with new tiles
     for(int x = 0; x < w; x += tilesize){
         for(int y = 0; y < h; y += tilesize){
+            //std::cout << x << " " << y << " " << std::min(w - x, tilesize) << " " << std::min(h - y, tilesize) << " " << std::endl;
             tiles.push(tile{x, y, std::min(w - x, tilesize), std::min(h - y, tilesize)});
         }
     }
+    this->tile_queue_lock.unlock();
 }
 
 worker_thread::worker_thread(thread_manager *manager){
@@ -91,7 +93,7 @@ void render_tiles(std::queue<tile> &tiles, std::mutex &tile_queue_lock, bool &is
         int img_width = (*raster_ref)->width();
         int img_height = (*raster_ref)->height();
         //check if tile is valid (ie in case of image resize)
-        if(current_tile.x+current_tile.w >= img_width || current_tile.y + current_tile.h >= img_height){
+        if(current_tile.x+current_tile.w > img_width || current_tile.y + current_tile.h > img_height){
             continue;
         }
         

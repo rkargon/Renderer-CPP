@@ -2,6 +2,8 @@
 //  common.h
 //  Renderer
 //
+//  Utility functions and definitions.
+//
 //  Created by Raphael Kargon on 6/5/14.
 //  Copyright (c) 2014 Raphael Kargon. All rights reserved.
 //
@@ -9,7 +11,12 @@
 #ifndef __Renderer__common__
 #define __Renderer__common__
 
+#define USE_VECTOR
+
+#ifdef USE_VECTOR
 #include <immintrin.h>
+#endif
+
 #include <cstdarg>
 #include <math.h>
 #include <random>
@@ -41,6 +48,7 @@ inline T signum(T a){
 }
 
 //vector functions
+#ifdef USE_VECTOR
 const __v4si zeroveci = __v4si{0,0,0,0};
 const __v4sf zerovecf = __v4sf{0,0,0,0};
 
@@ -55,5 +63,6 @@ inline __v4si muli32(const __v4si &a, const __v4si &b)
     return _mm_unpacklo_epi32(_mm_shuffle_epi32(tmp1, _MM_SHUFFLE (0,0,2,0)), _mm_shuffle_epi32(tmp2, _MM_SHUFFLE (0,0,2,0))); /* shuffle results to [63..0] and pack */
 #endif
 }
+#endif //USE_VECTOR
 
 #endif

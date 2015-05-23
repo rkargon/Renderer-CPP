@@ -197,7 +197,7 @@ double ambientOcclusion(const ray& viewray, scene *sc){
 
 /* Rasterization */
 //reference implementation, no vector operations
-void zBufferDraw(raster *imgrasters, scene *sc){
+void generate_maps(int mapflags, raster *imgrasters, scene *sc){
     int w = imgrasters->width(), h = imgrasters->height();
     double z, z1, z2, z3, dz21, dz31;
     int minx, miny, maxx, maxy;
@@ -207,12 +207,13 @@ void zBufferDraw(raster *imgrasters, scene *sc){
     vertex fcenter;
     point2D<double> p1, p2, p3, p;
     point2D<int> p1int, p2int, p3int, pint;
-    color col;
-    uint colrgb;
+    color col, col2, col3;
+    vertex norm, norm2, norm3, normtmp;
+    uint colrgb = 1;
     
-    //set up z buffer
     std::fill_n(imgrasters->zbuffer, w*h, 1);
-    std::fill_n(imgrasters->colbuffer, w*h, 0xffffff);
+    if(mapflags & 2) std::fill_n(imgrasters->normbuffer, w*h, 0xffffff);
+    if(mapflags & 4) std::fill_n(imgrasters->colbuffer, w*h, 0xffffff);
     
     for(mesh *obj: sc->objects){
         for(face *f : obj->faces){
@@ -237,11 +238,20 @@ void zBufferDraw(raster *imgrasters, scene *sc){
             dz21 = z2-z1;
             dz31 = z3-z1;
             
-            fcenter = f->center();
-            col = calcLighting(fcenter, f->normal, *f->obj->mat, sc);
-            colrgb = colorToRGB(col);
+            if (mapflags & 4){
+                fcenter = f->center();
+                colrgb = 1<<24; //unitialized color, largest byte is non-zero
+            }
             
-            //TODO smooth shading
+            //smooth shading, get vertex colors
+            if((mapflags & (4+2)) && f->obj->smooth){
+                norm = f->vertices[0]->vertexNormal();
+                norm2 = f->vertices[1]->vertexNormal();
+                norm3 = f->vertices[2]->vertexNormal();
+                col = calcLighting(*f->vertices[0], norm, *f->obj->mat, sc);
+                col2 = calcLighting(*f->vertices[1], norm2, *f->obj->mat, sc);
+                col3 = calcLighting(*f->vertices[2], norm3, *f->obj->mat, sc);
+            }
             
             //triangle bounding box
             minx = std::min(std::min(p1int.x, p2int.x), p3int.x);
@@ -257,7 +267,7 @@ void zBufferDraw(raster *imgrasters, scene *sc){
             maxy = std::min(maxy, h-1);
             
             
-            //triangle edge setupint
+            //triangle edge setup
             A12 = p1int.y-p2int.y;
             A23 = p2int.y-p3int.y;
             A31 = p3int.y-p1int.y;
@@ -273,6 +283,7 @@ void zBufferDraw(raster *imgrasters, scene *sc){
             w0 = orient2D(p1int, p2int, p3int);
             if(w0==0) continue;
             wsgn = signum(w0);
+            
             //rasterize
             for(pint.y=miny; pint.y<=maxy; pint.y++){
                 w1=w1_row;
@@ -283,8 +294,17 @@ void zBufferDraw(raster *imgrasters, scene *sc){
                         //interpolate z value
                         z = z1 + w2*dz21/w0 + w3*dz31/w0;
                         if(z < imgrasters->zbuffer[w*pint.y+pint.x]){
-                            imgrasters->zbuffer[w*pint.y+pint.x] = z;
-                            imgrasters->colbuffer[w*pint.y + pint.x] = colrgb;
+                            if(mapflags & 2){
+                                if(f->obj->smooth) normtmp = lerp(norm, norm2, norm3, double(w1)/w0, double(w2)/w0, double(w3)/w0);
+                                else normtmp = f->normal;
+                                imgrasters->normbuffer[pint.y*w + pint.x] = normalToRGB(normtmp);
+                            }
+                            if(mapflags & 4){
+                                if(f->obj->smooth) colrgb = colorToRGB(lerp(col, col2, col3, double(w1)/w0, double(w2)/w0, double(w3)/w0));
+                                else if(colrgb>>24) colrgb = colorToRGB(calcLighting(fcenter, f->normal, *f->obj->mat, sc));
+                                imgrasters->colbuffer[pint.y*w + pint.x] = colrgb;
+                            }
+                            imgrasters->zbuffer[w*pint.y + pint.x] = z;
                         }
                     }
                     w1+=A23;
@@ -304,6 +324,7 @@ void zBufferDraw(raster *imgrasters, scene *sc){
 // 1 - depth map - (will always be generated anyway, needed for other maps)
 // 2 - normal map
 // 4 - color map
+#ifdef USE_VECTOR
 void generate_maps_vector(int mapflags, raster *imgrasters, scene *sc){
     int i;
     int w = imgrasters->width(), h = imgrasters->height();
@@ -317,7 +338,6 @@ void generate_maps_vector(int mapflags, raster *imgrasters, scene *sc){
     color col, col2, col3;
     vertex norm, norm2, norm3, normtmp;
     uint colrgb = 1;
-    std::map<meshvertex*, color> vertexcols;
     
     std::fill_n(imgrasters->zbuffer, w*h, 1);
     if(mapflags & 2) std::fill_n(imgrasters->normbuffer, w*h, 0xffffff);
@@ -431,9 +451,14 @@ void generate_maps_vector(int mapflags, raster *imgrasters, scene *sc){
         }
     }
 }
+#endif
 
-void zBufferDraw_vector(raster *imgrasters, scene *sc){
+void zBufferDraw(raster *imgrasters, scene *sc){
+#ifdef USE_VECTOR
     generate_maps_vector(5, imgrasters, sc);
+#else
+    generate_maps(5, imgrasters, sc);
+#endif
 }
 
 void paintNormalMap(raster *imgrasters, scene *sc){

@@ -396,7 +396,7 @@ bool rayAABBIntersect(const bounds& AABB, const ray& r){
     if(tmin<=0 && tmax<=0) return false; //ray should not intersect bounding box if box is behind the origin of the ray
     return true;
 }
-//Intersect a ray with a setof faces. If lazy==false, return nearest face. Otherwise, return first intersection.
+//Intersect a ray with a set of faces. If lazy==false, return nearest face. Otherwise, return first intersection.
 //(t,u,v) stores (intersection distance, barycentric coordinate from v12, barycentric coordiante from v13)
 face *rayFacesIntersect(const std::vector<face*>& faces, const ray& r, bool lazy, vertex *tuv){
     face *f = nullptr;

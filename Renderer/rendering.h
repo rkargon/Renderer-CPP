@@ -2,6 +2,17 @@
 //  rendering.h - the magic happens here!
 //  Renderer
 //
+//  Functions for rendering 3D scenes.
+//
+//  Rasterization:  Projection of triangles onto the image plane, does not calculate shadows
+//
+//  Raytracing:     Sends ray from the camera, and checks for shadows / reflection by
+//                  bouncing rays through the 3D scene. Does not do indirect lighting.
+//
+//  Path Tracing:   Sends rays off in random direction, and averages the results to sample all light
+//                  falling onto an object. More photorealistic, much slower.
+//
+//
 //  Created by Raphael Kargon on 6/8/14.
 //  Copyright (c) 2014 Raphael Kargon. All rights reserved.
 //
@@ -28,7 +39,7 @@ double ambientOcclusion(const ray& viewray, kdtree* kdt);
 
 /* Rasterization */
 void generate_maps_vector(int mapflags, raster *imgrasters, scene *sc);
-void zBufferDraw_vector(raster *imgrasters, scene *sc);
+void zBufferDraw(raster *imgrasters, scene *sc);
 void paintNormalMap(raster *imgrasters, scene *sc);
 void SSAO(raster *imgrasters, scene *sc);
 

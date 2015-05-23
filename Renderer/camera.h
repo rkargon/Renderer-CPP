@@ -2,6 +2,8 @@
 //  camera.h
 //  Renderer
 //
+//  Represents a camera in 3D space, through which one views and renders a 3D scene.
+//
 //  Created by Raphael Kargon on 6/8/14.
 //  Copyright (c) 2014 Raphael Kargon. All rights reserved.
 //
@@ -11,9 +13,6 @@
 
 #include "geom.h"
 
-// Represents the 'camera' from which a 3D scene is projected and rendered.
-// Contains a position vector, and orientation vectors, as well as a focus point around which the camera may be rotated.
-// The minimum and maximum clipping distance, the field of view, and whether the projection is orthographic or perspective may be changed.
 class camera{
 public:
     vertex center; //location of the camera
@@ -28,27 +27,32 @@ public:
     camera(const vertex& center, const vertex& focus, const vertex& normal, const vertex& vert, const double fov, const double mindist, const double maxdist, const bool ortho);
     
     /* projections */
+    
     ray castRay(const double px, const double py, const double w, const double h) const;
     point2D<double> projectVertex(const vertex& v, double w, double h) const;
     double vertexDepth(const vertex& v) const;
-    vertex viewVector(const vertex& v) const;
+    vertex viewVector(const vertex& v) const; //get vector from camera to given vertex
     double faceDepth(const face& f) const;
     
     /* manipulation of camera */
+    
+    //Moves the camera so that is is facing the focus point
     void centerFocus();
     void shiftFocus(const double dx, const double dy);
     void zoom(const double zoomfactor);
     vertex getImagePlaneVector(const double dx, const double dy);
     
     /* rotation */
-    void rotateAxis(const vertex& axis, const double dtheta);
-    void rotateLocalX(const double dtheta);
-    void rotateLocalY(const double dtheta);
-    void rotateLocalZ(const double dtheta);
-    void setGlobalRotation(const double theta, const double rho, const double psi);
+    void rotateAxis(const vertex& axis, const double dtheta); //rotate along arbitrary axis
+    void rotateLocalX(const double dtheta); //rotate along local X axis
+    void rotateLocalY(const double dtheta); //rotate along local y axis
+    void rotateLocalZ(const double dtheta); //rotate along local z axis
+    void setGlobalRotation(const double theta, const double rho, const double psi); //set global rotation angles
     
 private:
+    //keeps track of image plane vectors
     vertex cx, cy;
+    //recalculates image plane vectors
     void calcImageVectors(){
 		cx = cross(normal, vert);
 		cy = cross(cx, normal);
@@ -56,15 +60,6 @@ private:
 		cy.normalize();
     }
     
-};
-
-//sorts faces with increasing distance from camera
-struct zFaceComparator{
-    camera *cam;
-    bool nearestFirst;
-    bool operator()(face* f1, face* f2);
-    
-    zFaceComparator(camera *cam, bool nearestFirst);
 };
 
 #endif /* defined(__Renderer__camera__) */

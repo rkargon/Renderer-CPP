@@ -52,7 +52,7 @@ public:
     //NOTE: These invalidate KD Trees
     void move(const vertex& dv);
     void scale(const vertex& ds, const vertex& center);
-    void scale_centered(const vertex& ds);
+    void scale_centered(const vertex& ds); //scale around a given origin
 
     //calculates the centroid, or arithmetic mean, of all the vertices in an object. 
     vertex centroid() const;

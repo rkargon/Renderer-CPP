@@ -16,8 +16,8 @@ RenderArea::RenderArea(QWidget *parent): QWidget(parent){
     setLayout(new QHBoxLayout);
     
     //scene setup
-    std::ifstream dragonfile("/Users/raphaelkargon/Documents/Programming/STL Renderer/dragonsmall.stl");
-    std::ifstream spherefile("/Users/raphaelkargon/Documents/Programming/STL Renderer/sphere.stl");
+    std::ifstream dragonfile("/Users/raphaelkargon/Documents/Programming/STL Renderer/Models/dragonsmall.stl");
+    std::ifstream spherefile("/Users/raphaelkargon/Documents/Programming/STL Renderer/Models/sphere.stl");
     camera *cam = new camera();
     std::vector<lamp*> lamps;
     lamps.push_back(new lamp(15, 2, vertex(-4, 0,-2.828), RGBToColor(0xFFAAAA)));
@@ -31,7 +31,7 @@ RenderArea::RenderArea(QWidget *parent): QWidget(parent){
     mesh *dragonobj = new mesh(dragonfile, "Dragon");
     dragonfile.close();
     dragonobj->mat = new material();
-    dragonobj->bsdf = new GlossyBSDF();
+    dragonobj->bsdf = new DiffuseBSDF();
     dragonobj->project_texture(TEX_PROJ_SPHERICAL);
 
     //sphere
@@ -122,7 +122,7 @@ void RenderArea::updateImage(){
             drawWireFrame();
             break;
         case 1:
-            zBufferDraw_vector(imgrasters, sc);
+            zBufferDraw(imgrasters, sc);
             break;
         case 2:
             SSAO(imgrasters, sc);
