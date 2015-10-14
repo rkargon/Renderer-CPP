@@ -20,8 +20,8 @@
 class material;
 
 /* Texture projections:
- Determine how a texture is mapped onto an object's faces. 
- 
+ Determine how a texture is mapped onto an object's faces.
+
 TEX_PROJ_SPHERICAL
     Projects vertices onto a sphere and uses spherical coordinates as texture coordinates.
     Each vertex is converted from cartesian to spherical coordinates which are normalized to [0, 1]
@@ -41,13 +41,13 @@ public:
     material *mat;
     BSDF *bsdf;
     bool smooth;
-    
+
     //loads object from STL file
     //smooth off by default, materials uninitialized.
     mesh(std::ifstream& infile, std::string objname);
 
     void project_texture(tex_projection_t proj);
-    
+
     /* Mesh manipulation */
     //NOTE: These invalidate KD Trees
     void move(const vertex& dv);
