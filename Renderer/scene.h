@@ -11,6 +11,7 @@
 
 #include <QtGui/QImage>
 #include "camera.h"
+#include "distance_estimation.h"
 #include "geom.h"
 #include "mesh.h"
 #include "kdtree.h"
@@ -24,7 +25,7 @@ public:
     double spec_intensity; //The intensity of specular highlights
     double spec_hardness; //The hardness of specular highlights (according to Phong reflection model)
     
-    double refl_intensity; //Amount of light reflected (0 = no relfection, 1 = mirror)
+    double refl_intensity; //Amount of light reflected (0 = no reflection, 1 = mirror)
     double alpha; //Transparency of material. 0 = transparent, 1 = opaque
     double ior; //Index of refraction for transparency.
     
@@ -38,7 +39,7 @@ public:
              const color& sc=color(1,1,1),
              const double si=1,
              const double sh=128,
-             const double ri=0.3,
+             const double ri=0,
              const double a=1,
              const double indxofrefr=1.3,
              QImage *c=nullptr,
@@ -63,16 +64,21 @@ public:
     
     vertex loc;
     color col;
+
+    bool is_sun;
+    vertex sun_direction;
     
     lamp();
     lamp(const double i, const int falloff, const vertex& l, const color& c);
+    lamp(const double i, const int falloff, const vertex& l, const color& c, const vertex& sun_direction);
 };
 
 class world{
 public:
     color horizoncol, zenithcol; //The color at horizon level, and the the color at the top of the sky
     bool isFlat; //If isFlat, all colors are horizoncol and zenithcol is ignored.
-    world(const color& hc = color(1,1,1), const color& zc=color(0.8,0.8,1), const bool flat=false);
+    double ambient_intensity;
+    world(const color& hc = color(1,1,1), const color& zc=color(0.8,0.8,1), const bool flat=false, const double ambient_intensity=1);
     virtual color getColor(const ray& r);
 };
 
@@ -108,8 +114,10 @@ public:
     world *w;
     std::vector<mesh*> objects;
     kdtree *kdt;
+    distance_estimator *de_obj;
+    material *de_mat;
     
-    scene(camera *c, std::vector<lamp*> l, world* wor, std::vector<mesh*> objects);
+    scene(camera *c, std::vector<lamp*> l, world* wor, std::vector<mesh*> objects, distance_estimator *de_obj, material *de_mat);
     scene();
 };
 

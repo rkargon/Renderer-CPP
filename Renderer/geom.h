@@ -61,8 +61,10 @@ public:
     friend vertex operator- (const vertex& v1, const vertex& v2);
     friend vertex operator- (const vertex& v1, const vertex *v2);
     friend vertex operator* (const vertex& v1, double r);
-    friend vertex operator* (const double r, vertex& v1);
+    friend vertex operator* (const double r, const vertex& v1);
     friend vertex operator* (const vertex& v1, const vertex& v2);
+    friend vertex operator/ (const double r, const vertex& v1);
+    friend vertex operator/ (const vertex& v1, const double r);
     friend bool operator== (const vertex& v1, const vertex& v2);
     friend bool operator!= (const vertex& v1, const vertex& v2);
     friend std::ostream& operator<<(std::ostream& os, const vertex& v);
@@ -168,12 +170,16 @@ struct edgePtrEquality{
 /* vertex functions */
 inline vertex cross(const vertex& A, const vertex& B){ return vertex(A.y*B.z - A.z*B.y, A.z*B.x - A.x*B.z, A.x*B.y - A.y*B.x); }
 inline double dot(const vertex& A, const vertex& B){ return (A.x*B.x + A.y*B.y + A.z*B.z); }
+vertex rotate(const vertex& v, const vertex& axis, const double dtheta);
+vertex abs(const vertex& v);
 vertex lerp(const vertex& v1, const vertex& v2, const double r);
 //linearly interpolate between 3 vertices using barycentric coordinates
 vertex lerp(const vertex& v1, const vertex& v2, const vertex& v3, double w1, double w2, double w3);
+vertex lerp(const vertex& v1, const vertex& v2, const vertex& v3, const vertex& w);
 //return a vertex containig the min/max of each coordinate from the given two inputs.
-vertex min3(const vertex& v1, const vertex& v2);
-vertex max3(const vertex& v1, const vertex& v2);
+vertex min(const vertex& v1, const vertex& v2);
+vertex max(const vertex& v1, const vertex& v2);
+vertex clamp(const vertex& v, const vertex& min, const vertex& max);
 vertex randomDirection(); //picks a random point on the unit sphere (uniformly)
 
 /* color functions */

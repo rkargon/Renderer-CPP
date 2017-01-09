@@ -14,19 +14,19 @@ RenderArea::RenderArea(QWidget *parent): QWidget(parent){
     setFocusPolicy(Qt::StrongFocus);
     setFocus(Qt::ActiveWindowFocusReason);
     setLayout(new QHBoxLayout);
-    
+
     //scene setup
-    std::ifstream dragonfile("/Users/raphaelkargon/Documents/Programming/STL Renderer/Models/dragonsmall.stl");
-    std::ifstream spherefile("/Users/raphaelkargon/Documents/Programming/STL Renderer/Models/sphere.stl");
+    std::ifstream dragonfile("/Users/raphaelkargon/Documents/Programming/Computer Graphics/Models/dragonsmall.stl");
+    std::ifstream spherefile("/Users/raphaelkargon/Documents/Programming/Computer Graphics/Models/sphere.stl");
     camera *cam = new camera();
     std::vector<lamp*> lamps;
-    lamps.push_back(new lamp(15, 2, vertex(-4, 0,-2.828), RGBToColor(0xFFAAAA)));
-    lamps.push_back(new lamp(15, 2, vertex( 4, 0,-2.828), RGBToColor(0xAAFFAA)));
-    lamps.push_back(new lamp(15, 2, vertex( 0,-4, 2.828), RGBToColor(0xAAAAFF)));
-    lamps.push_back(new lamp(15, 2, vertex( 0, 4, 2.828), RGBToColor(0xFFFFAA)));
-    world* sc_world = new sky();
+//    lamps.push_back(new lamp(45, 2, vertex(-10, 0,-7), RGBToColor(0xFFAAAA)));
+//    lamps.push_back(new lamp(45, 2, vertex( 10, 0,-7), RGBToColor(0xAAFFAA)));
+//    lamps.push_back(new lamp(45, 2, vertex( 0,-10, 7), RGBToColor(0xAAAAFF)));
+    lamps.push_back(new lamp(25, 2, vertex( 0, 5, 5), RGBToColor(0xFFCC66)));
+    world* sc_world = new world(color(0.8,0.8,0.8), color(0.6,0.8,1), false, 0.4);;
     std::vector<mesh*> objects;
-    
+
     //dragon
     mesh *dragonobj = new mesh(dragonfile, "Dragon");
     dragonfile.close();
@@ -40,22 +40,25 @@ RenderArea::RenderArea(QWidget *parent): QWidget(parent){
     sphereobj->mat = new material();
     sphereobj->bsdf = new EmissionBSDF(vertex(1,1,1), 15);
     sphereobj->project_texture(TEX_PROJ_SPHERICAL);
-    sphereobj->scale_centered(vertex(0.5, 0.5, 0.5));
-    sphereobj->move(vertex(5, 0, 0));
-    
-    objects.push_back(dragonobj);
+    sphereobj->scale_centered(vertex(0.6, 0.6, 0.6));
+    sphereobj->move(vertex(0, 0, 1));
+
+//    objects.push_back(dragonobj);
     objects.push_back(sphereobj);
-    sc = new scene(cam, lamps, sc_world, objects);
+    distance_estimator *de_obj = new auto(de_menger(3, {1,1,1}, 20));
+    sc = new scene(cam, lamps, sc_world, objects, de_obj, new material{});
     if(sc->kdt != nullptr) sc->kdt->printstats();
+
+    // set up distance field for ray marching
     
     //set up images and buffers
     int h = height(), w = width();
     imgrasters = new raster(w, h);
     renderimg = new QImage((uchar*) imgrasters->colbuffer, width(), height(), QImage::Format_ARGB32);
     manager = new thread_manager(6, &imgrasters, sc);
-    
+
     //status label
-    statuslbl = new QLabel("Raph Renderer 2015");
+    statuslbl = new QLabel("Raph Renderer 2017");
     statuslbl->setParent(this);
     this->layout()->addWidget(statuslbl);
     statuslbl->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
@@ -91,7 +94,7 @@ void RenderArea::updateText(){
             statuslbl->setText("1. Wireframe");
             break;
         case 1:
-            statuslbl->setText("2. ZBuffer draw, SSE");
+            statuslbl->setText("2. ZBuffer Draw");
             break;
         case 2:
             statuslbl->setText("3. SSAO");
@@ -108,6 +111,9 @@ void RenderArea::updateText(){
         case 6:
             statuslbl->setText("6. Ambient Occlusion");
             break;
+        case 7:
+            statuslbl->setText("7. Fractal Rendering");
+            break;
         default:
             statuslbl->setText("Raph Renderer 2015");
     }
@@ -116,7 +122,7 @@ void RenderArea::updateText(){
 void RenderArea::updateImage(){
     manager->stop();
     manager->fill_tile_queue();
-    
+
     switch(rendermode){
         case 0:
             drawWireFrame();
@@ -142,6 +148,11 @@ void RenderArea::updateImage(){
             manager->set_render_method(ambOccPixel);
             manager->start();
             break;
+        case 7:
+            manager->set_render_method(ray_march_pixel);
+            manager->start();
+            break;
+            break;
     }
 }
 
@@ -164,7 +175,7 @@ void RenderArea::keyPressEvent(QKeyEvent *event){
         case Qt::Key_Z:
             if(event->modifiers() & Qt::ShiftModifier) --rendermode;
             else ++rendermode;
-            rendermode  = (rendermode+7)%7;
+            rendermode  = (rendermode+8)%8;
             updateText();
             updateImage();
             break;
@@ -182,7 +193,7 @@ void RenderArea::keyPressEvent(QKeyEvent *event){
 void RenderArea::mouseMoveEvent(QMouseEvent *event){
     QPoint pos = event->pos();
     QPoint delta = pos - prevpos; //prevpos initialized in mousePressEvent
-    
+
     if(event->modifiers() & Qt::ShiftModifier){
         sc->cam->shiftFocus(-delta.x()/100.0, delta.y()/100.0);
     }
@@ -214,6 +225,8 @@ void RenderArea::wheelEvent(QWheelEvent *event){
 }
 
 void RenderArea::resizeEvent(QResizeEvent *event){
+    // thread manager wiill segfault if image buffer changes out from under its feet.
+    manager->stop();
     imgrasters->resize(width(), height());
     renderimg = new QImage((uchar*) imgrasters->colbuffer, width(), height(), QImage::Format_RGB32);
     updateImage();
@@ -227,7 +240,7 @@ void RenderArea::drawWireFrame(){
     int w = width(), h = height();
     point2D<double> p1,p2;
     painter.setPen(QColor(0,0,0));
-    
+
     for(mesh *obj: sc->objects){
         for(edge *e : obj->edges){
             p1 = sc->cam->projectVertex(*e->v1, w, h);

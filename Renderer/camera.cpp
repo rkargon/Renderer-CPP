@@ -103,20 +103,9 @@ vertex camera::getImagePlaneVector(const double dx, const double dy){
 }
 
 /* Rotation */
-
 void camera::rotateAxis(const vertex& axis, const double dtheta){
-    vertex a = axis.unitvect();
-    double l = a.x, m = a.y, n= a.z;
-    double s=sin(dtheta), c=cos(dtheta);
-    
-    //columns of rotation matrix
-    vertex col1(l*l*(1-c) + c, l*m*(1-c) + n*s, l*n*(1-c) - m*s);
-    vertex col2(m*l*(1-c) - n*s, m*m*(1-c) + c, m*n*(1-c) + l*s);
-    vertex col3(n*l*(1-c) + m*s, n*m*(1-c) - l*s, n*n*(1-c) + c);
-    
-    //matrix multiplication
-    vert = vertex(dot(vert,col1), dot(vert,col2), dot(vert,col3));
-    normal = vertex(dot(normal,col1), dot(normal,col2), dot(normal,col3));
+    vert = rotate(vert, axis, dtheta);
+    normal = rotate(normal, axis, dtheta);
     calcImageVectors();
 }
 

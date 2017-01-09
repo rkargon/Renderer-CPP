@@ -39,6 +39,11 @@ inline double lerp(const double a, const double b, const double r){
     return a+r*(b-a);
 }
 
+// interpolate between three values p1,2,3 using barycentric coordinates w1,2,3
+inline double barycentric_lerp(const double p1, const double p2, const double p3, const double w1, const double w2, const double w3){
+    return p1*w1 + p2*w2 + p3*w3;
+}
+
 //returns 1 if a>0,
 //        0 if a==0, and
 //       -1 is a<0
@@ -52,7 +57,7 @@ inline T signum(T a){
 const __v4si zeroveci = __v4si{0,0,0,0};
 const __v4sf zerovecf = __v4sf{0,0,0,0};
 
-//multiplies two integer vectors 
+//multiplies two integer vectors
 inline __v4si muli32(const __v4si &a, const __v4si &b)
 {
 #ifdef __SSE4_1__  // modern CPU - use SSE 4.1

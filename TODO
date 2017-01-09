@@ -1,0 +1,8 @@
+ - refactor CamelCase in project
+ - antialiasing
+ - textures
+    - bump mapping
+    - mesh parametrization
+ - depth of field
+ - fluid / smoke simulation
+ - BVH for whole objects? 

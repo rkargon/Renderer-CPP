@@ -21,6 +21,7 @@ void vertex::normalize(){
         x *= len;
         y *= len;
         z *= len;
+
     }
 }
 void vertex::set(const double a, const double b, const double c){x=a;y=b;z=c;}
@@ -49,12 +50,12 @@ void vertex::operator*= (const vertex *v2){x*=v2->x; y*=v2->y; z*=v2->z;}
 vertex vertex::operator-() {return vertex(-x, -y, -z);}
 
 vertex operator+ (const vertex& v1, const vertex& v2) {return vertex(v1.x+v2.x, v1.y+v2.y, v1.z+v2.z);}
-vertex operator+ (const vertex& v1, const vertex *v2) {return vertex(v1.x+v2->x, v1.y+v2->y, v1.z+v2->z);}
 vertex operator- (const vertex& v1, const vertex& v2) {return vertex(v1.x-v2.x, v1.y-v2.y, v1.z-v2.z);}
-vertex operator- (const vertex& v1, const vertex *v2) {return vertex(v1.x-v2->x, v1.y-v2->y, v1.z-v2->z);}
-vertex operator* (const vertex& v1, double r){return vertex(v1.x*r, v1.y*r, v1.z*r);}
-vertex operator* (const double r, vertex& v1){return vertex(v1.x*r, v1.y*r, v1.z*r);}
+vertex operator* (const vertex& v1, const double r){return vertex(v1.x*r, v1.y*r, v1.z*r);}
+vertex operator* (const double r, const vertex& v1){return vertex(v1.x*r, v1.y*r, v1.z*r);}
 vertex operator* (const vertex& v1, const vertex& v2) {return vertex(v1.x*v2.x, v1.y*v2.y, v1.z*v2.z);} //coordinate-wise multiplication
+vertex operator/ (const double r, const vertex& v1){return vertex(v1.x/r, v1.y/r, v1.z/r);}
+vertex operator/ (const vertex& v1, const double r){return vertex(v1.x/r, v1.y/r, v1.z/r);}
 bool operator== (const vertex& v1, const vertex& v2){return v1.x==v2.x && v1.y==v2.y && v1.z==v2.z;}
 bool operator!= (const vertex& v1, const vertex& v2){return !(v1==v2);}
 std::ostream& operator<< (std::ostream &os, const vertex &v){return os << "(" << v.x << ", " << v.y << ", " << v.z << ")";}
@@ -91,7 +92,7 @@ face::face(const vertex& norm, meshvertex * const v1, meshvertex * const v2, mes
     vertices[0] = v1;
     vertices[1] = v2;
     vertices[2] = v3;
-    
+
     if(normal.lensqr() && isPerpendicular(normal)){
         normal.normalize();
     }
@@ -126,17 +127,17 @@ bool face::intersectRayTriangle(const ray& r, vertex *tuv){
     vertex edge1, edge2, tvec, pvec, qvec;
     double det, inv_det;
     double t, u, v;
-    
+
     edge1 = (*vertices[1]-*vertices[0]);
     edge2 = (*vertices[2]-*vertices[0]);
-    
+
     pvec = cross(r.dir, edge2);
     det = dot(edge1, pvec);
-    
+
     tvec = r.org - *vertices[0];
     inv_det = 1.0/det;
     qvec = cross(tvec, edge1);
-    
+
     if(det > EPSILON){
         u = dot(tvec, pvec);
         if(u<0.0 || u>det) return false;
@@ -148,10 +149,10 @@ bool face::intersectRayTriangle(const ray& r, vertex *tuv){
         if(u>0.0 || u<det) return false;
         v = dot(r.dir, qvec);
         if(v>0.0 || u + v < det) return false;
-        
+
     }
     else return false;
-    
+
     u*=inv_det;
     v*=inv_det;
     t = dot(edge2, qvec) * inv_det;
@@ -269,13 +270,32 @@ bool edgePtrEquality::operator()(X const &lhs, Y const &rhs) const{
     return *lhs==*rhs;
 }
 
+// Rotates the given vertex about an axis, the given number of degrees
+vertex rotate(const vertex& v, const vertex& axis, const double dtheta){
+    vertex a = axis.unitvect();
+    double l = a.x, m = a.y, n= a.z;
+    double s=sin(dtheta), c=cos(dtheta);
+    
+    //columns of rotation matrix
+    vertex col1(l*l*(1-c) + c, l*m*(1-c) + n*s, l*n*(1-c) - m*s);
+    vertex col2(m*l*(1-c) - n*s, m*m*(1-c) + c, m*n*(1-c) + l*s);
+    vertex col3(n*l*(1-c) + m*s, n*m*(1-c) - l*s, n*n*(1-c) + c);
+    
+    return {dot(v, col1), dot(v, col2), dot(v, col3)};
+}
+
+vertex abs(const vertex& v){
+    return {fabs(v.x), fabs(v.y), fabs(v.z)};
+}
+
 //linearly interpolate two 3d vertices
 vertex lerp(const vertex& v1, const vertex& v2, const double r){return vertex(v1.x+r*(v2.x-v1.x), v1.y+r*(v2.y-v1.y), v1.z+r*(v2.z-v1.z));}
 //linearly interpolate 3 vertices based on barycentric coordinates.
 vertex lerp(const vertex& v1, const vertex& v2, const vertex& v3, double w1, double w2, double w3){return v1*w1 + v2*w2 + v3*w3;}
-//The maximum of each coordainte of the two vertices
-vertex max3(const vertex& v1, const vertex& v2){return vertex(fmax(v1.x,v2.x), fmax(v1.y,v2.y), fmax(v1.z,v2.z));}
-vertex min3(const vertex& v1, const vertex& v2){return vertex(fmin(v1.x,v2.x), fmin(v1.y,v2.y), fmin(v1.z,v2.z));}
+vertex lerp(const vertex& v1, const vertex& v2, const vertex& v3, const vertex& w){return v1*w.x + v2*w.y + v3*w.z;}
+vertex min(const vertex& v1, const vertex& v2){return vertex(fmin(v1.x,v2.x), fmin(v1.y,v2.y), fmin(v1.z,v2.z));}
+vertex max(const vertex& v1, const vertex& v2){return vertex(fmax(v1.x,v2.x), fmax(v1.y,v2.y), fmax(v1.z,v2.z));}
+vertex clamp(const vertex& v, const vertex& min_v, const vertex& max_v){return max(min(v, max_v), min_v);}
 //A random unit vector.
 vertex randomDirection(){
     double theta = (double)rand()/RAND_MAX;
@@ -321,7 +341,7 @@ bounds calcBoundingBox(const std::vector<face *>& faces){
         if(isnan(miny) || miny>tmp) miny = tmp;
         tmp = f->minCoord(2);
         if(isnan(minz) || minz>tmp) minz = tmp;
-        
+
         tmp = f->maxCoord(0);
         if(isnan(maxx) || maxx<tmp) maxx = tmp;
         tmp = f->maxCoord(1);
@@ -336,14 +356,14 @@ bounds calcBoundingBox(const std::vector<face *>& faces){
 }
 //Stores intersection of b1 and b2 in newbounds
 void intersectBoundingBoxes(const bounds& b1, const bounds& b2, bounds& newbounds){
-    newbounds.min = max3(b1.min, b2.min);
-    newbounds.max = min3(b1.max, b2.max);
+    newbounds.min = max(b1.min, b2.min);
+    newbounds.max = min(b1.max, b2.max);
 }
 void listBounds(bounds& newbounds, int nverts, const vertex *v1 ...){
     newbounds.min = vertex(NAN,NAN,NAN);
     newbounds.max = vertex(NAN,NAN,NAN);
     const vertex *vtmp;
-    
+
     va_list vertices;
     va_start(vertices, v1);
     vtmp = v1;
@@ -370,7 +390,7 @@ bool rayAABBIntersect(const bounds& AABB, const ray& r){
         tmin = tmax;
         tmax = tmp;
     }
-    
+
     double tymin = (AABB.min.y-r.org.y) / r.dir.y;
     double tymax = (AABB.max.y-r.org.y) / r.dir.y;
     if (tymin > tymax) {
@@ -381,7 +401,7 @@ bool rayAABBIntersect(const bounds& AABB, const ray& r){
     if(tmin > tymax || tmax < tymin) return false;
     if (tymin > tmin) tmin = tymin;
     if (tymax < tmax) tmax = tymax;
-    
+
     double tzmin = (AABB.min.z-r.org.z) / r.dir.z;
     double tzmax = (AABB.max.z-r.org.z) / r.dir.z;
     if (tzmin > tzmax) {
@@ -392,7 +412,7 @@ bool rayAABBIntersect(const bounds& AABB, const ray& r){
     if (tmin > tzmax || tmax < tzmin) return false;
     if (tzmin > tmin) tmin = tzmin;
     if (tzmax < tmax) tmax = tzmax;
-    
+
     if(tmin<=0 && tmax<=0) return false; //ray should not intersect bounding box if box is behind the origin of the ray
     return true;
 }

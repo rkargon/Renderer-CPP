@@ -23,6 +23,7 @@
 #include <QtWidgets/QLayout>
 #include <QtWidgets/QWidget>
 #include "camera.h"
+#include "distance_estimation.h"
 #include "kdtree.h"
 #include "mesh.h"
 #include "raster.h"

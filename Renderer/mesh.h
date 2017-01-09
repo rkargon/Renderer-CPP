@@ -49,7 +49,7 @@ public:
     void project_texture(tex_projection_t proj);
 
     /* Mesh manipulation */
-    //NOTE: These invalidate KD Trees
+    //NOTE: These invalidate KD Trees :-(
     void move(const vertex& dv);
     void scale(const vertex& ds, const vertex& center);
     void scale_centered(const vertex& ds); //scale around a given origin

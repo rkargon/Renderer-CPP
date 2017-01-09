@@ -41,19 +41,28 @@ lamp::lamp()
     :intensity(1),
     falloff(2),
     loc(vertex()),
-    col(color(1,1,1)){}
+col(color(1,1,1)){}
 
 lamp::lamp(const double i, const int fall, const vertex& l, const color& c)
-    :intensity(i),
-    falloff(fall),
-    loc(l),
-    col(c){}
+:intensity(i),
+falloff(fall),
+loc(l),
+col(c),
+is_sun(false){}
 
+lamp::lamp(const double i, const int fall, const vertex& l, const color& c, const vertex& sun_direction)
+:intensity(i),
+falloff(fall),
+loc(l),
+col(c),
+sun_direction(sun_direction),
+is_sun(true){}
 
-world::world(const color& hc, const color& zc, const bool flat)
+world::world(const color& hc, const color& zc, const bool flat, const double ambient_intensity)
     :horizoncol(hc),
     zenithcol(zc),
-    isFlat(flat){}
+    isFlat(flat),
+    ambient_intensity(ambient_intensity){}
 
 //PRECONDITION: dir is normalized
 //If isFlat, horizoncol is returned.
@@ -144,11 +153,13 @@ objects(std::vector<mesh*>()),
 kdt(nullptr){}
 
 // automatically builds kdtree for object
-scene::scene(camera *c, std::vector<lamp*> l, world* wor, std::vector<mesh*> os)
+scene::scene(camera *c, std::vector<lamp*> l, world* wor, std::vector<mesh*> objects, distance_estimator *de_obj, material *de_mat)
 :cam(c),
 lamps(l),
 w(wor),
-objects(os){
+objects(objects),
+de_obj(de_obj),
+de_mat(de_mat){
     std::vector<face*> allfaces;
     for(mesh *o : objects){
         allfaces.insert(allfaces.end(), o->faces.begin(), o->faces.end());
