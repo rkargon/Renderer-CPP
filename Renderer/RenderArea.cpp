@@ -45,17 +45,15 @@ RenderArea::RenderArea(QWidget *parent): QWidget(parent){
 
 //    objects.push_back(dragonobj);
     objects.push_back(sphereobj);
-    distance_estimator *de_obj = new auto(de_menger(3, {1,1,1}, 20));
+    distance_estimator *de_obj = new auto(de_mandelbulb(8, 20));
     sc = new scene(cam, lamps, sc_world, objects, de_obj, new material{});
     if(sc->kdt != nullptr) sc->kdt->printstats();
-
-    // set up distance field for ray marching
     
     //set up images and buffers
     int h = height(), w = width();
     imgrasters = new raster(w, h);
     renderimg = new QImage((uchar*) imgrasters->colbuffer, width(), height(), QImage::Format_ARGB32);
-    manager = new thread_manager(6, &imgrasters, sc);
+    manager = new thread_manager(6, &imgrasters, sc, 1);
 
     //status label
     statuslbl = new QLabel("Raph Renderer 2017");

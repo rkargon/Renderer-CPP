@@ -40,6 +40,17 @@ vertex vertex::unitvect() const{
     return vertex(x,y,z);
 }
 
+void vertex::to_polar(double &radius, double& theta, double& phi) const {
+    radius = this->len();
+    theta = acos(z/radius);
+    phi = atan2(y, x);
+}
+
+void vertex::to_polar_angles(const double radius, double &theta, double &phi) const {
+    theta = acos(z/radius);
+    phi = atan2(y, x);
+}
+
 void vertex::operator+= (const vertex& v2){x+=v2.x; y+=v2.y; z+=v2.z;}
 void vertex::operator+= (const vertex *v2){x+=v2->x; y+=v2->y; z+=v2->z;}
 void vertex::operator-= (const vertex& v2){x-=v2.x; y-=v2.y; z-=v2.z;}
@@ -296,6 +307,7 @@ vertex lerp(const vertex& v1, const vertex& v2, const vertex& v3, const vertex& 
 vertex min(const vertex& v1, const vertex& v2){return vertex(fmin(v1.x,v2.x), fmin(v1.y,v2.y), fmin(v1.z,v2.z));}
 vertex max(const vertex& v1, const vertex& v2){return vertex(fmax(v1.x,v2.x), fmax(v1.y,v2.y), fmax(v1.z,v2.z));}
 vertex clamp(const vertex& v, const vertex& min_v, const vertex& max_v){return max(min(v, max_v), min_v);}
+
 //A random unit vector.
 vertex randomDirection(){
     double theta = (double)rand()/RAND_MAX;
@@ -304,6 +316,10 @@ vertex randomDirection(){
     z = z*2 - 1;
     double w = sqrt(1-z*z);
     return vertex(w*cos(theta), w*sin(theta), z);
+}
+
+vertex from_polar(const double radius, const double theta, const double phi){
+    return radius * vertex{cos(phi) * sin(theta), sin(phi)*sin(theta), cos(theta)};
 }
 
 //color functions

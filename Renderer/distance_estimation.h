@@ -32,6 +32,7 @@ distance_estimator de_sphere(vertex center, double radius);
 distance_estimator de_torus(double r1, double r2);
 distance_estimator de_sierpinski_tetrahedron(int num_iterations);
 distance_estimator de_menger(double scale, vertex center, int num_iterations);
+distance_estimator de_mandelbulb(double power, int num_iterations, double bailout = 2);
 
 /* Distance Estimator Operations */
 distance_estimator de_union(distance_estimator de1, distance_estimator de2);
@@ -55,7 +56,7 @@ distance_estimator de_twist(distance_estimator de);
  *
  *  @return A normalized vector representing the normal at this point.
  */
-vertex estimate_normal(const vertex& v, const distance_estimator& obj, double epsilon = 0.0001);
+vertex estimate_normal(const vertex& v, const distance_estimator& obj, double epsilon = 0.00001);
 
 /**
  *  Intersects a ray with a 3D scene given as a distance function using ray marching.

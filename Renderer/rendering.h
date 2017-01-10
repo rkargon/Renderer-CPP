@@ -49,10 +49,10 @@ void rayTraceUnthreaded(raster *imgrasters, scene *sc, int tilesize);
 void pathTraceUnthreaded(raster *imgrasters, scene *sc, int tilesize);
 
 /* Used in multithreaded rendering */
-color rayTracePixel(int x, int y, int w, int h, scene *sc);
-color pathTracePixel(int x, int y, int w, int h, scene *sc);
-color ambOccPixel(int x, int y, int w, int h, scene *sc);
-color ray_march_pixel(int x, int y, int w, int h, scene *sc);
+color rayTracePixel(double x, double y, int w, int h, scene *sc);
+color pathTracePixel(double x, double y, int w, int h, scene *sc);
+color ambOccPixel(double x, double y, int w, int h, scene *sc);
+color ray_march_pixel(double x, double y, int w, int h, scene *sc);
 
 /**
  *  Render a given pixel using ray-marching.
@@ -65,7 +65,7 @@ color ray_march_pixel(int x, int y, int w, int h, scene *sc);
  *
  *  @return color of pixel
  */
-color ray_march_pixel(int x, int y, int w, int h, scene *sc);
+color ray_march_pixel(double x, double y, int w, int h, scene *sc);
 
 //stores increment values of barycentric coordinates for 4 pixel values at once
 typedef struct EdgeVect{

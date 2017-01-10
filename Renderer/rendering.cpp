@@ -805,11 +805,11 @@ void pathTraceUnthreaded(raster *imgrasters, scene *sc, int tilesize){
     std::cout << num_rays_traced << " rays traced in " << time_elapsed << " seconds, or " << num_rays_traced/time_elapsed << " rays per second." << std::endl;
 }
 
-color rayTracePixel(int x, int y, int w, int h, scene *sc){
+color rayTracePixel(double x, double y, int w, int h, scene *sc){
     return traceRay(sc->cam->castRay(x, y, w, h), sc);
 }
 
-color pathTracePixel(int x, int y, int w, int h, scene *sc){
+color pathTracePixel(double x, double y, int w, int h, scene *sc){
     int s;
     color totalcol;
     for(s=1, totalcol=color(); s<=PATH_TRACE_SAMPLES; s++){
@@ -818,14 +818,14 @@ color pathTracePixel(int x, int y, int w, int h, scene *sc){
     return totalcol*(1.0/s);
 }
 
-color ambOccPixel(int x, int y, int w, int h, scene *sc){
+color ambOccPixel(double x, double y, int w, int h, scene *sc){
     ray r = sc->cam->castRay(x, y, w, h);
     double ao = ambientOcclusion(r, sc);
     ao = clamp(ao*2, 0, 1);
     return color(ao, ao, ao);
 }
 
-color ray_march_pixel(int x, int y, int w, int h, scene *sc){
+color ray_march_pixel(double x, double y, int w, int h, scene *sc){
     return rayTraceDistanceField(sc->cam->castRay(x, y, w, h), sc, 50);
 }
 

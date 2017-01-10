@@ -34,7 +34,7 @@ template<typename T> T orient2D(point2D<T> a, point2D<T> b, point2D<T> c){
     return ((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x));
 }
 
-//Represents a point in three-dimensional space. Also used to represent color values.
+//Represents a point in three-dimensional space in cartesian coordinates. Also used to represent color values.
 class vertex
 {
 public:
@@ -47,6 +47,9 @@ public:
     void set(const double a, const double b, const double c);
     vertex reflection(const vertex& n) const;
     vertex unitvect() const; //return a normalized copy of this vector
+    void to_polar(double &radius, double& theta, double& phi) const;
+    // Convenience function for getting polar coordinates, given a pre-calculated radius. This saves some computation time.
+    void to_polar_angles(const double radius_squared, double &theta, double &phi) const;
     
     void operator+= (const vertex& v2);
     void operator+= (const vertex *v2);
@@ -181,6 +184,7 @@ vertex min(const vertex& v1, const vertex& v2);
 vertex max(const vertex& v1, const vertex& v2);
 vertex clamp(const vertex& v, const vertex& min, const vertex& max);
 vertex randomDirection(); //picks a random point on the unit sphere (uniformly)
+vertex from_polar(const double radius, const double theta, const double phi);
 
 /* color functions */
 uint colorToRGB(const color& c);

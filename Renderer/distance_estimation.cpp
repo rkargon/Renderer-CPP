@@ -124,6 +124,46 @@ distance_estimator de_menger(double scale, vertex center, int num_iterations){
 //    return (sqrt(x*x+y*y+z*z)-2)*scale^(-i);
 //}
 
+
+distance_estimator de_mandelbulb(double power, int num_iterations, double bailout){
+    return [=](const vertex& v) -> double {
+        vertex z = v;
+        double dr = 1;
+        double radius = 0.0;
+        for (int i=0; i< num_iterations; i++){
+            radius = z.len();
+            if(radius > bailout){
+                break;
+            }
+            
+            // convert to polar coordinates
+            double theta, phi;
+            z.to_polar_angles(radius, theta, phi);
+    
+            // This is a running derivative of the mandeulbulb formula:
+            // z_{n+1} = z_n^8 + z0 // Iterative formula for the current point
+            // z_{n+1}' = 8 * z_n^7 * z_n' + 1 // Derivative of the current point
+            // We want the derivative of the norm of the point.
+            // Turns out we can just use a running scalar derivative, taking the norm of each value
+            // |z_{n+1}|' = 8 * |z_n^7| * |z_n|' + 1
+            // => dr_{n+1} = 8 * |z_n^7| * dr_n + 1 // dr_i = |z_i|'
+            // Technically this formula for the derivative of the norm needs the mapping for be conformal (e.g. in the case of mendelBROT function)
+            // For some reason this also works here
+            dr = power * pow(radius, power-1)*dr + 1;
+            
+            // Scale and rotate the point
+            double r_new = pow(radius, power);
+            theta *= power;
+            phi *= power;
+            
+            // Convert back to cartesian coordinates
+            z = from_polar(r_new, theta, phi);
+            z += v;
+        }
+        return 0.5 * log(radius) * radius / dr;
+    };
+}
+
 /* Distance Estimator Operations */
 
 distance_estimator de_union(distance_estimator de1, distance_estimator de2){

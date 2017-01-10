@@ -10,8 +10,8 @@
 
 const int thread_manager::tilesize = 32;
 
-thread_manager::thread_manager(const int nthreads, raster **raster_ref, scene *sc)
-:raster_ref(raster_ref), sc(sc){
+thread_manager::thread_manager(const int nthreads, raster **raster_ref, scene *sc, const int antialiasing_per_side)
+:antialiasing_per_side(antialiasing_per_side), raster_ref(raster_ref), sc(sc){
     //set up thread pool
     thread_pool = std::vector<worker_thread>();
     for(int i=0; i<nthreads; i++){
@@ -34,7 +34,7 @@ void thread_manager::stop(){
     }
 }
 
-void thread_manager::set_render_method(color (*render_method)(const int, const int, const int, const int, scene*)){
+void thread_manager::set_render_method(render_method_func render_method){
     this->render_method = render_method;
 }
 
@@ -49,7 +49,6 @@ void thread_manager::fill_tile_queue(){
     //fill queue with new tiles
     for(int x = 0; x < w; x += tilesize){
         for(int y = 0; y < h; y += tilesize){
-            //std::cout << x << " " << y << " " << std::min(w - x, tilesize) << " " << std::min(h - y, tilesize) << " " << std::endl;
             tiles.push(tile{x, y, std::min(w - x, tilesize), std::min(h - y, tilesize)});
         }
     }
@@ -98,12 +97,19 @@ void worker_thread::render_tiles(){
         }
         
         //render current tile
+        double antialias_delta = 1.0 / manager->antialiasing_per_side;
+        double antialias_factor = antialias_delta * antialias_delta;
         for(int x = current_tile.x; x < current_tile.x + current_tile.w; x++){
             for(int y = current_tile.y; y < current_tile.y + current_tile.h; y++){
                 if(!is_running){
                     return;
                 }
-                color col = manager->render_method(x, y, img_width, img_height, manager->sc);
+                color col = {0,0,0};
+                for (int i = 0; i < manager->antialiasing_per_side; i++){
+                    for (int j = 0; j < manager->antialiasing_per_side; j++){
+                        col += antialias_factor * manager->render_method(x + i * antialias_delta, y + j * antialias_delta, img_width, img_height, manager->sc);
+                    }
+                }
                 (*manager->raster_ref)->colbuffer[y*img_width + x] = colorToRGB(col);
             }
         }
