@@ -24,7 +24,7 @@ RenderArea::RenderArea(QWidget *parent): QWidget(parent){
 //    lamps.push_back(new lamp(45, 2, vertex( 10, 0,-7), RGBToColor(0xAAFFAA)));
 //    lamps.push_back(new lamp(45, 2, vertex( 0,-10, 7), RGBToColor(0xAAAAFF)));
     lamps.push_back(new lamp(25, 2, vertex( 0, 5, 5), RGBToColor(0xFFCC66)));
-    world* sc_world = new world(color(0.8,0.8,0.8), color(0.6,0.8,1), false, 0.4);;
+    world* sc_world = new world(color(0.8,0.8,0.8), color(0.6,0.8,1), false, 1);;
     std::vector<mesh*> objects;
 
     //dragon
@@ -43,17 +43,18 @@ RenderArea::RenderArea(QWidget *parent): QWidget(parent){
     sphereobj->scale_centered(vertex(0.6, 0.6, 0.6));
     sphereobj->move(vertex(0, 0, 1));
 
-//    objects.push_back(dragonobj);
+    objects.push_back(dragonobj);
     objects.push_back(sphereobj);
-    distance_estimator *de_obj = new auto(de_mandelbulb(8, 20));
+
+    distance_estimator *de_obj = new auto(de_mandelbox(2.5, 1, 0.5, 1, 30));
     sc = new scene(cam, lamps, sc_world, objects, de_obj, new material{});
-    if(sc->kdt != nullptr) sc->kdt->printstats();
+//    if(sc->kdt != nullptr) sc->kdt->printstats();
     
     //set up images and buffers
     int h = height(), w = width();
     imgrasters = new raster(w, h);
     renderimg = new QImage((uchar*) imgrasters->colbuffer, width(), height(), QImage::Format_ARGB32);
-    manager = new thread_manager(6, &imgrasters, sc, 1);
+    manager = new thread_manager(&imgrasters, sc, 1);
 
     //status label
     statuslbl = new QLabel("Raph Renderer 2017");
@@ -119,7 +120,6 @@ void RenderArea::updateText(){
 
 void RenderArea::updateImage(){
     manager->stop();
-    manager->fill_tile_queue();
 
     switch(rendermode){
         case 0:
@@ -223,7 +223,7 @@ void RenderArea::wheelEvent(QWheelEvent *event){
 }
 
 void RenderArea::resizeEvent(QResizeEvent *event){
-    // thread manager wiill segfault if image buffer changes out from under its feet.
+    // thread manager will segfault if image buffer changes out from under its feet.
     manager->stop();
     imgrasters->resize(width(), height());
     renderimg = new QImage((uchar*) imgrasters->colbuffer, width(), height(), QImage::Format_RGB32);

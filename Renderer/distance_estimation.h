@@ -33,6 +33,10 @@ distance_estimator de_torus(double r1, double r2);
 distance_estimator de_sierpinski_tetrahedron(int num_iterations);
 distance_estimator de_menger(double scale, vertex center, int num_iterations);
 distance_estimator de_mandelbulb(double power, int num_iterations, double bailout = 2);
+// A fast implementation of the 8th-power mandelbulb
+// NOTE: bailout here is for r^2
+distance_estimator de_mandelbulb_8_fast(int num_iterations, double bailout = 4);
+distance_estimator de_mandelbox(double scale, double folding_limit, double min_radius_2, double fixed_radius_2, int num_iterations);
 
 /* Distance Estimator Operations */
 distance_estimator de_union(distance_estimator de1, distance_estimator de2);

@@ -8,30 +8,33 @@
 
 #include "renderthreads.h"
 
-const int thread_manager::tilesize = 32;
-
-thread_manager::thread_manager(const int nthreads, raster **raster_ref, scene *sc, const int antialiasing_per_side)
-:antialiasing_per_side(antialiasing_per_side), raster_ref(raster_ref), sc(sc){
-    //set up thread pool
-    thread_pool = std::vector<worker_thread>();
-    for(int i=0; i<nthreads; i++){
-        thread_pool.push_back(worker_thread(this));
+thread_manager::thread_manager(raster **raster_ref, scene *sc, const int antialiasing_per_side, int nthreads, const int tilesize)
+:tilesize(tilesize), antialiasing_per_side(antialiasing_per_side), raster_ref(raster_ref), sc(sc){
+    this->is_running = false;
+    if (nthreads == 0){
+        // Use one less thread than max to allow other programs to run on system.
+        nthreads = std::max<unsigned>(1, (std::thread::hardware_concurrency() - 1));
     }
-    
-    tiles = std::queue<tile>();
-    fill_tile_queue();
+    for(int i=0; i<nthreads; i++){
+        this->thread_pool.push_back(std::thread(&thread_manager::render_tiles, this));
+    }
 }
 
+// TODO worker threads might finish current tile before actually re-starting
 void thread_manager::start(){
-    for(worker_thread &w : thread_pool){
-        w.start();
+    if (!is_running){
+        // Signal threads to start running
+        {
+            std::lock_guard<std::mutex> lk(this->is_running_mutex);
+            this->is_running = true;
+        }
+        this->is_running_cv.notify_all();
+        this->fill_tile_queue();
     }
 }
 
 void thread_manager::stop(){
-    for(worker_thread &w : thread_pool){
-        w.stop();
-    }
+    this->is_running = false;
 }
 
 void thread_manager::set_render_method(render_method_func render_method){
@@ -42,8 +45,9 @@ void thread_manager::fill_tile_queue(){
     int w = (*raster_ref)->width();
     int h = (*raster_ref)->height();
     
+    std::unique_lock<std::mutex> lk(this->tile_queue_lock);
+    
     //clear tiles
-    this->tile_queue_lock.lock();
     std::queue<tile>().swap(tiles);
     
     //fill queue with new tiles
@@ -52,66 +56,56 @@ void thread_manager::fill_tile_queue(){
             tiles.push(tile{x, y, std::min(w - x, tilesize), std::min(h - y, tilesize)});
         }
     }
-    this->tile_queue_lock.unlock();
+    lk.unlock();
+    this->queue_filled_cv.notify_all();
 }
 
-worker_thread::worker_thread(thread_manager *manager){
-    this->manager = manager;
-    this->is_running = false;
+tile thread_manager::get_next_tile(){
+    // Wait for tile queue to not be empty
+    std::unique_lock<std::mutex> lk(this->tile_queue_lock);
+    this->queue_filled_cv.wait(lk, [this]{return !this->tiles.empty();});
+    // Get next tile and remove it from queue
+    tile current_tile = this->tiles.front();
+    this->tiles.pop();
+    return current_tile;
+    // Mutex lock automatically unlocks when exiting scope
 }
 
-void worker_thread::start() {
-    if(!is_running){
-        is_running = true;
-        render_thread = std::thread(&worker_thread::render_tiles, this);
-        render_thread.detach();
+void thread_manager::render_single_tile(const tile &t){
+    int img_width = (*raster_ref)->width();
+    int img_height = (*raster_ref)->height();
+    //check if tile is valid (ie in case of image resize)
+    if(t.x+t.w > img_width || t.y + t.h > img_height){
+        return;
     }
-}
-
-void worker_thread::stop(){
-    if(is_running){
-        is_running = false;
-    }
-}
-
-void worker_thread::render_tiles(){
-    while(is_running){
-        //get next tile (or stop if no tiles left)
-        tile current_tile;
-        manager->tile_queue_lock.lock();
-        if(!manager->tiles.empty()){
-            current_tile = manager->tiles.front();
-            manager->tiles.pop();
-            manager->tile_queue_lock.unlock();
-        }
-        else{
-            manager->tile_queue_lock.unlock();
-            return;
-        }
-        
-        int img_width = (*manager->raster_ref)->width();
-        int img_height = (*manager->raster_ref)->height();
-        //check if tile is valid (ie in case of image resize)
-        if(current_tile.x+current_tile.w > img_width || current_tile.y + current_tile.h > img_height){
-            continue;
-        }
-        
-        //render current tile
-        double antialias_delta = 1.0 / manager->antialiasing_per_side;
-        double antialias_factor = antialias_delta * antialias_delta;
-        for(int x = current_tile.x; x < current_tile.x + current_tile.w; x++){
-            for(int y = current_tile.y; y < current_tile.y + current_tile.h; y++){
-                if(!is_running){
-                    return;
-                }
-                color col = {0,0,0};
-                for (int i = 0; i < manager->antialiasing_per_side; i++){
-                    for (int j = 0; j < manager->antialiasing_per_side; j++){
-                        col += antialias_factor * manager->render_method(x + i * antialias_delta, y + j * antialias_delta, img_width, img_height, manager->sc);
+    
+    //render current tile
+    double antialias_delta = 1.0 / antialiasing_per_side;
+    double antialias_factor = antialias_delta * antialias_delta;
+    for(int x = t.x; x < t.x + t.w; x++){
+        for(int y = t.y; y < t.y + t.h; y++){
+            color col = {0,0,0};
+            for (int i = 0; i < antialiasing_per_side; i++){
+                for (int j = 0; j < antialiasing_per_side; j++){
+                    if(!is_running){
+                        return;
                     }
+                    col += antialias_factor * render_method(x + i * antialias_delta, y + j * antialias_delta, img_width, img_height, sc);
                 }
-                (*manager->raster_ref)->colbuffer[y*img_width + x] = colorToRGB(col);
             }
+            (*raster_ref)->colbuffer[y*img_width + x] = colorToRGB(col);
         }
+    }
+}
+
+void thread_manager::render_tiles(){
+    while (true){
+        // Wait until signalled that thread should be running
+        std::unique_lock<std::mutex> lk(this->is_running_mutex);
+        this->is_running_cv.wait(lk, [this]{return this->is_running;});
+        lk.unlock();
+        // Waits until there is a tile available in the queue to render
+        tile current_tile = this->get_next_tile();
+        this->render_single_tile(current_tile);
     }
 }

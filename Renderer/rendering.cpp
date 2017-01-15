@@ -269,9 +269,9 @@ color rayTraceDistanceField(const ray& viewray, scene *sc, int num_steps, int de
         if (sc->w->ambient_intensity > 0){
             ray normal_ray{v, n};
             // double t;
-            if(!ray_march(normal_ray, *sc->de_obj, nullptr, nullptr, num_steps)){
+            //if(!ray_march(normal_ray, *sc->de_obj, nullptr, nullptr, num_steps)){
                 totcol += sc->w->ambient_intensity * sc->w->getColor(normal_ray) * ambient_occlusion;
-            }
+            //}
         }
         
         /* REFLECTION & REFRACTION */
@@ -307,104 +307,6 @@ color rayTraceDistanceField(const ray& viewray, scene *sc, int num_steps, int de
             if(sc->de_mat->refl_intensity > 0){
                 color refcol = traceRay(ray(v, refl), sc, depth+1);
                 totcol = lerp(totcol, refcol, sc->de_mat->refl_intensity);
-            }
-        }
-        return totcol;
-    }
-    
-    vertex tuv;
-    face *f = kdtree::rayTreeIntersect(sc->kdt, viewray, false, &tuv);
-    if(f==nullptr) return sc->w->getColor(viewray);
-    else{
-        vertex v = viewray.org + viewray.dir*tuv.t; //calculate vertex location
-        
-        //interpolate texture coordinates
-        double txu,txv;
-        txu = f->vertices[0]->tex_u*(1-tuv.u-tuv.v) + f->vertices[1]->tex_u*tuv.u + f->vertices[2]->tex_u*tuv.v;
-        txv = f->vertices[0]->tex_v*(1-tuv.u-tuv.v) + f->vertices[1]->tex_v*tuv.u + f->vertices[2]->tex_v*tuv.v;
-        
-        //calculate normal
-        vertex n;
-        if(f->obj->smooth){
-            n = (f->vertices[0]->vertexNormal())*(1-tuv.u-tuv.v) + (f->vertices[1]->vertexNormal())*tuv.u + (f->vertices[2]->vertexNormal())*tuv.v;
-            n.normalize();
-        }
-        else n = f->normal;
-        //n = sc->obj->mat->getNormal(txu, txv);
-        
-        double ndotray = dot(n, viewray.dir);
-        
-        /* SPECULAR & DIFFUSE LIGHTING */
-        color lightcol, speclightcol;
-        for(lamp *l : sc->lamps){
-            vertex lampvect = l->loc - v;
-            vertex lampvnorm = lampvect.unitvect();
-            if(dot(n, lampvect)*ndotray>0) continue; //make sure lamp is on same side of face as view
-            ray lampray(v, lampvnorm);
-            if(kdtree::rayTreeIntersect(sc->kdt, lampray, true, &tuv)!=nullptr) continue;
-            double dotprod = dot(lampvnorm, n);
-            double dstsqr = lampvect.lensqr();
-            if(dstsqr==0){
-                //if lamp is on the face's center, add full brightness to each color that the lamp emits
-                if(l->col.r) lightcol.r++;
-                if(l->col.g) lightcol.g++;
-                if(l->col.b) lightcol.b++;
-                continue;
-            }
-            //Phong shading
-            vertex lamprefl = lampvnorm.reflection(n);
-            double spec_intensity = l->intensity * f->obj->mat->spec_intensity * fmax(0, pow(dot(viewray.dir, lamprefl), f->obj->mat->spec_hardness));
-            double diff_intensity = l->intensity *fabs(dotprod) * f->obj->mat->diff_intensity;
-            //calculate falloff
-            switch(l->falloff){
-                case 2:
-                    diff_intensity /= dstsqr;
-                    spec_intensity /= dstsqr;
-                    break;
-                case 1:
-                    diff_intensity /= sqrt(dstsqr);
-                    spec_intensity /= sqrt(dstsqr);
-                    break;
-                case 0:
-                    break;
-            }
-            lightcol += l->col * diff_intensity;
-            speclightcol += l->col * spec_intensity;
-        }
-        
-        color totcol = f->obj->mat->getColor(txu, txv) * lightcol + f->obj->mat->getSpecCol(txu, txv) * speclightcol;
-        
-        /* REFLECTION & REFRACTION */
-        //an approximation. Assumes normals point outside and doesn't really deal with with concentric/intersecting objects.Currently assumes 'outside' of every object is air.
-        //also doesn't do fresnel formula, reflection and refraction are handled separately, except for total internal reflection
-        if(depth < RAY_DEPTH){
-            vertex refl = viewray.dir.reflection(n);
-            if(f->obj->mat->alpha < 1){
-                double n1, n2;
-                vertex transray;
-                if(ndotray < 0){
-                    n1 = 1;
-                    n2 = f->obj->mat->ior;
-                }
-                else{
-                    n1 = f->obj->mat->ior;
-                    n2 = 1;
-                }
-                vertex raynorm = n * ndotray;
-                vertex raytang = viewray.dir - raynorm;
-                vertex transtang = raytang * (n1/n2);
-                double transsinsquared = transtang.lensqr();
-                if(transsinsquared > 1) transray = refl; //total reflection
-                else{
-                    vertex transnorm = n * signum(ndotray) *sqrt(1-transsinsquared);
-                    transray = transnorm + transtang;
-                }
-                color transcol = traceRay(ray(v, transray), sc, depth+1);
-                totcol = lerp(transcol, totcol, f->obj->mat->alpha);
-            }
-            if(f->obj->mat->refl_intensity > 0){
-                color refcol = traceRay(ray(v, refl), sc, depth+1);
-                totcol = lerp(totcol, refcol, f->obj->mat->refl_intensity);
             }
         }
         return totcol;

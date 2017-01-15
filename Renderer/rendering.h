@@ -54,19 +54,6 @@ color pathTracePixel(double x, double y, int w, int h, scene *sc);
 color ambOccPixel(double x, double y, int w, int h, scene *sc);
 color ray_march_pixel(double x, double y, int w, int h, scene *sc);
 
-/**
- *  Render a given pixel using ray-marching.
- *
- *  @param x  x coordinate of pixel
- *  @param y  y coordinate of pixel
- *  @param w  width of image
- *  @param h  height of image
- *  @param sc scene struct containing a distance_field callable object.
- *
- *  @return color of pixel
- */
-color ray_march_pixel(double x, double y, int w, int h, scene *sc);
-
 //stores increment values of barycentric coordinates for 4 pixel values at once
 typedef struct EdgeVect{
     static const int stepX = 4;

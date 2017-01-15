@@ -129,9 +129,8 @@ distance_estimator de_mandelbulb(double power, int num_iterations, double bailou
     return [=](const vertex& v) -> double {
         vertex z = v;
         double dr = 1;
-        double radius = 0.0;
+        double radius = z.len();
         for (int i=0; i< num_iterations; i++){
-            radius = z.len();
             if(radius > bailout){
                 break;
             }
@@ -143,10 +142,10 @@ distance_estimator de_mandelbulb(double power, int num_iterations, double bailou
             // This is a running derivative of the mandeulbulb formula:
             // z_{n+1} = z_n^8 + z0 // Iterative formula for the current point
             // z_{n+1}' = 8 * z_n^7 * z_n' + 1 // Derivative of the current point
-            // We want the derivative of the norm of the point.
+            // We want the derivative of the norm of the point (with respect to the original point v).
             // Turns out we can just use a running scalar derivative, taking the norm of each value
-            // |z_{n+1}|' = 8 * |z_n^7| * |z_n|' + 1
-            // => dr_{n+1} = 8 * |z_n^7| * dr_n + 1 // dr_i = |z_i|'
+            // |z_{n+1}|' = 8 * |z_n^7| * |z_n'| + 1
+            // => dr_{n+1} = 8 * |z_n^7| * dr_n + 1 // dr_i = |z_i'|
             // Technically this formula for the derivative of the norm needs the mapping for be conformal (e.g. in the case of mendelBROT function)
             // For some reason this also works here
             dr = power * pow(radius, power-1)*dr + 1;
@@ -159,8 +158,61 @@ distance_estimator de_mandelbulb(double power, int num_iterations, double bailou
             // Convert back to cartesian coordinates
             z = from_polar(r_new, theta, phi);
             z += v;
+            radius = z.len();
         }
         return 0.5 * log(radius) * radius / dr;
+    };
+}
+
+// http://www.iquilezles.org/www/articles/mandelbulb/mandelbulb.htm
+distance_estimator de_mandelbulb_8_fast(int num_iterations, double bailout){
+    return [=](const vertex& v) -> double {
+        vertex z = v;
+        double dr = 1;
+        double r2 = z.lensqr();
+        for (int i=0; i< num_iterations; i++){
+            double r4 = r2*r2;
+            double r8 = r4*r4;
+            // Calculate running derivative of norm of z
+            dr = 8.0*sqrt(r8*r4*r2)*dr + 1.0;
+        
+            vertex z2 = z * z;
+            vertex z4 = z2 * z2;
+            
+            double k3 = z2.x + z2.z;
+            // John Cormack plz save me from my inverse square root sins
+            double k2 = 1.0 / sqrt(k3*k3*k3*k3*k3*k3*k3); // k3^(-7)
+            double k1 = z4.x + z4.y + z4.z - 6.0*z2.y*z2.z - 6.0*z2.x*z2.y + 2*z2.z*z2.x;
+            double k4 = z2.x - z2.y + z2.z;
+            
+            // Algebraic formula for z_new = z^8 + z
+            z = {64.0 * z.x * z.y * z.z * (z2.x-z2.z) * k4 * (z4.x-6.0 * z2.x * z2.z + z4.z) * k1*k2,
+                -16.0 * z2.y * k3 * k4 * k4 + k1 * k1,
+                -8.0 * z.y * k4 * (z4.x * z4.x - 28.0 * z4.x * z2.x * z2.z + 70.0 * z4.x * z4.z - 28 * z2.x * z2.z * z4.z + z4.z * z4.z) * k1*k2};
+            z += v;
+
+            r2 = z.lensqr();
+            if (r2 > bailout){
+                break;
+            }
+        }
+        return 0.25 * log(r2) * sqrt(r2) / dr;
+    };
+}
+
+distance_estimator de_mandelbox(double scale, double folding_limit, double min_radius_2, double fixed_radius_2, int num_iterations){
+    return [=](const vertex& v) -> double {
+        vertex z = v;
+        double dr = 1;
+        for(int i=0; i<num_iterations; i++){
+            z = z.box_fold(folding_limit);
+            double sphere_scale = z.sphere_fold_ratio(min_radius_2, fixed_radius_2);
+            z *= sphere_scale;
+            dr *= sphere_scale;
+            z = z*scale + v;
+            dr = dr * fabs(scale) + 1;
+        }
+        return z.len()/fabs(dr);
     };
 }
 

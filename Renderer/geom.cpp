@@ -51,6 +51,28 @@ void vertex::to_polar_angles(const double radius, double &theta, double &phi) co
     phi = atan2(y, x);
 }
 
+vertex vertex::box_fold(const double l) const{
+    return 2 * clamp(*this, {-l, -l, -l}, {l,l,l}) - *this;
+}
+
+// TODO test if optimization makes a difference
+double vertex::sphere_fold_ratio(const double min_radius_2, const double fixed_radius_2) const{
+    double r2 = this->lensqr();
+    if (r2 < min_radius_2){
+        return fixed_radius_2 / min_radius_2;
+    } else if (r2 < fixed_radius_2){
+        return fixed_radius_2 / r2;
+    } else {
+        return 1;
+    }
+    
+
+//    double rad = this->len();
+//     branchless optimization
+//    double f = (rad < r) * ((r * r) / (rad * rad)) + (rad >= r) * ((rad < 1) / rad + (rad >= 1));
+//    return *this * f;
+}
+
 void vertex::operator+= (const vertex& v2){x+=v2.x; y+=v2.y; z+=v2.z;}
 void vertex::operator+= (const vertex *v2){x+=v2->x; y+=v2->y; z+=v2->z;}
 void vertex::operator-= (const vertex& v2){x-=v2.x; y-=v2.y; z-=v2.z;}

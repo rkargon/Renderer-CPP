@@ -50,6 +50,9 @@ public:
     void to_polar(double &radius, double& theta, double& phi) const;
     // Convenience function for getting polar coordinates, given a pre-calculated radius. This saves some computation time.
     void to_polar_angles(const double radius_squared, double &theta, double &phi) const;
+    vertex box_fold(const double l) const;
+    // Returns the scaling factor for a sphere fold 
+    double sphere_fold_ratio(const double min_radius_2, const double fixed_radius_2) const;
     
     void operator+= (const vertex& v2);
     void operator+= (const vertex *v2);
