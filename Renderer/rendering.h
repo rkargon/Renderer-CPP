@@ -62,7 +62,7 @@ typedef struct EdgeVect{
     __v4si oneStepX;
     __v4si oneStepY;
     
-    __v4si init(const point2D<int>& v0, const point2D<int>& v1, const point2D<int>& origin);
+    __v4si init(const point_2d<int>& v0, const point_2d<int>& v1, const point_2d<int>& origin);
 } EdgeVect;
 
 #endif /* defined(__Renderer__rendering__) */

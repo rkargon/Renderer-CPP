@@ -20,7 +20,7 @@ color calcLighting(const vertex& v, const vertex& n, const material& mat, const 
         vertex lampvect = l->loc - v;
         vertex lampvnorm = lampvect.unitvect();
         double dotprod = dot(n,lampvnorm);
-        vertex view = sc->cam->viewVector(v).unitvect();
+        vertex view = sc->cam->view_vector(v).unitvect();
         //if lamp and view are on different sides of face, then one is looking at underside of face)
         if(dotprod * dot(n, view) > 0) continue;
         double dstsqr = lampvect.lensqr();
@@ -329,8 +329,8 @@ void generate_maps(int mapflags, raster *imgrasters, scene *sc){
     int w0, w1, w2, w3, w1_row, w2_row, w3_row;
     int wsgn;
     vertex fcenter;
-    point2D<double> p1, p2, p3, p;
-    point2D<int> p1int, p2int, p3int, pint;
+    point_2d<double> p1, p2, p3, p;
+    point_2d<int> p1int, p2int, p3int, pint;
     color col, col2, col3;
     vertex norm, norm2, norm3, normtmp;
     uint colrgb = 1;
@@ -342,9 +342,9 @@ void generate_maps(int mapflags, raster *imgrasters, scene *sc){
     for(mesh *obj: sc->objects){
         for(face *f : obj->faces){
             //get pixels of vertices
-            p1 = sc->cam->projectVertex(*f->vertices[0], w, h);
-            p2 = sc->cam->projectVertex(*f->vertices[1], w, h);
-            p3 = sc->cam->projectVertex(*f->vertices[2], w, h);
+            p1 = sc->cam->project_vertex(*f->vertices[0], w, h);
+            p2 = sc->cam->project_vertex(*f->vertices[1], w, h);
+            p3 = sc->cam->project_vertex(*f->vertices[2], w, h);
             if(isnan(p1.x)||isnan(p1.y) || isnan(p2.x)||isnan(p2.y) || isnan(p3.x)||isnan(p3.y)) continue;
             p1int.x=(int)p1.x;
             p1int.y=(int)p1.y;
@@ -354,9 +354,9 @@ void generate_maps(int mapflags, raster *imgrasters, scene *sc){
             p3int.y=(int)p3.y;
             
             //z values = (z-min)/(max-min)
-            z1 = (sc->cam->vertexDepth(*f->vertices[0])-sc->cam->mindist)/(sc->cam->maxdist-sc->cam->mindist);
-            z2 = (sc->cam->vertexDepth(*f->vertices[1])-sc->cam->mindist)/(sc->cam->maxdist-sc->cam->mindist);
-            z3 = (sc->cam->vertexDepth(*f->vertices[2])-sc->cam->mindist)/(sc->cam->maxdist-sc->cam->mindist);
+            z1 = (sc->cam->vertex_depth(*f->vertices[0])-sc->cam->mindist)/(sc->cam->maxdist-sc->cam->mindist);
+            z2 = (sc->cam->vertex_depth(*f->vertices[1])-sc->cam->mindist)/(sc->cam->maxdist-sc->cam->mindist);
+            z3 = (sc->cam->vertex_depth(*f->vertices[2])-sc->cam->mindist)/(sc->cam->maxdist-sc->cam->mindist);
             
             //store difference values. Makes interpolation later on slightly faster
             dz21 = z2-z1;
@@ -400,11 +400,11 @@ void generate_maps(int mapflags, raster *imgrasters, scene *sc){
             B31 = p1int.x-p3int.x;
             
             //initial barycentric coordinates at corner
-            pint = point2D<int>(minx, miny);
-            w1_row = orient2D(p2int,p3int,pint);
-            w2_row = orient2D(p3int,p1int,pint);
-            w3_row = orient2D(p1int,p2int,pint);
-            w0 = orient2D(p1int, p2int, p3int);
+            pint = point_2d<int>(minx, miny);
+            w1_row = orient_2d(p2int,p3int,pint);
+            w2_row = orient_2d(p3int,p1int,pint);
+            w3_row = orient_2d(p1int,p2int,pint);
+            w0 = orient_2d(p1int, p2int, p3int);
             if(w0==0) continue;
             wsgn = signum(w0);
             
@@ -456,8 +456,8 @@ void generate_maps_vector(int mapflags, raster *imgrasters, scene *sc){
     __v4si w0, w1, w2, w3, w1_row, w2_row, w3_row, wsgn;
     __v4si pxmask; //whether each pixel is inside the triangle
     vertex fcenter;
-    point2D<double> p1, p2, p3;
-    point2D<int> p1int, p2int, p3int, pint;
+    point_2d<double> p1, p2, p3;
+    point_2d<int> p1int, p2int, p3int, pint;
     color col, col2, col3;
     vertex norm, norm2, norm3, normtmp;
     uint colrgb = 1;
@@ -469,9 +469,9 @@ void generate_maps_vector(int mapflags, raster *imgrasters, scene *sc){
     for(mesh *obj: sc->objects){
         for(face *f : obj->faces){
             //get pixels of vertices
-            p1 = sc->cam->projectVertex(*f->vertices[0], w, h);
-            p2 = sc->cam->projectVertex(*f->vertices[1], w, h);
-            p3 = sc->cam->projectVertex(*f->vertices[2], w, h);
+            p1 = sc->cam->project_vertex(*f->vertices[0], w, h);
+            p2 = sc->cam->project_vertex(*f->vertices[1], w, h);
+            p3 = sc->cam->project_vertex(*f->vertices[2], w, h);
             
             if(isnan(p1.x)||isnan(p1.y) || isnan(p2.x)||isnan(p2.y) || isnan(p3.x)||isnan(p3.y)) continue;
             p1int.x=(int)p1.x;
@@ -482,9 +482,9 @@ void generate_maps_vector(int mapflags, raster *imgrasters, scene *sc){
             p3int.y=(int)p3.y;
             
             //z values
-            z1 = _mm_set1_ps((sc->cam->vertexDepth(*f->vertices[0])-sc->cam->mindist)/(sc->cam->maxdist-sc->cam->mindist));
-            z2 = _mm_set1_ps((sc->cam->vertexDepth(*f->vertices[1])-sc->cam->mindist)/(sc->cam->maxdist-sc->cam->mindist));
-            z3 = _mm_set1_ps((sc->cam->vertexDepth(*f->vertices[2])-sc->cam->mindist)/(sc->cam->maxdist-sc->cam->mindist));
+            z1 = _mm_set1_ps((sc->cam->vertex_depth(*f->vertices[0])-sc->cam->mindist)/(sc->cam->maxdist-sc->cam->mindist));
+            z2 = _mm_set1_ps((sc->cam->vertex_depth(*f->vertices[1])-sc->cam->mindist)/(sc->cam->maxdist-sc->cam->mindist));
+            z3 = _mm_set1_ps((sc->cam->vertex_depth(*f->vertices[2])-sc->cam->mindist)/(sc->cam->maxdist-sc->cam->mindist));
             
             //store difference values. Makes interpolation later on slightly faster
             dz21 = z2-z1;
@@ -520,14 +520,14 @@ void generate_maps_vector(int mapflags, raster *imgrasters, scene *sc){
             
             
             //triangle edge setup
-            pint = point2D<int>(minx, miny);
+            pint = point_2d<int>(minx, miny);
             EdgeVect e12, e23, e31;
             
             //initial barycentric coordinates at corner
             w1_row = e23.init(p2int, p3int, pint);
             w2_row = e31.init(p3int, p1int, pint);
             w3_row = e12.init(p1int, p2int, pint);
-            w0 = _mm_set1_epi32(orient2D(p1int, p2int, p3int));
+            w0 = _mm_set1_epi32(orient_2d(p1int, p2int, p3int));
             //if w0 is zero continue
             if(_mm_movemask_epi8(_mm_cmpeq_epi32(w0,zeroveci))>0) { continue; }
             wsgn = _mm_cmpgt_epi32(w0, zeroveci);
@@ -606,7 +606,7 @@ void SSAO(raster *imgrasters, scene *sc)
             z = imgrasters->zbuffer[y*w + x];
             if(z==1) continue;
             z = z * (sc->cam->maxdist-sc->cam->mindist) + sc->cam->mindist;
-            r = sc->cam->castRay(x, y, w, h);
+            r = sc->cam->cast_ray(x, y, w, h);
             v = r.org + r.dir*z;
             n = RGBToNormal(imgrasters->normbuffer[y*w+x]);
             
@@ -621,7 +621,7 @@ void SSAO(raster *imgrasters, scene *sc)
                 ztmp = imgrasters->zbuffer[(y+dy)*w + (x+dx)];
                 if(ztmp==1) continue;
                 ztmp  = ztmp * (sc->cam->maxdist-sc->cam->mindist) + sc->cam->mindist;
-                rtmp = sc->cam->castRay(x, y, w, h);
+                rtmp = sc->cam->cast_ray(x, y, w, h);
                 vtmp = rtmp.org + rtmp.dir*ztmp;
                 dv = vtmp-v;
                 d = dv.len();
@@ -653,7 +653,7 @@ void rayTraceUnthreaded(raster *imgrasters, scene *sc, int tilesize){
             //for each tile
             for(x=i; x<xmax; x++){
                 for(y=j; y<ymax; y++){
-                    r = sc->cam->castRay(x, y, w, h);
+                    r = sc->cam->cast_ray(x, y, w, h);
                     col = traceRay(r, sc);
                     colrgb = colorToRGB(col);
                     imgrasters->colbuffer[y*w + x] = colrgb;
@@ -689,7 +689,7 @@ void pathTraceUnthreaded(raster *imgrasters, scene *sc, int tilesize){
             for(x=i; x<xmax; x++){
                 for(y=j; y<ymax; y++){
                     for(s=1, totalcol=color(); s<=PATH_TRACE_SAMPLES; s++){
-                        r = sc->cam->castRay(x, y, w, h);
+                        r = sc->cam->cast_ray(x, y, w, h);
                         totalcol += tracePath(r, sc);
                     }
                     colrgb = colorToRGB(totalcol*(1.0/PATH_TRACE_SAMPLES));
@@ -708,30 +708,30 @@ void pathTraceUnthreaded(raster *imgrasters, scene *sc, int tilesize){
 }
 
 color rayTracePixel(double x, double y, int w, int h, scene *sc){
-    return traceRay(sc->cam->castRay(x, y, w, h), sc);
+    return traceRay(sc->cam->cast_ray(x, y, w, h), sc);
 }
 
 color pathTracePixel(double x, double y, int w, int h, scene *sc){
     int s;
     color totalcol;
     for(s=1, totalcol=color(); s<=PATH_TRACE_SAMPLES; s++){
-        totalcol += tracePath(sc->cam->castRay(x, y, w, h), sc);
+        totalcol += tracePath(sc->cam->cast_ray(x, y, w, h), sc);
     }
     return totalcol*(1.0/s);
 }
 
 color ambOccPixel(double x, double y, int w, int h, scene *sc){
-    ray r = sc->cam->castRay(x, y, w, h);
+    ray r = sc->cam->cast_ray(x, y, w, h);
     double ao = ambientOcclusion(r, sc);
     ao = clamp(ao*2, 0, 1);
     return color(ao, ao, ao);
 }
 
 color ray_march_pixel(double x, double y, int w, int h, scene *sc){
-    return rayTraceDistanceField(sc->cam->castRay(x, y, w, h), sc, 50);
+    return rayTraceDistanceField(sc->cam->cast_ray(x, y, w, h), sc, 50);
 }
 
-__v4si EdgeVect::init(const point2D<int> &v0, const point2D<int> &v1, const point2D<int> &origin){
+__v4si EdgeVect::init(const point_2d<int> &v0, const point_2d<int> &v1, const point_2d<int> &origin){
     // Edge setup
     int A = v0.y - v1.y, B = v1.x - v0.x;
     int C = v0.x*v1.y - v0.y*v1.x;

@@ -28,32 +28,32 @@ public:
     
     /* projections */
     
-    ray castRay(const double px, const double py, const double w, const double h) const;
-    point2D<double> projectVertex(const vertex& v, double w, double h) const;
-    double vertexDepth(const vertex& v) const;
-    vertex viewVector(const vertex& v) const; //get vector from camera to given vertex
-    double faceDepth(const face& f) const;
+    ray cast_ray(const double px, const double py, const double w, const double h) const;
+    point_2d<double> project_vertex(const vertex& v, double w, double h) const;
+    double vertex_depth(const vertex& v) const;
+    vertex view_vector(const vertex& v) const; //get vector from camera to given vertex
+    double face_depth(const face& f) const;
     
     /* manipulation of camera */
     
     //Moves the camera so that is is facing the focus point
-    void centerFocus();
-    void shiftFocus(const double dx, const double dy);
+    void center_focus();
+    void shift_focus(const double dx, const double dy);
     void zoom(const double zoomfactor);
-    vertex getImagePlaneVector(const double dx, const double dy);
+    vertex image_plane_vector(const double dx, const double dy);
     
     /* rotation */
-    void rotateAxis(const vertex& axis, const double dtheta); //rotate along arbitrary axis
-    void rotateLocalX(const double dtheta); //rotate along local X axis
-    void rotateLocalY(const double dtheta); //rotate along local y axis
-    void rotateLocalZ(const double dtheta); //rotate along local z axis
-    void setGlobalRotation(const double theta, const double rho, const double psi); //set global rotation angles
+    void rotate_axis(const vertex& axis, const double dtheta); //rotate along arbitrary axis
+    void rotate_local_x(const double dtheta); //rotate along local X axis
+    void rotate_local_y(const double dtheta); //rotate along local y axis
+    void rotate_local_z(const double dtheta); //rotate along local z axis
+    void set_global_rotation(const double theta, const double rho, const double psi); //set global rotation angles
     
 private:
     //keeps track of image plane vectors
     vertex cx, cy;
     //recalculates image plane vectors
-    void calcImageVectors(){
+    void calc_image_vectors(){
 		cx = cross(normal, vert);
 		cy = cross(cx, normal);
 		cx.normalize();

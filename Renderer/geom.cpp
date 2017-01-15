@@ -95,7 +95,7 @@ std::ostream& operator<< (std::ostream &os, const vertex &v){return os << "(" <<
 std::ostream& operator<< (std::ostream &os, const vertex *&v){return os << "(" << v->x << ", " << v->y << ", " << v->z << ")";}
 
 //two vertex*'s or two vertex's are equal in these hash functions if they represent the same point in space.
-std::size_t vertexPtrHasher::operator()(const vertex* v) const{
+std::size_t vertex_ptr_hasher::operator()(const vertex* v) const{
     size_t result = 1;
     unsigned long bits = *(long *)&v->x;
     result = 31 * result + (size_t) (bits ^ (bits >> 8*4));

@@ -24,13 +24,13 @@ class bounds;
 typedef vertex color; //In the 'color' type, values range from 0 to 1 (not 0 to 255)
 typedef bounds ray;
 
-template <typename T> struct point2D{
+template <typename T> struct point_2d{
     T x,y;
-    point2D(){}
-    point2D(T a, T b) :x(a),y(b){}
+    point_2d(){}
+    point_2d(T a, T b) :x(a),y(b){}
 };
 //cross product of AB, and AC
-template<typename T> T orient2D(point2D<T> a, point2D<T> b, point2D<T> c){
+template<typename T> T orient_2d(point_2d<T> a, point_2d<T> b, point_2d<T> c){
     return ((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x));
 }
 
@@ -84,7 +84,7 @@ public:
         //ok so maybe I'm lazy
     };
 };
-struct vertexPtrHasher{
+struct vertex_ptr_hasher{
     std::size_t operator()(const vertex* v) const;
 };
 struct vertexHasher{

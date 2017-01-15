@@ -9,7 +9,7 @@
 #include "camera.h"
 
 camera::camera() :center(vertex(-5,0,0)), focus(vertex()), normal(vertex(1,0,0)), vert(vertex(0,0,1)), fov(0.75), mindist(0.01),  maxdist(100), ortho(false) {
-    calcImageVectors();
+    calc_image_vectors();
 }
 camera::camera(const vertex& center, const vertex& focus, const vertex& normal, const vertex& vert, const double fov, const double mindist, const double maxdist, const bool ortho){
     this->center = center;
@@ -20,13 +20,13 @@ camera::camera(const vertex& center, const vertex& focus, const vertex& normal, 
     this->mindist = mindist;
     this->maxdist = maxdist > 0 ? maxdist : HUGE_VAL;
     this->ortho = ortho;
-    calcImageVectors();
+    calc_image_vectors();
 }
 
 /* Projections */
 
 // Cast a ray from the screen into 3D space
-ray camera::castRay(const double px, const double py, const double w, const double h) const{
+ray camera::cast_ray(const double px, const double py, const double w, const double h) const{
     double img_w = 2*tan(fov/2);
     double img_h = (img_w * h / w);
     double x= px/w - 0.5;
@@ -48,7 +48,7 @@ ray camera::castRay(const double px, const double py, const double w, const doub
 
 
 // Project a vertex into 3D space onto a screen
-point2D<double> camera::projectVertex(const vertex& v, const double w, const double h) const{
+point_2d<double> camera::project_vertex(const vertex& v, const double w, const double h) const{
     vertex dv = v-center;
     double x,y;
     
@@ -57,40 +57,40 @@ point2D<double> camera::projectVertex(const vertex& v, const double w, const dou
     if(!ortho) dv.normalize();
     double dvdotnorm = dot(dv, normal);
     if(dvdotnorm<=mindist || dvdotnorm > maxdist){
-        return point2D<double>(nan(""), nan(""));
+        return point_2d<double>(nan(""), nan(""));
     }
     x = dot(dv, cx);
     y = dot(dv, cy);
     
     double px = (0.5+x/fov)*w;
     double py = (0.5-y*w/(h*fov))*h;
-    return point2D<double>(px,py);
+    return point_2d<double>(px,py);
 }
 
 // The distance of a vertex from the camera.
-double camera::vertexDepth(const vertex& v)const{
+double camera::vertex_depth(const vertex& v)const{
     vertex dv = v - center;
     if(ortho) return dot(dv, normal);
     else return dv.len() * (dot(dv, normal)<0 ? -1 : 1);
 }
 
 // Get vector from camera to given vertex
-vertex camera::viewVector(const vertex& v) const{
+vertex camera::view_vector(const vertex& v) const{
     return ortho ? normal * dot(v, normal): v - center;
 }
 
-double camera::faceDepth(const face& f) const{
-    return vertexDepth(f.center());
+double camera::face_depth(const face& f) const{
+    return vertex_depth(f.center());
 }
 
 /* manipulation of camera */
 
-void camera::centerFocus(){
+void camera::center_focus(){
     vertex camdist = focus - center;
     center = focus - normal*camdist.len();
 }
 
-void camera::shiftFocus(const double dx, const double dy){
+void camera::shift_focus(const double dx, const double dy){
     focus += cx*dx + cy*dy;
 }
 
@@ -98,30 +98,30 @@ void camera::zoom(const double zoomfactor){
     center = focus + (center - focus)*zoomfactor;
 }
 
-vertex camera::getImagePlaneVector(const double dx, const double dy){
+vertex camera::image_plane_vector(const double dx, const double dy){
     return cx*dx + cy*dy;
 }
 
 /* Rotation */
-void camera::rotateAxis(const vertex& axis, const double dtheta){
+void camera::rotate_axis(const vertex& axis, const double dtheta){
     vert = rotate(vert, axis, dtheta);
     normal = rotate(normal, axis, dtheta);
-    calcImageVectors();
+    calc_image_vectors();
 }
 
-void camera::rotateLocalX(const double dtheta){
-    rotateAxis(cross(normal, vert), dtheta);
+void camera::rotate_local_x(const double dtheta){
+    rotate_axis(cross(normal, vert), dtheta);
 }
-void camera::rotateLocalY(const double dtheta){
-    rotateAxis(vert, dtheta);
+void camera::rotate_local_y(const double dtheta){
+    rotate_axis(vert, dtheta);
 }
-void camera::rotateLocalZ(const double dtheta){
-    rotateAxis(normal, dtheta);
+void camera::rotate_local_z(const double dtheta){
+    rotate_axis(normal, dtheta);
 }
 
-void camera::setGlobalRotation(const double theta, const double rho, const double psi){
+void camera::set_global_rotation(const double theta, const double rho, const double psi){
     double st = sin(theta), ct = cos(theta), sr = sin(rho), cr=cos(rho), sp=sin(psi), cp=cos(psi);
     vert = vertex(-sr, cr*sp, cr*cp);
     normal = vertex(ct*cr, ct*sr*sp-cp*st, st*sp+ct*cp*sr);
-    calcImageVectors();
+    calc_image_vectors();
 }

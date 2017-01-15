@@ -179,7 +179,7 @@ void RenderArea::keyPressEvent(QKeyEvent *event){
             break;
         case Qt::Key_Space:
             sc->cam->focus = vertex();
-            sc->cam->centerFocus();
+            sc->cam->center_focus();
             updateImage();
             break;
         default:
@@ -193,13 +193,13 @@ void RenderArea::mouseMoveEvent(QMouseEvent *event){
     QPoint delta = pos - prevpos; //prevpos initialized in mousePressEvent
 
     if(event->modifiers() & Qt::ShiftModifier){
-        sc->cam->shiftFocus(-delta.x()/100.0, delta.y()/100.0);
+        sc->cam->shift_focus(-delta.x()/100.0, delta.y()/100.0);
     }
     else{
-        sc->cam->rotateLocalX(delta.y()/100.0);
-        sc->cam->rotateLocalY(delta.x()/100.0);
+        sc->cam->rotate_local_x(delta.y()/100.0);
+        sc->cam->rotate_local_y(delta.x()/100.0);
     }
-    sc->cam->centerFocus();
+    sc->cam->center_focus();
     prevpos = pos;
     updateImage();
     repaint();
@@ -208,8 +208,8 @@ void RenderArea::mouseMoveEvent(QMouseEvent *event){
 void RenderArea::mousePressEvent(QMouseEvent *event){
     prevpos = event->pos();
     if(event->button()==Qt::MiddleButton){
-        sc->cam->setGlobalRotation(0,0,0);
-        sc->cam->centerFocus();
+        sc->cam->set_global_rotation(0,0,0);
+        sc->cam->center_focus();
         updateImage();
         repaint();
     }
@@ -236,13 +236,13 @@ void RenderArea::drawWireFrame(){
     renderimg->fill(0xffffff);
     QPainter painter(renderimg);
     int w = width(), h = height();
-    point2D<double> p1,p2;
+    point_2d<double> p1,p2;
     painter.setPen(QColor(0,0,0));
 
     for(mesh *obj: sc->objects){
         for(edge *e : obj->edges){
-            p1 = sc->cam->projectVertex(*e->v1, w, h);
-            p2 = sc->cam->projectVertex(*e->v2, w, h);
+            p1 = sc->cam->project_vertex(*e->v1, w, h);
+            p2 = sc->cam->project_vertex(*e->v2, w, h);
             if(isnan(p1.x)||isnan(p2.x)||isnan(p1.y)||isnan(p2.y)) continue;
             painter.drawLine(p1.x, p1.y, p2.x, p2.y);
         }

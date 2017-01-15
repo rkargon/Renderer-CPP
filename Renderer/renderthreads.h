@@ -98,9 +98,30 @@ private:
     scene *sc;
     render_method_func render_method;
     
+    /**
+     *  Fills up tile queue with tiles from the image to be rendered and signals to worker threads that queue is full.
+     */
     void fill_tile_queue();
+    
+    /**
+     *  Removes the next tile from the queue and returs it. If queue is empty, waits until queue is filled by main thread.
+     *
+     *  @return A tile for the worker thread to render.
+     */
     tile get_next_tile();
+    
+    /**
+     *  Loops indefinitely, getting tiles from the queue and rendering them one by one. 
+     *  Once a tile is finished, the current thread waits until is_running
+     *  is true and until there are available tiles in the queue to render.
+     */
     void render_tiles();
+    
+    /**
+     *  Renders a singe tile of an image. After each pixel, checks if is_running is true and exits early if it is not.
+     *
+     *  @param t A given tile to render.
+     */
     void render_single_tile(const tile& t);
 };
 
