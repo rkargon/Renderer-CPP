@@ -49,7 +49,7 @@ color calcLighting(const vertex& v, const vertex& n, const material& mat, const 
 color traceRay(const ray& viewray, scene* sc, int depth){
     num_rays_traced++;
     vertex tuv;
-    face *f = kdtree::rayTreeIntersect(sc->kdt, viewray, false, &tuv);
+    face *f = kdtree::ray_tree_intersect(sc->kdt, viewray, false, &tuv);
     if(f==nullptr) return sc->w->getColor(viewray);
     else{
         vertex v = viewray.org + viewray.dir*tuv.t; //calculate vertex location
@@ -62,7 +62,7 @@ color traceRay(const ray& viewray, scene* sc, int depth){
         //calculate normal
         vertex n;
         if(f->obj->smooth){
-            n = (f->vertices[0]->vertexNormal())*(1-tuv.u-tuv.v) + (f->vertices[1]->vertexNormal())*tuv.u + (f->vertices[2]->vertexNormal())*tuv.v;
+            n = (f->vertices[0]->vertex_normal())*(1-tuv.u-tuv.v) + (f->vertices[1]->vertex_normal())*tuv.u + (f->vertices[2]->vertex_normal())*tuv.v;
             n.normalize();
         }
         else n = f->normal;
@@ -77,7 +77,7 @@ color traceRay(const ray& viewray, scene* sc, int depth){
             vertex lampvnorm = lampvect.unitvect();
             if(dot(n, lampvect)*ndotray>0) continue; //make sure lamp is on same side of face as view
             ray lampray(v, lampvnorm);
-            if(kdtree::rayTreeIntersect(sc->kdt, lampray, true, &tuv)!=nullptr) continue;
+            if(kdtree::ray_tree_intersect(sc->kdt, lampray, true, &tuv)!=nullptr) continue;
             double dotprod = dot(lampvnorm, n);
             double dstsqr = lampvect.lensqr();
             if(dstsqr==0){
@@ -113,7 +113,7 @@ color traceRay(const ray& viewray, scene* sc, int depth){
         /* Ambient lighting from sky */
         if (sc->w->ambient_intensity > 0){
             ray normal_ray{v, n};
-            if(kdtree::rayTreeIntersect(sc->kdt, normal_ray, true, nullptr)==nullptr){
+            if(kdtree::ray_tree_intersect(sc->kdt, normal_ray, true, nullptr)==nullptr){
                 totcol += sc->w->ambient_intensity * sc->w->getColor(normal_ray);
             }
         }
@@ -162,7 +162,7 @@ color tracePath(const ray& viewray, scene* sc, int depth){
     
     num_rays_traced++;
     vertex tuv;
-    face *f = kdtree::rayTreeIntersect(sc->kdt, viewray, false, &tuv);
+    face *f = kdtree::ray_tree_intersect(sc->kdt, viewray, false, &tuv);
     if(f==nullptr) return sc->w->getColor(viewray);
     else{
         vertex v = viewray.org + viewray.dir*tuv.t; //calculate vertex location
@@ -170,7 +170,7 @@ color tracePath(const ray& viewray, scene* sc, int depth){
         //calculate normal
         vertex n;
         if(f->obj->smooth){
-            n = (f->vertices[0]->vertexNormal())*(1-tuv.u-tuv.v) + (f->vertices[1]->vertexNormal())*tuv.u + (f->vertices[2]->vertexNormal())*tuv.v;
+            n = (f->vertices[0]->vertex_normal())*(1-tuv.u-tuv.v) + (f->vertices[1]->vertex_normal())*tuv.u + (f->vertices[2]->vertex_normal())*tuv.v;
             n.normalize();
         }
         else n = f->normal;
@@ -187,14 +187,14 @@ color tracePath(const ray& viewray, scene* sc, int depth){
 // Calculates ambient occlusion for a ray.
 double ambientOcclusion(const ray& viewray, scene *sc){
     vertex tuv;
-    face *f = kdtree::rayTreeIntersect(sc->kdt, viewray, false, &tuv);
+    face *f = kdtree::ray_tree_intersect(sc->kdt, viewray, false, &tuv);
     if(f==nullptr) return 1;
     else{
         vertex v = viewray.org + viewray.dir*tuv.t; //calculate vertex location
         //calculate normal
         vertex n;
         if(f->obj->smooth){
-            n = (f->vertices[0]->vertexNormal())*(1-tuv.u-tuv.v) + (f->vertices[1]->vertexNormal())*tuv.u + (f->vertices[2]->vertexNormal())*tuv.v;
+            n = (f->vertices[0]->vertex_normal())*(1-tuv.u-tuv.v) + (f->vertices[1]->vertex_normal())*tuv.u + (f->vertices[2]->vertex_normal())*tuv.v;
             n.normalize();
         }
         else n = f->normal;
@@ -203,9 +203,9 @@ double ambientOcclusion(const ray& viewray, scene *sc){
         double occ_amount = 0; //amount of ambient occlusion, ie how much current point is illuminated by the background.
         ray testray(v, vertex(0,0,0));
         for(int i=1; i<=AMB_OCC_SAMPLES; i++){
-            testray.dir = randomDirection();
+            testray.dir = random_direction();
             if(dot(testray.dir, n) < 0) continue;
-            else if (kdtree::rayTreeIntersect(sc->kdt, testray, true, nullptr)==nullptr) occ_amount++;
+            else if (kdtree::ray_tree_intersect(sc->kdt, testray, true, nullptr)==nullptr) occ_amount++;
         }
         occ_amount /= AMB_OCC_SAMPLES;
         return occ_amount;
@@ -369,9 +369,9 @@ void generate_maps(int mapflags, raster *imgrasters, scene *sc){
             
             //smooth shading, get vertex colors
             if((mapflags & (4+2)) && f->obj->smooth){
-                norm = f->vertices[0]->vertexNormal();
-                norm2 = f->vertices[1]->vertexNormal();
-                norm3 = f->vertices[2]->vertexNormal();
+                norm = f->vertices[0]->vertex_normal();
+                norm2 = f->vertices[1]->vertex_normal();
+                norm3 = f->vertices[2]->vertex_normal();
                 col = calcLighting(*f->vertices[0], norm, *f->obj->mat, sc);
                 col2 = calcLighting(*f->vertices[1], norm2, *f->obj->mat, sc);
                 col3 = calcLighting(*f->vertices[2], norm3, *f->obj->mat, sc);
@@ -421,11 +421,11 @@ void generate_maps(int mapflags, raster *imgrasters, scene *sc){
                             if(mapflags & 2){
                                 if(f->obj->smooth) normtmp = lerp(norm, norm2, norm3, double(w1)/w0, double(w2)/w0, double(w3)/w0);
                                 else normtmp = f->normal;
-                                imgrasters->normbuffer[pint.y*w + pint.x] = normalToRGB(normtmp);
+                                imgrasters->normbuffer[pint.y*w + pint.x] = normal_to_rgb(normtmp);
                             }
                             if(mapflags & 4){
-                                if(f->obj->smooth) colrgb = colorToRGB(lerp(col, col2, col3, double(w1)/w0, double(w2)/w0, double(w3)/w0));
-                                else if(colrgb>>24) colrgb = colorToRGB(calcLighting(fcenter, f->normal, *f->obj->mat, sc));
+                                if(f->obj->smooth) colrgb = color_to_rgb(lerp(col, col2, col3, double(w1)/w0, double(w2)/w0, double(w3)/w0));
+                                else if(colrgb>>24) colrgb = color_to_rgb(calcLighting(fcenter, f->normal, *f->obj->mat, sc));
                                 imgrasters->colbuffer[pint.y*w + pint.x] = colrgb;
                             }
                             imgrasters->zbuffer[w*pint.y + pint.x] = z;
@@ -497,9 +497,9 @@ void generate_maps_vector(int mapflags, raster *imgrasters, scene *sc){
             
             //smooth shading, get vertex colors
             if((mapflags & (4+2)) && f->obj->smooth){
-                norm = f->vertices[0]->vertexNormal();
-                norm2 = f->vertices[1]->vertexNormal();
-                norm3 = f->vertices[2]->vertexNormal();
+                norm = f->vertices[0]->vertex_normal();
+                norm2 = f->vertices[1]->vertex_normal();
+                norm3 = f->vertices[2]->vertex_normal();
                 col = calcLighting(*f->vertices[0], norm, *f->obj->mat, sc);
                 col2 = calcLighting(*f->vertices[1], norm2, *f->obj->mat, sc);
                 col3 = calcLighting(*f->vertices[2], norm3, *f->obj->mat, sc);
@@ -552,11 +552,11 @@ void generate_maps_vector(int mapflags, raster *imgrasters, scene *sc){
                             if(mapflags & 2){
                                 if(f->obj->smooth) normtmp = lerp(norm, norm2, norm3, double(w1[i])/w0[i], double(w2[i])/w0[i], double(w3[i])/w0[i]);
                                 else normtmp = f->normal;
-                                imgrasters->normbuffer[pint.y*w + pint.x+i] = normalToRGB(normtmp);
+                                imgrasters->normbuffer[pint.y*w + pint.x+i] = normal_to_rgb(normtmp);
                             }
                             if(mapflags & 4){
-                                if(f->obj->smooth) colrgb = colorToRGB(lerp(col, col2, col3, double(w1[i])/w0[i], double(w2[i])/w0[i], double(w3[i])/w0[i]));
-                                else if(colrgb>>24) colrgb = colorToRGB(calcLighting(fcenter, f->normal, *f->obj->mat, sc));
+                                if(f->obj->smooth) colrgb = color_to_rgb(lerp(col, col2, col3, double(w1[i])/w0[i], double(w2[i])/w0[i], double(w3[i])/w0[i]));
+                                else if(colrgb>>24) colrgb = color_to_rgb(calcLighting(fcenter, f->normal, *f->obj->mat, sc));
                                 imgrasters->colbuffer[pint.y*w + pint.x+i] = colrgb;
                             }
                             imgrasters->zbuffer[w*pint.y+pint.x+i] = z[i];
@@ -608,7 +608,7 @@ void SSAO(raster *imgrasters, scene *sc)
             z = z * (sc->cam->maxdist-sc->cam->mindist) + sc->cam->mindist;
             r = sc->cam->cast_ray(x, y, w, h);
             v = r.org + r.dir*z;
-            n = RGBToNormal(imgrasters->normbuffer[y*w+x]);
+            n = rgb_to_normal(imgrasters->normbuffer[y*w+x]);
             
             ao = 0;
             nsamples=0;
@@ -630,7 +630,7 @@ void SSAO(raster *imgrasters, scene *sc)
             }
             ao /= fmax(1, nsamples);
             // * color(1,1,1) *
-            imgrasters->colbuffer[y*w + x] = colorToRGB(RGBToColor(imgrasters->colbuffer[y*w+x])*clamp(ao*2, 0, 1));
+            imgrasters->colbuffer[y*w + x] = color_to_rgb(rgb_to_color(imgrasters->colbuffer[y*w+x])*clamp(ao*2, 0, 1));
         }
     }
     
@@ -655,7 +655,7 @@ void rayTraceUnthreaded(raster *imgrasters, scene *sc, int tilesize){
                 for(y=j; y<ymax; y++){
                     r = sc->cam->cast_ray(x, y, w, h);
                     col = traceRay(r, sc);
-                    colrgb = colorToRGB(col);
+                    colrgb = color_to_rgb(col);
                     imgrasters->colbuffer[y*w + x] = colrgb;
                 }
             }
@@ -692,7 +692,7 @@ void pathTraceUnthreaded(raster *imgrasters, scene *sc, int tilesize){
                         r = sc->cam->cast_ray(x, y, w, h);
                         totalcol += tracePath(r, sc);
                     }
-                    colrgb = colorToRGB(totalcol*(1.0/PATH_TRACE_SAMPLES));
+                    colrgb = color_to_rgb(totalcol*(1.0/PATH_TRACE_SAMPLES));
                     imgrasters->colbuffer[y*w + x] = colrgb;
                 }
             }

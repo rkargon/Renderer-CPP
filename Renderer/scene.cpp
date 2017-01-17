@@ -24,17 +24,17 @@ material::material(const color& dc, const double di, const color& sc, const doub
 //Either returns diff_col, or if col_tex is defined, the pixel corresponding to the passed texture coordinates
 color material::getColor(double txu, double txv){
     if(col_tex==nullptr) return diff_col;
-    else return RGBToColor(col_tex->pixel(txu*col_tex->width(), txv*col_tex->height()));
+    else return rgb_to_color(col_tex->pixel(txu*col_tex->width(), txv*col_tex->height()));
 }
 //TODO: Return normal relative to a passed, default normal
 vertex material::getNormal(double txu, double txv){
     if(norm_tex==nullptr) return vertex();
-    else return RGBToColor(norm_tex->pixel(txu*norm_tex->width(), txv*norm_tex->height()));
+    else return rgb_to_color(norm_tex->pixel(txu*norm_tex->width(), txv*norm_tex->height()));
 }
 //Returns spec_col, or the corresponding pixel of spec_tex to determine specular color
 color material::getSpecCol(double txu, double txv){
     if(spec_tex==nullptr) return spec_col;
-    else return RGBToColor(spec_tex->pixel(txu*spec_tex->width(), txv*spec_tex->height()));
+    else return rgb_to_color(spec_tex->pixel(txu*spec_tex->width(), txv*spec_tex->height()));
 }
 
 lamp::lamp()
@@ -93,7 +93,7 @@ color sky::getColor(const ray& r){
     r_new.org.z+=radiusEarth;
     //get atmosphere intersection point
     double t_atmo;
-    if(!raySphereIntersect(r_new, radiusAtmo, t_atmo)) return color();
+    if(!ray_sphere_intersect(r_new, radiusAtmo, t_atmo)) return color();
     double segmentLength = t_atmo / samples;
     vertex raysegment = r_new.dir*segmentLength, raysample = r_new.org+raysegment*0.5; //set up initial sample and delta for each sample along ray
     
@@ -119,7 +119,7 @@ color sky::getColor(const ray& r){
         ray lightray(raysample, sundirection);
         double lightray_t;
         //cast ray from sample to sun
-        raySphereIntersect(lightray, radiusAtmo, lightray_t);
+        ray_sphere_intersect(lightray, radiusAtmo, lightray_t);
         double segmentLength_light = lightray_t/samples_lightray;
         vertex lightraysegment = lightray.dir * segmentLength_light,  lightraysample = lightray.org+lightraysegment*0.5;
         double opticalDepthLightR = 0, opticalDepthLightM = 0;
@@ -164,5 +164,5 @@ de_mat(de_mat){
     for(mesh *o : objects){
         allfaces.insert(allfaces.end(), o->faces.begin(), o->faces.end());
     }
-    this->kdt = kdtree::buildTree(allfaces);
+    this->kdt = kdtree::build_tree(allfaces);
 }

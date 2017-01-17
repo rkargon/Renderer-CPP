@@ -34,7 +34,7 @@ vertex DiffuseBSDF::getIncidentDirection(vertex normal, vertex viewDirection){
     int i=0;
     while(cos > r){
         i++;
-        d = randomDirection();
+        d = random_direction();
         cos = dot(normal, d);
         r = double(rand())/double(RAND_MAX);
     }
@@ -53,7 +53,7 @@ color GlossyBSDF::getLight(color incidentColor, vertex incidentDirection, vertex
 vertex GlossyBSDF::getIncidentDirection(vertex normal, vertex viewDirection){
     //returns a random ray in a cone centered around the reflection of viewDirection
     //the cone's width depends on the roughness
-    return (viewDirection.reflection(normal) + randomDirection()*roughness).unitvect();
+    return (viewDirection.reflection(normal) + random_direction()*roughness).unitvect();
 }
 
 MixBSDF::MixBSDF(double f, BSDF *m1, BSDF *m2)

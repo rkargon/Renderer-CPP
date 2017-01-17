@@ -32,21 +32,21 @@ public:
     
     std::vector<edge*> wireframe();
     std::vector<edge*> wireframe(bool isRoot, int depth);
-    void calcstats(int& nodes, int& leaf_nodes, int& non_empty_leaf_nodes, int& triangles_in_leaves, double& est_traversals, double& est_leaves_visited, double& est_tris_intersected, double& estcost, double rootArea=-1);
-    void printstats();
-    static kdtree *buildTree(const std::vector<face*>& faces);
-    static face *rayTreeIntersect(kdtree *kdt, const ray& r, bool lazy, vertex *tuv, bool isRoot = true);
+    void calc_stats(int& nodes, int& leaf_nodes, int& non_empty_leaf_nodes, int& triangles_in_leaves, double& est_traversals, double& est_leaves_visited, double& est_tris_intersected, double& estcost, double root_area=-1);
+    void print_stats();
+    static kdtree *build_tree(const std::vector<face*>& faces);
+    static face *ray_tree_intersect(kdtree *kdt, const ray& r, bool lazy, vertex *tuv, bool isRoot = true);
     
 private:
 
-    typedef struct planedata{
+    typedef struct plane_data{
         double plane_pos;
         int plane_axis;
-        double splitcost;
+        double split_cost;
         bool planar_side; //true if planar faces go to the right
-    } planedata;
+    } plane_data;
     
-    class faceWrapper{
+    class face_wrapper{
     public:
         static int i; //keeps track of how many objects are created, for debugging purposes.
         face *f;
@@ -57,17 +57,17 @@ private:
 		//11 = 3 = both
         int classification;
         
-        faceWrapper(face *f, int classification);
-        faceWrapper(face *f);
-        ~faceWrapper();
-        static std::vector<face*> toFaceList(const std::vector<faceWrapper*>& wrappedfaces);
-        static std::vector<faceWrapper*> toWrapperList(const std::vector<face*>& faces);
+        face_wrapper(face *f, int classification);
+        face_wrapper(face *f);
+        ~face_wrapper();
+        static std::vector<face*> toFaceList(const std::vector<face_wrapper*>& wrappedfaces);
+        static std::vector<face_wrapper*> toWrapperList(const std::vector<face*>& faces);
     };
     
     class planarEvent{
     public:
         static int i; //keeps track of how many objects are created, for debugging purposes.
-        faceWrapper * fw;
+        face_wrapper * fw;
         double pos;
         
         //should probably use enums for these
@@ -81,7 +81,7 @@ private:
 		// 2 - f starts at p
         int type;
         
-        planarEvent(faceWrapper *fw, double p, int k, int type);
+        planarEvent(face_wrapper *fw, double p, int k, int type);
         ~planarEvent();
         
         class planarEventComparator{
@@ -91,12 +91,12 @@ private:
     };
     
     kdtree(std::vector<planarEvent*>& events, const bounds& facebounds, int depth);
-    static std::vector<planarEvent*> buildEventList(const std::vector<faceWrapper*>& faces);
-    static planedata findOptimalPlane(int nfaces, const std::vector<planarEvent*>& events, bounds& boundingbox, double area);
+    static std::vector<planarEvent*> buildEventList(const std::vector<face_wrapper*>& faces);
+    static plane_data findOptimalPlane(int nfaces, const std::vector<planarEvent*>& events, bounds& boundingbox, double area);
     static inline double lambda(double lowerarea, double upperarea, double Nl, double Nr){
         return ((Nl==0||Nr==0) && !(lowerarea==1 || upperarea==1)) ? 0.8 : 1;
     }
     static std::pair<double, bool> SAH(const bounds& boundingbox, double position, int axis, double area, int Nl, int Np, int Nr);
-    static void generateClippedEvents(faceWrapper *fw, double pos, int axis, const bounds& boundingbox, std::vector<planarEvent*>& newevents_left, std::vector<planarEvent*>& newevents_right);
+    static void generateClippedEvents(face_wrapper *fw, double pos, int axis, const bounds& boundingbox, std::vector<planarEvent*>& newevents_left, std::vector<planarEvent*>& newevents_right);
 };
 #endif /* defined(__Renderer__kdtree__) */

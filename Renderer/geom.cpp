@@ -106,7 +106,7 @@ std::size_t vertex_ptr_hasher::operator()(const vertex* v) const{
     return result;
 }
 
-std::size_t vertexHasher::operator()(const vertex v) const{
+std::size_t vertex_hasher::operator()(const vertex v) const{
     size_t result = 1;
     unsigned long bits = *(long *)&v.x;
     result = 31 * result + (size_t) (bits ^ (bits >> 8*4));
@@ -126,26 +126,25 @@ face::face(const vertex& norm, meshvertex * const v1, meshvertex * const v2, mes
     vertices[1] = v2;
     vertices[2] = v3;
 
-    if(normal.lensqr() && isPerpendicular(normal)){
+    if(normal.lensqr() && is_perpendicular(normal)){
         normal.normalize();
     }
     else{
-        normal = generateNormal(); //if normal is invalid, generate it
+        normal = generate_normal(); //if normal is invalid, generate it
     }
 }
-bool face::isPerpendicular(const vertex &normal){
+bool face::is_perpendicular(const vertex &normal){
     vertex v12 = *vertices[1] - *vertices[0];
     vertex v23 = *vertices[2] - *vertices[1];
     //normal must be perpendicular to two of the edges, and must have nonzero length
     return (normal.lensqr() && !dot(v12, normal) && !dot(v23, normal));
 }
 //use cross product of edges to create normal. Orientation depends on order of vertices
-vertex face::generateNormal(){
+vertex face::generate_normal(){
     vertex v12 = *vertices[1] - *vertices[0];
     vertex v23 = *vertices[2] - *vertices[1];
     vertex n = cross(v12, v23);
-    n.normalize();
-    return n;
+    return n.unitvect();
 }
 //the center of the face, the arithmetic mean of vertices.
 vertex face::center() const{
@@ -156,7 +155,7 @@ vertex face::center() const{
 //t: distance from origin to intersect point
 //u, v: barycentric coordinates of intersect based on edge1, edge2
 //Muller-Trumbore algorithm
-bool face::intersectRayTriangle(const ray& r, vertex *tuv){
+bool face::intersect_ray_triangle(const ray& r, vertex *tuv){
     vertex edge1, edge2, tvec, pvec, qvec;
     double det, inv_det;
     double t, u, v;
@@ -193,10 +192,10 @@ bool face::intersectRayTriangle(const ray& r, vertex *tuv){
     return (t>EPSILON);
 }
 
-bounds face::boundingBox() const{
+bounds face::bounding_box() const{
     bounds b;
-    b.min = vertex(minCoord(0), minCoord(1), minCoord(2));
-    b.max = vertex(maxCoord(0), maxCoord(1), maxCoord(2));
+    b.min = vertex(min_coord(0), min_coord(1), min_coord(2));
+    b.max = vertex(max_coord(0), max_coord(1), max_coord(2));
     return b;
 }
 
@@ -222,7 +221,7 @@ meshvertex::meshvertex(double a, double b, double c){
     x=a; y=b; z=c;
 }
 //sum the normal of each adjacent face, and normalize.
-vertex meshvertex::vertexNormal(){
+vertex meshvertex::vertex_normal(){
     vertex v=vertex();
     for(face *f : faces) v+=f->normal;
     v.normalize();
@@ -243,7 +242,7 @@ bool operator==(const meshvertex& v1, const meshvertex& v2){return v1.x==v2.x &&
 /* EDGE */
 edge::edge(){}
 edge::edge(vertex *vert1, vertex *vert2)  :v1(vert1), v2(vert2) {}
-vertex edge::getVector() {return (*v2) - (*v1);}
+vertex edge::get_vector() {return (*v2) - (*v1);}
 double edge::length() {return (*v2-*v1).len();}
 void edge::operator=(const edge& e){
     v1 = e.v1;
@@ -257,7 +256,7 @@ bool operator==(const edge& e1, const edge& e2){
 
 //Two edges are equal in this hash operation if their vertices represent the same points in space
 // (but in any order, edge(v1,v2) and edge(v2, v1) have same hash
-std::size_t edgeHasher::operator()(const edge &e) const{
+std::size_t edge_hasher::operator()(const edge &e) const{
     size_t result1 = 1;
     unsigned long bits = *(long *)&e.v1->x;
     result1 = 31 * result1 + (size_t) (bits ^ (bits >> 8*4));
@@ -278,7 +277,7 @@ std::size_t edgeHasher::operator()(const edge &e) const{
     return result;
 }
 
-std::size_t edgePtrHasher::operator()(edge* const& e) const{
+std::size_t edge_ptr_hasher::operator()(edge* const& e) const{
     size_t result1 = 1;
     unsigned long bits = *(long *)&e->v1->x;
     result1 = 31 * result1 + (size_t) (bits ^ (bits >> 8*4));
@@ -299,7 +298,7 @@ std::size_t edgePtrHasher::operator()(edge* const& e) const{
     return result;
 }
 template< typename X, typename Y >
-bool edgePtrEquality::operator()(X const &lhs, Y const &rhs) const{
+bool edge_ptr_equality::operator()(X const &lhs, Y const &rhs) const{
     return *lhs==*rhs;
 }
 
@@ -331,7 +330,7 @@ vertex max(const vertex& v1, const vertex& v2){return vertex(fmax(v1.x,v2.x), fm
 vertex clamp(const vertex& v, const vertex& min_v, const vertex& max_v){return max(min(v, max_v), min_v);}
 
 //A random unit vector.
-vertex randomDirection(){
+vertex random_direction(){
     double theta = (double)rand()/RAND_MAX;
     theta *= M_PI*2;
     double z = (double)rand()/RAND_MAX;
@@ -346,21 +345,21 @@ vertex from_polar(const double radius, const double theta, const double phi){
 
 //color functions
 //Take a vertex of three values in range [0,1] and convert to 32-bit RGB
-uint colorToRGB(const color& c){
+uint color_to_rgb(const color& c){
     return (unsigned char)clamp(c.r*255, 0, 255)<<16 | (unsigned char)clamp(c.g*255, 0, 255)<<8 | (unsigned char)clamp(c.b*255, 0, 255);
 }
 //Convert a normal vector to 32-bit RGB. FOr each coordinate, the range [-1, 1] is mapped to [0, 255]
-uint normalToRGB(const vertex& n){
+uint normal_to_rgb(const vertex& n){
     return (unsigned char)clamp(n.x*128+128, 0, 255)<<16 | (unsigned char)clamp(n.y*128+128, 0, 255)<<8 | (unsigned char)clamp(n.z*128+128, 0, 255);
 }
 //Convert 32-bit RGB to vertex
-color RGBToColor(const uint rgb){
+color rgb_to_color(const uint rgb){
     return color(((rgb>>16)&0xff)/255.0,
                  ((rgb>>8)&0xff)/255.0,
                  (rgb&0xff)/255.0);
 }
 //Convert 32-bit RGB to normal vector
-color RGBToNormal(const uint n){
+color rgb_to_normal(const uint n){
     return vertex(((n>>16)&0xff)/255.0 - 0.5,
                   ((n>>8)&0xff)/255.0 - 0.5,
                   (n&0xff)/255.0 - 0.5);
@@ -369,22 +368,22 @@ color RGBToNormal(const uint n){
 //bounding box related functions
 
 //THe bounding box of a set of faces.
-bounds calcBoundingBox(const std::vector<face *>& faces){
+bounds calc_bounding_box(const std::vector<face *>& faces){
     double minx, miny, minz, maxx, maxy, maxz, tmp;
     minx = miny = minz = maxx = maxy = maxz = nan("");
     for(face *f: faces){
-        tmp = f->minCoord(0);
+        tmp = f->min_coord(0);
         if(isnan(minx) || minx>tmp) minx = tmp;
-        tmp = f->minCoord(1);
+        tmp = f->min_coord(1);
         if(isnan(miny) || miny>tmp) miny = tmp;
-        tmp = f->minCoord(2);
+        tmp = f->min_coord(2);
         if(isnan(minz) || minz>tmp) minz = tmp;
 
-        tmp = f->maxCoord(0);
+        tmp = f->max_coord(0);
         if(isnan(maxx) || maxx<tmp) maxx = tmp;
-        tmp = f->maxCoord(1);
+        tmp = f->max_coord(1);
         if(isnan(maxy) || maxy<tmp) maxy = tmp;
-        tmp = f->maxCoord(2);
+        tmp = f->max_coord(2);
         if(isnan(maxz) || maxz<tmp) maxz = tmp;
     }
     bounds b;
@@ -393,11 +392,11 @@ bounds calcBoundingBox(const std::vector<face *>& faces){
     return b;
 }
 //Stores intersection of b1 and b2 in newbounds
-void intersectBoundingBoxes(const bounds& b1, const bounds& b2, bounds& newbounds){
+void intersect_bounding_boxes(const bounds& b1, const bounds& b2, bounds& newbounds){
     newbounds.min = max(b1.min, b2.min);
     newbounds.max = min(b1.max, b2.max);
 }
-void listBounds(bounds& newbounds, int nverts, const vertex *v1 ...){
+void list_bounds(bounds& newbounds, int nverts, const vertex *v1 ...){
     newbounds.min = vertex(NAN,NAN,NAN);
     newbounds.max = vertex(NAN,NAN,NAN);
     const vertex *vtmp;
@@ -419,7 +418,7 @@ void listBounds(bounds& newbounds, int nverts, const vertex *v1 ...){
 //geometry intersection
 
 //Intersect a ray with a bounding box (AABB = Axis Aligned Bounding Box)
-bool rayAABBIntersect(const bounds& AABB, const ray& r){
+bool ray_AABB_intersect(const bounds& AABB, const ray& r){
     double tmp;
     double tmin = (AABB.min.x-r.org.x) / r.dir.x;
     double tmax = (AABB.max.x-r.org.x) / r.dir.x;
@@ -456,12 +455,12 @@ bool rayAABBIntersect(const bounds& AABB, const ray& r){
 }
 //Intersect a ray with a set of faces. If lazy==false, return nearest face. Otherwise, return first intersection.
 //(t,u,v) stores (intersection distance, barycentric coordinate from v12, barycentric coordiante from v13)
-face *rayFacesIntersect(const std::vector<face*>& faces, const ray& r, bool lazy, vertex *tuv){
+face *ray_faces_intersect(const std::vector<face*>& faces, const ray& r, bool lazy, vertex *tuv){
     face *f = nullptr;
     vertex tuvtmp;
     double zmin = nan("");
     for(face *ftmp : faces){
-        if(ftmp->intersectRayTriangle(r, &tuvtmp) && (tuvtmp.t < zmin || isnan(zmin))){
+        if(ftmp->intersect_ray_triangle(r, &tuvtmp) && (tuvtmp.t < zmin || isnan(zmin))){
             zmin = tuvtmp.t;
             f = ftmp;
             if(tuv!=nullptr) *tuv = tuvtmp;
@@ -471,20 +470,20 @@ face *rayFacesIntersect(const std::vector<face*>& faces, const ray& r, bool lazy
     return f;
 }
 //Intersect a ray with a sphere, t stores distance from ray origin to intersect
-bool raySphereIntersect(const ray& r, const double rad, double& t){
-    double DdotO = dot(r.dir, r.org);
+bool ray_sphere_intersect(const ray& r, const double rad, double& t){
+    double d_dot_o = dot(r.dir, r.org);
     double lensq = r.org.lensqr();
-    double disc = DdotO*DdotO - (lensq-rad*rad);
+    double disc = d_dot_o*d_dot_o - (lensq-rad*rad);
     if(disc<0) return false; //no intersect
     else if (disc==0){ //one intersect
-        t = -DdotO;
+        t = -d_dot_o;
         return (t>=0);
     }
     else{
         //return nearest intersection, that is not behind ray origin
         disc = sqrt(disc);
         //two intersection points.
-        double t1=disc-DdotO, t2=(-disc)-DdotO;
+        double t1=disc-d_dot_o, t2=(-disc)-d_dot_o;
         if(t1>=0 && t2>=0){
             t = fmin(t1,t2);
             return true;

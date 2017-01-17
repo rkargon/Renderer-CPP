@@ -20,10 +20,10 @@ RenderArea::RenderArea(QWidget *parent): QWidget(parent){
     std::ifstream spherefile("/Users/raphaelkargon/Documents/Programming/Computer Graphics/Models/sphere.stl");
     camera *cam = new camera();
     std::vector<lamp*> lamps;
-//    lamps.push_back(new lamp(45, 2, vertex(-10, 0,-7), RGBToColor(0xFFAAAA)));
-//    lamps.push_back(new lamp(45, 2, vertex( 10, 0,-7), RGBToColor(0xAAFFAA)));
-//    lamps.push_back(new lamp(45, 2, vertex( 0,-10, 7), RGBToColor(0xAAAAFF)));
-    lamps.push_back(new lamp(25, 2, vertex( 0, 5, 5), RGBToColor(0xFFCC66)));
+//    lamps.push_back(new lamp(45, 2, vertex(-10, 0,-7), rgb_to_color(0xFFAAAA)));
+//    lamps.push_back(new lamp(45, 2, vertex( 10, 0,-7), rgb_to_color(0xAAFFAA)));
+//    lamps.push_back(new lamp(45, 2, vertex( 0,-10, 7), rgb_to_color(0xAAAAFF)));
+    lamps.push_back(new lamp(25, 2, vertex( 0, 5, 5), rgb_to_color(0xFFCC66)));
     world* sc_world = new world(color(0.8,0.8,0.8), color(0.6,0.8,1), false, 1);;
     std::vector<mesh*> objects;
 
@@ -48,7 +48,7 @@ RenderArea::RenderArea(QWidget *parent): QWidget(parent){
 
     distance_estimator *de_obj = new auto(de_mandelbox(2.5, 1, 0.5, 1, 30));
     sc = new scene(cam, lamps, sc_world, objects, de_obj, new material{});
-//    if(sc->kdt != nullptr) sc->kdt->printstats();
+//    if(sc->kdt != nullptr) sc->kdt->print_stats();
     
     //set up images and buffers
     int h = height(), w = width();

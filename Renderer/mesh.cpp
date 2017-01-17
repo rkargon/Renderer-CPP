@@ -32,10 +32,10 @@ mesh::mesh(ifstream& infile, string objname){
     vertex norm, vtmp;
     meshvertex *v1, *v2, *v3;
     face *facetmp;
-    unordered_map<vertex, meshvertex*, vertexHasher> vertices_hash;
-    unordered_map<vertex, meshvertex*, vertexHasher>::const_iterator v_iter;
-    unordered_set<edge, edgeHasher> edges_hash;
-    unordered_set<edge, edgeHasher>::const_iterator e_iter;
+    unordered_map<vertex, meshvertex*, vertex_hasher> vertices_hash;
+    unordered_map<vertex, meshvertex*, vertex_hasher>::const_iterator v_iter;
+    unordered_set<edge, edge_hasher> edges_hash;
+    unordered_set<edge, edge_hasher>::const_iterator e_iter;
     while (!infile.read(facebuffer, 50).eof()){
         //read face normal
         xtmp = ((float *)facebuffer)[0];

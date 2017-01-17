@@ -87,13 +87,8 @@ public:
 struct vertex_ptr_hasher{
     std::size_t operator()(const vertex* v) const;
 };
-struct vertexHasher{
+struct vertex_hasher{
     std::size_t operator()(const vertex v) const;
-};
-struct ptrEquality{
-    template< typename X, typename Y >
-    bool operator() ( X const &lhs, Y const &rhs ) const
-    { return * lhs == * rhs; }
 };
 
 //stores a vertex, as well as texture coordinates and adjacent faces.
@@ -105,7 +100,7 @@ public:
     
     meshvertex();
     meshvertex(double x, double y, double z);
-    vertex vertexNormal();
+    vertex vertex_normal();
     void operator=(const meshvertex& v);
     friend bool operator==(const meshvertex& v1, const meshvertex& v2);
 };
@@ -137,15 +132,15 @@ public:
     
     face();
     face(const vertex& norm, meshvertex * const v1, meshvertex * const v2, meshvertex * const v3, mesh * const object);
-    bounds boundingBox() const;
+    bounds bounding_box() const;
     vertex center() const;
-    vertex generateNormal();
-    bool intersectRayTriangle(const ray& r, vertex *tuv);
-    bool isPerpendicular(const vertex& normal);
-    inline double minCoord(int axis) const{
+    vertex generate_normal();
+    bool intersect_ray_triangle(const ray& r, vertex *tuv);
+    bool is_perpendicular(const vertex& normal);
+    inline double min_coord(int axis) const{
         return fmin(fmin(vertices[0]->vec[axis],vertices[1]->vec[axis]),vertices[2]->vec[axis]);
     }
-    inline double maxCoord(int axis) const{
+    inline double max_coord(int axis) const{
         return fmax(fmax(vertices[0]->vec[axis],vertices[1]->vec[axis]),vertices[2]->vec[axis]);
     }
 };
@@ -156,19 +151,19 @@ public:
     vertex *v1, *v2;
     edge();
     edge(vertex *vert1, vertex *vert2);
-    vertex getVector();
+    vertex get_vector();
     double length();
     
     void operator=(const edge& e);
     friend bool operator==(const edge& e1, const edge& e2);
 };
-struct edgeHasher{
+struct edge_hasher{
     std::size_t operator()(const edge& e) const;
 };
-struct edgePtrHasher{
+struct edge_ptr_hasher{
     std::size_t operator()(edge* const& e) const;
 };
-struct edgePtrEquality{
+struct edge_ptr_equality{
     template<typename X, typename Y>
     bool operator()(X const &lhs, Y const &rhs) const;
 };
@@ -186,23 +181,23 @@ vertex lerp(const vertex& v1, const vertex& v2, const vertex& v3, const vertex& 
 vertex min(const vertex& v1, const vertex& v2);
 vertex max(const vertex& v1, const vertex& v2);
 vertex clamp(const vertex& v, const vertex& min, const vertex& max);
-vertex randomDirection(); //picks a random point on the unit sphere (uniformly)
+vertex random_direction(); //picks a random point on the unit sphere (uniformly)
 vertex from_polar(const double radius, const double theta, const double phi);
 
 /* color functions */
-uint colorToRGB(const color& c);
-uint normalToRGB(const vertex& n);
-color RGBToColor(const uint rgb);
-vertex RGBToNormal(const uint n);
+uint color_to_rgb(const color& c);
+uint normal_to_rgb(const vertex& n);
+color rgb_to_color(const uint rgb);
+vertex rgb_to_normal(const uint n);
 
 /* bounding box related functions */
-bounds calcBoundingBox(const std::vector<face*>& faces);
-void intersectBoundingBoxes(const bounds& b1, const bounds& b2, bounds& newbounds);
-void listBounds(bounds& newbounds, int nverts, const vertex* vertices ...);
+bounds calc_bounding_box(const std::vector<face*>& faces);
+void intersect_bounding_boxes(const bounds& b1, const bounds& b2, bounds& newbounds);
+void list_bounds(bounds& newbounds, int nverts, const vertex* vertices ...);
 
 /* geometry intersections */
-bool rayAABBIntersect(const bounds& AABB, const ray& r);
-face *rayFacesIntersect(const std::vector<face*>& faces, const ray& r, bool lazy, vertex *tuv);
-bool raySphereIntersect(const ray& r, const double rad, double& t); //intersects a ray with a sphere centered on the origin. Assumes ray direction is normalized
+bool ray_AABB_intersect(const bounds& AABB, const ray& r);
+face *ray_faces_intersect(const std::vector<face*>& faces, const ray& r, bool lazy, vertex *tuv);
+bool ray_sphere_intersect(const ray& r, const double rad, double& t); //intersects a ray with a sphere centered on the origin. Assumes ray direction is normalized
 
 #endif /* defined(__Renderer__geom__) */

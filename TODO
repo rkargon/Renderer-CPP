@@ -1,4 +1,5 @@
  - refactor CamelCase in project
+ - automatic differentiation of distance estimators using dual numbers
  - textures
     - bump mapping
     - mesh parametrization

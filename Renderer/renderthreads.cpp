@@ -93,7 +93,7 @@ void thread_manager::render_single_tile(const tile &t){
                     col += antialias_factor * render_method(x + i * antialias_delta, y + j * antialias_delta, img_width, img_height, sc);
                 }
             }
-            (*raster_ref)->colbuffer[y*img_width + x] = colorToRGB(col);
+            (*raster_ref)->colbuffer[y*img_width + x] = color_to_rgb(col);
         }
     }
 }
