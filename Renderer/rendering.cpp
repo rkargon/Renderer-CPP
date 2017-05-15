@@ -50,7 +50,7 @@ color trace_ray(const ray& viewray, scene* sc, int depth){
     num_rays_traced++;
     vertex tuv;
     face *f = kdtree::ray_tree_intersect(sc->kdt, viewray, false, &tuv);
-    if(f==nullptr) return sc->w->getColor(viewray);
+    if(f==nullptr) return sc->w->get_color(viewray);
     else{
         vertex v = viewray.org + viewray.dir*tuv.t; //calculate vertex location
         
@@ -66,7 +66,7 @@ color trace_ray(const ray& viewray, scene* sc, int depth){
             n.normalize();
         }
         else n = f->normal;
-        //n = sc->obj->mat->getNormal(txu, txv);
+        //n = sc->obj->mat->get_normal(txu, txv);
         
         double ndotray = dot(n, viewray.dir);
         
@@ -108,12 +108,12 @@ color trace_ray(const ray& viewray, scene* sc, int depth){
             speclightcol += l->col * spec_intensity;
         }
         
-        color totcol = f->obj->mat->getColor(txu, txv) * lightcol + f->obj->mat->getSpecCol(txu, txv) * speclightcol;
+        color totcol = f->obj->mat->get_color(txu, txv) * lightcol + f->obj->mat->get_spec_col(txu, txv) * speclightcol;
         
         /* Ambient lighting from sky */
         if (sc->w->ambient_intensity > 0){
             ray normal_ray{v, n};
-            totcol += sc->w->ambient_intensity * sc->w->getColor(normal_ray);
+            totcol += sc->w->ambient_intensity * sc->w->get_color(normal_ray);
         }
         
         /* REFLECTION & REFRACTION */
@@ -161,7 +161,7 @@ color trace_path(const ray& viewray, scene* sc, int depth){
     num_rays_traced++;
     vertex tuv;
     face *f = kdtree::ray_tree_intersect(sc->kdt, viewray, false, &tuv);
-    if(f==nullptr) return sc->w->getColor(viewray);
+    if(f==nullptr) return sc->w->get_color(viewray);
     else{
         vertex v = viewray.org + viewray.dir*tuv.t; //calculate vertex location
     
@@ -210,12 +210,12 @@ double ambient_occlusion(const ray& viewray, scene *sc){
     }
 }
 
-color rayTraceDistanceField(const ray& viewray, scene *sc, int num_steps, int depth){
+color raytrace_distance_field(const ray& viewray, scene *sc, int num_steps, int depth){
     num_rays_traced++;
     double t;
     int steps;
     if (!ray_march(viewray, *sc->de_obj, &t, &steps, num_steps)){
-        return sc->w->getColor(viewray);
+        return sc->w->get_color(viewray);
     } else {
         vertex v = viewray.org + t*viewray.dir;
         double ambient_occlusion = 1.0 - (steps / (double)num_steps);
@@ -266,7 +266,7 @@ color rayTraceDistanceField(const ray& viewray, scene *sc, int num_steps, int de
         /* Ambient lighting from sky */
         if (sc->w->ambient_intensity > 0){
             ray normal_ray{v, n};
-                totcol += sc->w->ambient_intensity * sc->w->getColor(normal_ray) * ambient_occlusion;
+                totcol += sc->w->ambient_intensity * sc->w->get_color(normal_ray) * ambient_occlusion;
         }
         
         /* REFLECTION & REFRACTION */
@@ -516,7 +516,7 @@ void generate_maps_vector(int mapflags, raster *imgrasters, scene *sc){
             
             //triangle edge setup
             pint = point_2d<int>(minx, miny);
-            EdgeVect e12, e23, e31;
+            edge_vect e12, e23, e31;
             
             //initial barycentric coordinates at corner
             w1_row = e23.init(p2int, p3int, pint);
@@ -528,11 +528,11 @@ void generate_maps_vector(int mapflags, raster *imgrasters, scene *sc){
             wsgn = _mm_cmpgt_epi32(w0, zeroveci);
             
             //rasterize
-            for(pint.y=miny; pint.y<=maxy; pint.y+=EdgeVect::stepY){
+            for(pint.y=miny; pint.y<=maxy; pint.y+=edge_vect::step_y){
                 w1=w1_row;
                 w2=w2_row;
                 w3=w3_row;
-                for(pint.x=minx; pint.x<=maxx; pint.x+=EdgeVect::stepX){
+                for(pint.x=minx; pint.x<=maxx; pint.x+=edge_vect::step_x){
                     //each item in pxmask vector is >0 iff corresponding pixel should be drawn
                     //check if w1,2,3 have the same sign as w0, or are 0 themselves
                     pxmask = _mm_or_si128(_mm_cmpeq_epi32(_mm_cmpgt_epi32(w1, zeroveci), wsgn), _mm_cmpeq_epi32(w1,zeroveci));
@@ -558,19 +558,19 @@ void generate_maps_vector(int mapflags, raster *imgrasters, scene *sc){
                         }
                     }
                     
-                    w1+=e23.oneStepX;
-                    w2+=e31.oneStepX;
-                    w3+=e12.oneStepX;
+                    w1+=e23.one_step_x;
+                    w2+=e31.one_step_x;
+                    w3+=e12.one_step_x;
                 }
-                w1_row += e23.oneStepY;
-                w2_row += e31.oneStepY;
-                w3_row += e12.oneStepY;
+                w1_row += e23.one_step_y;
+                w2_row += e31.one_step_y;
+                w3_row += e12.one_step_y;
             }
         }
     }
 }
 
-void zBufferDraw(raster *imgrasters, scene *sc){
+void zbuffer_draw(raster *imgrasters, scene *sc){
 #ifdef USE_VECTOR
     generate_maps_vector(5, imgrasters, sc);
 #else
@@ -578,7 +578,7 @@ void zBufferDraw(raster *imgrasters, scene *sc){
 #endif
 }
 
-void paintNormalMap(raster *imgrasters, scene *sc){
+void paint_normal_map(raster *imgrasters, scene *sc){
     generate_maps_vector(3, imgrasters, sc);
     std::copy(imgrasters->normbuffer, imgrasters->normbuffer+(imgrasters->width()*imgrasters->height()), imgrasters->colbuffer);
 }
@@ -604,9 +604,9 @@ void SSAO(raster *imgrasters, scene *sc)
             
             ao = 0;
             nsamples=0;
-            for(dir=0; dir<10; dir++){
-                dx = rand() % 20 - 10;
-                dy = rand() % 20 - 10;
+            for(dir=0; dir<20; dir++){
+                dx = rand() % 10 - 5;
+                dy = rand() % 10 - 5;
                 if(x+dx < 0 || x+dx >= w) continue;
                 if(y+dy < 0 || y+dy >= h) continue;
                 
@@ -654,7 +654,7 @@ color ray_march_pixel(double x, double y, int w, int h, scene *sc){
 //    double iterations;
     double t;
     if (!ray_march(viewray, *sc->de_obj, &t, &steps, num_steps)){
-        return sc->w->getColor(viewray);
+        return sc->w->get_color(viewray);
     } else {
         double ambient_occlusion = (1.0 - double(steps) / num_steps);
 //        double hue = 360 * iterations;
@@ -662,14 +662,14 @@ color ray_march_pixel(double x, double y, int w, int h, scene *sc){
     }
 }
 
-__v4si EdgeVect::init(const point_2d<int> &v0, const point_2d<int> &v1, const point_2d<int> &origin){
+__v4si edge_vect::init(const point_2d<int> &v0, const point_2d<int> &v1, const point_2d<int> &origin){
     // Edge setup
     int A = v0.y - v1.y, B = v1.x - v0.x;
     int C = v0.x*v1.y - v0.y*v1.x;
     
     //step deltas
-    oneStepX = _mm_set1_epi32(A*stepX);
-    oneStepY = _mm_set1_epi32(B*stepY);
+    one_step_x = _mm_set1_epi32(A*step_x);
+    one_step_y = _mm_set1_epi32(B*step_y);
     
     __v4si x = _mm_set1_epi32(origin.x) + _mm_set_epi32(3,2,1,0);
     __v4si y = _mm_set1_epi32(origin.y);

@@ -16,3 +16,4 @@ Also supports:
   - Atmospheric scattering
   - Limited texture support
   - Multithreading
+  - Depth of Field

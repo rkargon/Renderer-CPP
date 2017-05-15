@@ -47,9 +47,9 @@ public:
              QImage *n=nullptr);
     
     //Get color, normal vector, and specular color using given texture coordinate
-    color getColor(double txu, double txv);
-    vertex getNormal(double txu, double txv);
-    color getSpecCol(double txu, double txv);
+    color get_color(double txu, double txv);
+    vertex get_normal(double txu, double txv);
+    color get_spec_col(double txu, double txv);
 };
 
 class lamp{
@@ -75,11 +75,11 @@ public:
 
 class world{
 public:
-    color horizoncol, zenithcol; //The color at horizon level, and the the color at the top of the sky
-    bool isFlat; //If isFlat, all colors are horizoncol and zenithcol is ignored.
+    color horizon_col, zenith_col; //The color at horizon level, and the the color at the top of the sky
+    bool is_flat; //If is_flat, all colors are horizon_col and zenith_col is ignored.
     double ambient_intensity;
     world(const color& hc = color(1,1,1), const color& zc=color(0.8,0.8,1), const bool flat=false, const double ambient_intensity=0);
-    virtual color getColor(const ray& r);
+    virtual color get_color(const ray& r);
 };
 
 //uses Rayleigh and Mie scattering to simulate the sky
@@ -88,23 +88,23 @@ public:
     static const int samples=8;
     static const int samples_lightray=6;
     
-    vertex betaR, betaM; //Rayleigh and Mie scattering coefficients at sea level
+    vertex beta_r, beta_m; //Rayleigh and Mie scattering coefficients at sea level
     double Hr, Hm; //Rayleigh and Mie scale heights
-    double radiusEarth, radiusAtmo; //Earth and atmosphere radii
-    vertex sundirection; //vector pointing in direction of the sun
-    double sunintensity; //Intensity of the sun
+    double radius_earth, radius_atmo; //Earth and atmosphere radii
+    vertex sun_direction; //vector pointing in direction of the sun
+    double sun_intensity; //Intensity of the sun
     double g; //mean cosine
     
-    sky(vertex betaR = vertex(5.5e-6, 13.0e-6, 22.4e-6),
-        vertex betaM = vertex(21e-6, 21e-6, 21e-6),
+    sky(vertex beta_r = vertex(5.5e-6, 13.0e-6, 22.4e-6),
+        vertex beta_m = vertex(21e-6, 21e-6, 21e-6),
         double Hr = 7994,
         double Hm = 1200,
-        double radiusEarth=6360e3,
-        double radiusAtmo=6420e3,
-        vertex sundirection=vertex(0,-1,0.4).unitvect(),
-        double sunintensity=20,
+        double radius_earth=6360e3,
+        double radius_atmo=6420e3,
+        vertex sun_direction=vertex(0,-1,0.4).unitvect(),
+        double sun_intensity=20,
         double g = 0.76);
-    color getColor(const ray& r);
+    color get_color(const ray& r);
 };
 
 class scene {

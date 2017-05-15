@@ -36,12 +36,12 @@ color calc_lighting(const vertex& v, const vertex& n, const material& mat, const
 color trace_ray(const ray& viewray, scene* sc, int depth=1);
 color trace_path(const ray& viewray, scene* sc, int depth=1);
 double ambient_occlusion(const ray& viewray, kdtree* kdt);
-color rayTraceDistanceField(const ray& viewray, scene *sc, int num_iterations, int depth = 1);
+color raytrace_distance_field(const ray& viewray, scene *sc, int num_iterations, int depth = 1);
 
 /* Rasterization */
 void generate_maps_vector(int mapflags, raster *imgrasters, scene *sc);
-void zBufferDraw(raster *imgrasters, scene *sc);
-void paintNormalMap(raster *imgrasters, scene *sc);
+void zbuffer_draw(raster *imgrasters, scene *sc);
+void paint_normal_map(raster *imgrasters, scene *sc);
 void SSAO(raster *imgrasters, scene *sc);
 
 /* Used in multithreaded rendering */
@@ -51,14 +51,14 @@ color amb_occ_pixel(double x, double y, int w, int h, scene *sc);
 color ray_march_pixel(double x, double y, int w, int h, scene *sc);
 
 //stores increment values of barycentric coordinates for 4 pixel values at once
-typedef struct EdgeVect{
-    static const int stepX = 4;
-    static const int stepY = 1;
+typedef struct edge_vect{
+    static const int step_x = 4;
+    static const int step_y = 1;
     
-    __v4si oneStepX;
-    __v4si oneStepY;
+    __v4si one_step_x;
+    __v4si one_step_y;
     
     __v4si init(const point_2d<int>& v0, const point_2d<int>& v1, const point_2d<int>& origin);
-} EdgeVect;
+} edge_vect;
 
 #endif /* defined(__Renderer__rendering__) */

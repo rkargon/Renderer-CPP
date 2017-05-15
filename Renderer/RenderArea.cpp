@@ -26,7 +26,7 @@ RenderArea::RenderArea(QWidget *parent): QWidget(parent){
 //    lamps.push_back(new lamp(45, 2, vertex( 10, 0,-7), rgb_to_color(0xAAFFAA)));
 //    lamps.push_back(new lamp(45, 2, vertex( 0,-10, 7), rgb_to_color(0xAAAAFF)));
     lamps.push_back(new lamp(25, 2, vertex( 0, 5, 5), rgb_to_color(0xFFCC66)));
-    world* sc_world = new world(color(0.8,0.8,0.8), color(0.6,0.8,1));;
+    world* sc_world = new world(color(0.4,0.4,0.4), color(0.3,0.4,0.5));;
     std::vector<mesh*> objects;
 
     //dragon
@@ -42,7 +42,7 @@ RenderArea::RenderArea(QWidget *parent): QWidget(parent){
     sphereobj->mat = new material();
     sphereobj->bsdf = new EmissionBSDF();
     sphereobj->project_texture(TEX_PROJ_SPHERICAL);
-    sphereobj->scale_centered(vertex(0.6, 0.6, 0.6));
+    sphereobj->scale_centered(vertex(0.3, 0.3, 0.3));
     sphereobj->move(vertex(0, 0, 1));
 
     objects.push_back(dragonobj);
@@ -128,13 +128,13 @@ void RenderArea::updateImage(){
             drawWireFrame();
             break;
         case 1:
-            zBufferDraw(imgrasters, sc);
+            zbuffer_draw(imgrasters, sc);
             break;
         case 2:
             SSAO(imgrasters, sc);
             break;
         case 3:
-            paintNormalMap(imgrasters, sc);
+            paint_normal_map(imgrasters, sc);
             break;
         case 4:
             manager->set_render_method(ray_trace_pixel);
