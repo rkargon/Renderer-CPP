@@ -14,7 +14,7 @@ int num_rays_traced = 0;
 // Calculate lighting for triangle rasterization.
 // Given a vertex, a normal, and a material, will calculate the color of it, taking into account incident light from lamps.
 // Does not take into account other geometry which could cause shadows, reflections etc.
-color calcLighting(const vertex& v, const vertex& n, const material& mat, const scene* sc){
+color calc_lighting(const vertex& v, const vertex& n, const material& mat, const scene* sc){
     color lightcol, speclightcol;
     for(lamp *l : sc->lamps){
         vertex lampvect = l->loc - v;
@@ -46,7 +46,7 @@ color calcLighting(const vertex& v, const vertex& n, const material& mat, const 
 }
 
 // Traces a ray from the camera through a scene, using ray-tracing, up to a certain depth
-color traceRay(const ray& viewray, scene* sc, int depth){
+color trace_ray(const ray& viewray, scene* sc, int depth){
     num_rays_traced++;
     vertex tuv;
     face *f = kdtree::ray_tree_intersect(sc->kdt, viewray, false, &tuv);
@@ -113,9 +113,7 @@ color traceRay(const ray& viewray, scene* sc, int depth){
         /* Ambient lighting from sky */
         if (sc->w->ambient_intensity > 0){
             ray normal_ray{v, n};
-            if(kdtree::ray_tree_intersect(sc->kdt, normal_ray, true, nullptr)==nullptr){
-                totcol += sc->w->ambient_intensity * sc->w->getColor(normal_ray);
-            }
+            totcol += sc->w->ambient_intensity * sc->w->getColor(normal_ray);
         }
         
         /* REFLECTION & REFRACTION */
@@ -143,11 +141,11 @@ color traceRay(const ray& viewray, scene* sc, int depth){
                     vertex transnorm = n * signum(ndotray) *sqrt(1-transsinsquared);
                     transray = transnorm + transtang;
                 }
-                color transcol = traceRay(ray(v, transray), sc, depth+1);
+                color transcol = trace_ray(ray(v, transray), sc, depth+1);
                 totcol = lerp(transcol, totcol, f->obj->mat->alpha);
             }
             if(f->obj->mat->refl_intensity > 0){
-                color refcol = traceRay(ray(v, refl), sc, depth+1);
+                color refcol = trace_ray(ray(v, refl), sc, depth+1);
                 totcol = lerp(totcol, refcol, f->obj->mat->refl_intensity);
             }
         }
@@ -157,7 +155,7 @@ color traceRay(const ray& viewray, scene* sc, int depth){
 
 // Traces a path through a scene, up to the given depth.
 // Used for path-tracing, and calculates indirect lighting.
-color tracePath(const ray& viewray, scene* sc, int depth){
+color trace_path(const ray& viewray, scene* sc, int depth){
     if(depth > RAY_DEPTH) return color();
     
     num_rays_traced++;
@@ -177,7 +175,7 @@ color tracePath(const ray& viewray, scene* sc, int depth){
         
         //calculate incident light
         vertex inc_dir = f->obj->bsdf->getIncidentDirection(n, viewray.dir);
-        color inc_col = tracePath(ray(v, inc_dir), sc, depth+1);
+        color inc_col = trace_path(ray(v, inc_dir), sc, depth+1);
         //calculate returned light
         color return_col = f->obj->bsdf->getLight(inc_col, inc_dir, n, viewray.dir);
         return return_col;
@@ -185,7 +183,7 @@ color tracePath(const ray& viewray, scene* sc, int depth){
 }
 
 // Calculates ambient occlusion for a ray.
-double ambientOcclusion(const ray& viewray, scene *sc){
+double ambient_occlusion(const ray& viewray, scene *sc){
     vertex tuv;
     face *f = kdtree::ray_tree_intersect(sc->kdt, viewray, false, &tuv);
     if(f==nullptr) return 1;
@@ -268,10 +266,7 @@ color rayTraceDistanceField(const ray& viewray, scene *sc, int num_steps, int de
         /* Ambient lighting from sky */
         if (sc->w->ambient_intensity > 0){
             ray normal_ray{v, n};
-            // double t;
-            //if(!ray_march(normal_ray, *sc->de_obj, nullptr, nullptr, num_steps)){
                 totcol += sc->w->ambient_intensity * sc->w->getColor(normal_ray) * ambient_occlusion;
-            //}
         }
         
         /* REFLECTION & REFRACTION */
@@ -301,11 +296,11 @@ color rayTraceDistanceField(const ray& viewray, scene *sc, int num_steps, int de
                     transray = transnorm + transtang;
                 }
                 // TODO
-                color transcol = traceRay(ray(v, transray), sc, depth+1);
+                color transcol = trace_ray(ray(v, transray), sc, depth+1);
                 totcol = lerp(transcol, totcol, sc->de_mat->alpha);
             }
             if(sc->de_mat->refl_intensity > 0){
-                color refcol = traceRay(ray(v, refl), sc, depth+1);
+                color refcol = trace_ray(ray(v, refl), sc, depth+1);
                 totcol = lerp(totcol, refcol, sc->de_mat->refl_intensity);
             }
         }
@@ -372,9 +367,9 @@ void generate_maps(int mapflags, raster *imgrasters, scene *sc){
                 norm = f->vertices[0]->vertex_normal();
                 norm2 = f->vertices[1]->vertex_normal();
                 norm3 = f->vertices[2]->vertex_normal();
-                col = calcLighting(*f->vertices[0], norm, *f->obj->mat, sc);
-                col2 = calcLighting(*f->vertices[1], norm2, *f->obj->mat, sc);
-                col3 = calcLighting(*f->vertices[2], norm3, *f->obj->mat, sc);
+                col = calc_lighting(*f->vertices[0], norm, *f->obj->mat, sc);
+                col2 = calc_lighting(*f->vertices[1], norm2, *f->obj->mat, sc);
+                col3 = calc_lighting(*f->vertices[2], norm3, *f->obj->mat, sc);
             }
             
             //triangle bounding box
@@ -425,7 +420,7 @@ void generate_maps(int mapflags, raster *imgrasters, scene *sc){
                             }
                             if(mapflags & 4){
                                 if(f->obj->smooth) colrgb = color_to_rgb(lerp(col, col2, col3, double(w1)/w0, double(w2)/w0, double(w3)/w0));
-                                else if(colrgb>>24) colrgb = color_to_rgb(calcLighting(fcenter, f->normal, *f->obj->mat, sc));
+                                else if(colrgb>>24) colrgb = color_to_rgb(calc_lighting(fcenter, f->normal, *f->obj->mat, sc));
                                 imgrasters->colbuffer[pint.y*w + pint.x] = colrgb;
                             }
                             imgrasters->zbuffer[w*pint.y + pint.x] = z;
@@ -500,9 +495,9 @@ void generate_maps_vector(int mapflags, raster *imgrasters, scene *sc){
                 norm = f->vertices[0]->vertex_normal();
                 norm2 = f->vertices[1]->vertex_normal();
                 norm3 = f->vertices[2]->vertex_normal();
-                col = calcLighting(*f->vertices[0], norm, *f->obj->mat, sc);
-                col2 = calcLighting(*f->vertices[1], norm2, *f->obj->mat, sc);
-                col3 = calcLighting(*f->vertices[2], norm3, *f->obj->mat, sc);
+                col = calc_lighting(*f->vertices[0], norm, *f->obj->mat, sc);
+                col2 = calc_lighting(*f->vertices[1], norm2, *f->obj->mat, sc);
+                col3 = calc_lighting(*f->vertices[2], norm3, *f->obj->mat, sc);
             }
             
             //triangle bounding box
@@ -556,7 +551,7 @@ void generate_maps_vector(int mapflags, raster *imgrasters, scene *sc){
                             }
                             if(mapflags & 4){
                                 if(f->obj->smooth) colrgb = color_to_rgb(lerp(col, col2, col3, double(w1[i])/w0[i], double(w2[i])/w0[i], double(w3[i])/w0[i]));
-                                else if(colrgb>>24) colrgb = color_to_rgb(calcLighting(fcenter, f->normal, *f->obj->mat, sc));
+                                else if(colrgb>>24) colrgb = color_to_rgb(calc_lighting(fcenter, f->normal, *f->obj->mat, sc));
                                 imgrasters->colbuffer[pint.y*w + pint.x+i] = colrgb;
                             }
                             imgrasters->zbuffer[w*pint.y+pint.x+i] = z[i];
@@ -593,13 +588,10 @@ void SSAO(raster *imgrasters, scene *sc)
 {
     int w=imgrasters->width(), h=imgrasters->height();
     generate_maps_vector(7, imgrasters, sc); //generate depth and normal maps
-    //renderimg->fill(0xffffff);
-    double ao, d, z, ztmp;
+    double ao, z, ztmp;
     vertex v, dv, vtmp, n;
     ray r, rtmp;
     int x, y, dy, dx, dir, nsamples;
-    int dx_arr[4] = {-3, 3, 0, 0};
-    int dy_arr[4] = {0, 0, -3, 3};
     
     for(y=0; y<h; y++){
         for(x=0; x<w; x++){
@@ -612,123 +604,62 @@ void SSAO(raster *imgrasters, scene *sc)
             
             ao = 0;
             nsamples=0;
-            for(dir=0; dir<4; dir++){
-                dx = dx_arr[dir];
-                dy = dy_arr[dir];
+            for(dir=0; dir<10; dir++){
+                dx = rand() % 20 - 10;
+                dy = rand() % 20 - 10;
                 if(x+dx < 0 || x+dx >= w) continue;
                 if(y+dy < 0 || y+dy >= h) continue;
                 
                 ztmp = imgrasters->zbuffer[(y+dy)*w + (x+dx)];
                 if(ztmp==1) continue;
-                ztmp  = ztmp * (sc->cam->maxdist-sc->cam->mindist) + sc->cam->mindist;
+                ztmp = ztmp * (sc->cam->maxdist-sc->cam->mindist) + sc->cam->mindist;
                 rtmp = sc->cam->cast_ray(x, y, w, h);
                 vtmp = rtmp.org + rtmp.dir*ztmp;
-                dv = vtmp-v;
-                d = dv.len();
-                ao += fabs(dot(n, dv))*(1.0/(1.0+d))/d; //divide by d at the end to normalize dot product
+                dv = (vtmp-v).unitvect();
+                ao += dot(n, dv); //divide by d at the end to normalize dot product
                 nsamples++;
             }
             ao /= fmax(1, nsamples);
-            // * color(1,1,1) *
-            imgrasters->colbuffer[y*w + x] = color_to_rgb(rgb_to_color(imgrasters->colbuffer[y*w+x])*clamp(ao*2, 0, 1));
+            imgrasters->colbuffer[y*w + x] = color_to_rgb(rgb_to_color(imgrasters->colbuffer[y*w+x]) * (1 - clamp(ao, 0, 1)));
         }
     }
     
 }
 
-// raytraces an image, breaking it up into tiles of dimension tilesize x tilesize
-void rayTraceUnthreaded(raster *imgrasters, scene *sc, int tilesize){
-    num_rays_traced = 0;
-    int i, j, x, y, xmax, ymax, w=imgrasters->width(), h=imgrasters->height();
-    int tilenum=0, totaltiles = ceil((double)w/tilesize) * ceil((double)h/tilesize);
-    int colrgb;
-    vertex col;
-    ray r;
-    
-    clock_t begin = clock();
-    for(i=0; i<w; i+=tilesize){
-        xmax = std::min(w, i+tilesize);
-        for(j=0; j<h; j+=tilesize){
-            ymax = std::min(h, j+tilesize);
-            //for each tile
-            for(x=i; x<xmax; x++){
-                for(y=j; y<ymax; y++){
-                    r = sc->cam->cast_ray(x, y, w, h);
-                    col = traceRay(r, sc);
-                    colrgb = color_to_rgb(col);
-                    imgrasters->colbuffer[y*w + x] = colrgb;
-                }
-            }
-            tilenum++;
-            if(tilenum%100==0) std::cout << "tile " << tilenum << " of " << totaltiles  << " (" << (int)((100.0*tilenum)/totaltiles) << "%)" << std::endl;
-        }
-    }
-    std::cout << "all tiles done. " << std::endl;
-    clock_t end = clock();
-    double time_elapsed = double(end - begin) / CLOCKS_PER_SEC;
-    std::cout << num_rays_traced << " rays traced in " << time_elapsed << " seconds, or " << num_rays_traced/time_elapsed << " rays per second." << std::endl;
+color ray_trace_pixel(double x, double y, int w, int h, scene *sc){
+    return trace_ray(sc->cam->cast_ray(x, y, w, h), sc);
 }
 
-// path traces an image
-void pathTraceUnthreaded(raster *imgrasters, scene *sc, int tilesize){
-    num_rays_traced = 0;
-    clock_t begin = clock();
-    
-    int i, j, x, y, xmax, ymax, w=imgrasters->width(), h=imgrasters->height(), s;
-    int tilenum=0, totaltiles = ceil((double)w/tilesize) * ceil((double)h/tilesize);
-    color totalcol;
-    int colrgb;
-    ray r;
-    
-    for(i=0; i<w; i+=tilesize){
-        xmax = std::min(w, i+tilesize);
-        for(j=0; j<h; j+=tilesize){
-            ymax = std::min(h, j+tilesize);
-            
-            //for each tile
-            for(x=i; x<xmax; x++){
-                for(y=j; y<ymax; y++){
-                    for(s=1, totalcol=color(); s<=PATH_TRACE_SAMPLES; s++){
-                        r = sc->cam->cast_ray(x, y, w, h);
-                        totalcol += tracePath(r, sc);
-                    }
-                    colrgb = color_to_rgb(totalcol*(1.0/PATH_TRACE_SAMPLES));
-                    imgrasters->colbuffer[y*w + x] = colrgb;
-                }
-            }
-            tilenum++;
-            if(tilenum%100==0) std::cout << "tile " << tilenum << " of " << totaltiles  << " (" << (int)((100.0*tilenum)/totaltiles) << "%)" << std::endl;
-        }
-    }
-    
-    std::cout << "all tiles done. " << std::endl;
-    clock_t end = clock();
-    double time_elapsed = double(end - begin) / CLOCKS_PER_SEC;
-    std::cout << num_rays_traced << " rays traced in " << time_elapsed << " seconds, or " << num_rays_traced/time_elapsed << " rays per second." << std::endl;
-}
-
-color rayTracePixel(double x, double y, int w, int h, scene *sc){
-    return traceRay(sc->cam->cast_ray(x, y, w, h), sc);
-}
-
-color pathTracePixel(double x, double y, int w, int h, scene *sc){
+color path_trace_pixel(double x, double y, int w, int h, scene *sc){
     int s;
-    color totalcol;
-    for(s=1, totalcol=color(); s<=PATH_TRACE_SAMPLES; s++){
-        totalcol += tracePath(sc->cam->cast_ray(x, y, w, h), sc);
+    color totalcol{};
+    for(s=1; s<=PATH_TRACE_SAMPLES; s++){
+        totalcol += trace_path(sc->cam->cast_ray(x, y, w, h), sc);
     }
-    return totalcol*(1.0/s);
+    return totalcol / s;
 }
 
-color ambOccPixel(double x, double y, int w, int h, scene *sc){
+color amb_occ_pixel(double x, double y, int w, int h, scene *sc){
     ray r = sc->cam->cast_ray(x, y, w, h);
-    double ao = ambientOcclusion(r, sc);
+    double ao = ambient_occlusion(r, sc);
     ao = clamp(ao*2, 0, 1);
     return color(ao, ao, ao);
 }
 
 color ray_march_pixel(double x, double y, int w, int h, scene *sc){
-    return rayTraceDistanceField(sc->cam->cast_ray(x, y, w, h), sc, 50);
+    int num_steps = 150;
+    ray viewray = sc->cam->cast_ray(x, y, w, h);
+    int steps;
+    // TODO get this number
+//    double iterations;
+    double t;
+    if (!ray_march(viewray, *sc->de_obj, &t, &steps, num_steps)){
+        return sc->w->getColor(viewray);
+    } else {
+        double ambient_occlusion = (1.0 - double(steps) / num_steps);
+//        double hue = 360 * iterations;
+        return ambient_occlusion * color{1,1,1};
+    }
 }
 
 __v4si EdgeVect::init(const point_2d<int> &v0, const point_2d<int> &v1, const point_2d<int> &origin){

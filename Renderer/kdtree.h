@@ -19,6 +19,14 @@
 #define KDT_CTRAVERSAL 1
 #define KDT_CINTERSECT 1.5
 
+/**
+ *  KDTree for hierarchically grouping the faces of a mesh in order to speed up ray-face intersection. 
+ *  Each level splits faces into two groups along a different axis. Uses "Surface Area Heuristic
+ *  
+ *  Source: "On building fast kd-Trees for Ray Tracing, and on doing that in O(N log N)" (Ingo Wald, Vlastimil Havran 2006)
+ * 
+ *  TODO: Recursion ends up to deep, subdivides faces too much
+ */
 class kdtree {
 public:
     kdtree *lower = nullptr;
@@ -32,6 +40,7 @@ public:
     
     std::vector<edge*> wireframe();
     std::vector<edge*> wireframe(bool isRoot, int depth);
+    //TODO put all stats in a struct
     void calc_stats(int& nodes, int& leaf_nodes, int& non_empty_leaf_nodes, int& triangles_in_leaves, double& est_traversals, double& est_leaves_visited, double& est_tris_intersected, double& estcost, double root_area=-1);
     void print_stats();
     static kdtree *build_tree(const std::vector<face*>& faces);
@@ -60,11 +69,11 @@ private:
         face_wrapper(face *f, int classification);
         face_wrapper(face *f);
         ~face_wrapper();
-        static std::vector<face*> toFaceList(const std::vector<face_wrapper*>& wrappedfaces);
-        static std::vector<face_wrapper*> toWrapperList(const std::vector<face*>& faces);
+        static std::vector<face*> to_face_list(const std::vector<face_wrapper*>& wrapped_faces);
+        static std::vector<face_wrapper*> to_wrapper_list(const std::vector<face*>& faces);
     };
     
-    class planarEvent{
+    class planar_event{
     public:
         static int i; //keeps track of how many objects are created, for debugging purposes.
         face_wrapper * fw;
@@ -81,22 +90,22 @@ private:
 		// 2 - f starts at p
         int type;
         
-        planarEvent(face_wrapper *fw, double p, int k, int type);
-        ~planarEvent();
+        planar_event(face_wrapper *fw, double p, int k, int type);
+        ~planar_event();
         
-        class planarEventComparator{
+        class planar_event_comparator{
         public:
-            bool operator()(const planarEvent* pe1, const planarEvent* pe2);
+            bool operator()(const planar_event* pe1, const planar_event* pe2);
         };
     };
     
-    kdtree(std::vector<planarEvent*>& events, const bounds& facebounds, int depth);
-    static std::vector<planarEvent*> buildEventList(const std::vector<face_wrapper*>& faces);
-    static plane_data findOptimalPlane(int nfaces, const std::vector<planarEvent*>& events, bounds& boundingbox, double area);
-    static inline double lambda(double lowerarea, double upperarea, double Nl, double Nr){
-        return ((Nl==0||Nr==0) && !(lowerarea==1 || upperarea==1)) ? 0.8 : 1;
+    kdtree(std::vector<planar_event*>& events, const bounds& facebounds, int depth);
+    static std::vector<planar_event*> build_event_list(const std::vector<face_wrapper*>& faces);
+    static plane_data find_optimal_plane(int nfaces, const std::vector<planar_event*>& events, bounds& boundingbox, double area);
+    static inline double lambda(double lower_area, double upper_area, double Nl, double Nr){
+        return ((Nl==0||Nr==0) && !(lower_area==1 || upper_area==1)) ? 0.8 : 1;
     }
     static std::pair<double, bool> SAH(const bounds& boundingbox, double position, int axis, double area, int Nl, int Np, int Nr);
-    static void generateClippedEvents(face_wrapper *fw, double pos, int axis, const bounds& boundingbox, std::vector<planarEvent*>& newevents_left, std::vector<planarEvent*>& newevents_right);
+    static void generate_clipped_events(face_wrapper *fw, double pos, int axis, const bounds& boundingbox, std::vector<planar_event*>& newevents_left, std::vector<planar_event*>& newevents_right);
 };
 #endif /* defined(__Renderer__kdtree__) */

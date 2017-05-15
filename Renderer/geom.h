@@ -189,6 +189,7 @@ uint color_to_rgb(const color& c);
 uint normal_to_rgb(const vertex& n);
 color rgb_to_color(const uint rgb);
 vertex rgb_to_normal(const uint n);
+color hsv_to_rgb(const int hue, const double saturation, const double value);
 
 /* bounding box related functions */
 bounds calc_bounding_box(const std::vector<face*>& faces);
@@ -199,5 +200,8 @@ void list_bounds(bounds& newbounds, int nverts, const vertex* vertices ...);
 bool ray_AABB_intersect(const bounds& AABB, const ray& r);
 face *ray_faces_intersect(const std::vector<face*>& faces, const ray& r, bool lazy, vertex *tuv);
 bool ray_sphere_intersect(const ray& r, const double rad, double& t); //intersects a ray with a sphere centered on the origin. Assumes ray direction is normalized
+
+/* misc geometry functions */
+point_2d<double> random_point_in_unit_circle();
 
 #endif /* defined(__Renderer__geom__) */

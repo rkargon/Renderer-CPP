@@ -27,15 +27,15 @@
 #include "scene.h"
 
 #define AMB_OCC_SAMPLES 100
-#define PATH_TRACE_SAMPLES 50
+#define PATH_TRACE_SAMPLES 100
 #define RAY_DEPTH 5
 
 extern int num_rays_traced; //keeps track of how many rays have been traced, to measure performance
 
-color calcLighting(const vertex& v, const vertex& n, const material& mat, const scene* sc);
-color traceRay(const ray& viewray, scene* sc, int depth=1);
-color tracePath(const ray& viewray, scene* sc, int depth=1);
-double ambientOcclusion(const ray& viewray, kdtree* kdt);
+color calc_lighting(const vertex& v, const vertex& n, const material& mat, const scene* sc);
+color trace_ray(const ray& viewray, scene* sc, int depth=1);
+color trace_path(const ray& viewray, scene* sc, int depth=1);
+double ambient_occlusion(const ray& viewray, kdtree* kdt);
 color rayTraceDistanceField(const ray& viewray, scene *sc, int num_iterations, int depth = 1);
 
 /* Rasterization */
@@ -44,14 +44,10 @@ void zBufferDraw(raster *imgrasters, scene *sc);
 void paintNormalMap(raster *imgrasters, scene *sc);
 void SSAO(raster *imgrasters, scene *sc);
 
-/* Unthreaded Rendering */
-void rayTraceUnthreaded(raster *imgrasters, scene *sc, int tilesize);
-void pathTraceUnthreaded(raster *imgrasters, scene *sc, int tilesize);
-
 /* Used in multithreaded rendering */
-color rayTracePixel(double x, double y, int w, int h, scene *sc);
-color pathTracePixel(double x, double y, int w, int h, scene *sc);
-color ambOccPixel(double x, double y, int w, int h, scene *sc);
+color ray_trace_pixel(double x, double y, int w, int h, scene *sc);
+color path_trace_pixel(double x, double y, int w, int h, scene *sc);
+color amb_occ_pixel(double x, double y, int w, int h, scene *sc);
 color ray_march_pixel(double x, double y, int w, int h, scene *sc);
 
 //stores increment values of barycentric coordinates for 4 pixel values at once

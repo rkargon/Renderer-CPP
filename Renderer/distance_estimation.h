@@ -74,7 +74,7 @@ vertex estimate_normal(const vertex& v, const distance_estimator& obj, double ep
  *
  *  @return Whether or not the ray intersects with the scene.
  */
-bool ray_march(const ray& r, const distance_estimator& obj, double *t, int *steps, int max_ray_steps, double epsilon = 0.001);
+bool ray_march(const ray& r, const distance_estimator& obj, double *t, int *steps, int max_ray_steps, double epsilon = 0.0001);
 
     
 #endif /* distance_estimation_hpp */

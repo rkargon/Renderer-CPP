@@ -22,9 +22,19 @@ public:
     double fov; //The field of view of the camera
     double mindist, maxdist; //Clipping distances
     bool ortho; //Whether the projection is orthographic or perspective
+    double dof_focus_distance; // Distance at which objects are in focus for the camera
+    double aperture_size; // Width of aperture for DOF effects. 0 means no blurring due to depth of field.
     
-    camera();
-    camera(const vertex& center, const vertex& focus, const vertex& normal, const vertex& vert, const double fov, const double mindist, const double maxdist, const bool ortho);
+    camera(const vertex& center = {-5,0,0},
+           const vertex& focus={},
+           const vertex& normal = {1,0,0},
+           const vertex& vert={0,0,1},
+           const double fov=0.75,
+           const double mindist=0.01,
+           const double maxdist=100,
+           const bool ortho=false,
+           double dof_focus_distance=0,
+           double aperture_size=0);
     
     /* projections */
     

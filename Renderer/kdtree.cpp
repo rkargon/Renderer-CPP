@@ -13,18 +13,18 @@ double kdtree::completion=0;
 kdtree *kdtree::build_tree(const std::vector<face*>& faces){
     if(faces.empty()) return nullptr;
     bounds facebounds = calc_bounding_box(faces);
-    std::vector<face_wrapper*> faceswrapper = face_wrapper::toWrapperList(faces);
-    std::vector<planarEvent*> events = buildEventList(faceswrapper);
+    std::vector<face_wrapper*> faceswrapper = face_wrapper::to_wrapper_list(faces);
+    std::vector<planar_event*> events = build_event_list(faceswrapper);
     return new kdtree(events, facebounds, 0);
 }
 
-kdtree::kdtree(std::vector<planarEvent*>& events, const bounds& facebounds, int depth){
+kdtree::kdtree(std::vector<planar_event*>& events, const bounds& facebounds, int depth){
     if(depth==0) completion=0;
     this->boundingbox = facebounds;
     int nfaces=0;
     
-    //face classifications are initially not 0 (see face_wrapper::toWrapperList), and are not 0 when passed from parent nodes. So an initial pass to reset classification values is not necessary
-    for(planarEvent *e : events){
+    //face classifications are initially not 0 (see face_wrapper::to_wrapper_list), and are not 0 when passed from parent nodes. So an initial pass to reset classification values is not necessary
+    for(planar_event *e : events){
         if(e->fw->classification){
             nfaces++;
             e->fw->classification=0;
@@ -37,7 +37,7 @@ kdtree::kdtree(std::vector<planarEvent*>& events, const bounds& facebounds, int 
     //exit if max recursion depth is reached or too few faces remaining
     if(depth > KDTfMAX_DEPTH || nfaces <= KDTfMIN_FACES || facebounds.volume()<EPSILON){
         //generate face list
-        for(planarEvent *e: events){
+        for(planar_event *e: events){
             if(e->fw->classification==0){
                 this->faces.push_back(e->fw->f);
                 e->fw->classification=1;
@@ -51,12 +51,12 @@ kdtree::kdtree(std::vector<planarEvent*>& events, const bounds& facebounds, int 
     double cost = KDT_CTRAVERSAL + KDT_CINTERSECT * nfaces;
     double area = boundingbox.area();
     plane_data optimalplane{};
-    optimalplane = findOptimalPlane(nfaces, events, boundingbox, area);
+    optimalplane = find_optimal_plane(nfaces, events, boundingbox, area);
     
     //only split if SAH finds it would reduce cost
     if(cost<=optimalplane.split_cost){
         //generate face list
-        for(planarEvent *e: events){
+        for(planar_event *e: events){
             if(e->fw->classification==0){
                 this->faces.push_back(e->fw->f);
                 e->fw->classification=1;
@@ -74,10 +74,10 @@ kdtree::kdtree(std::vector<planarEvent*>& events, const bounds& facebounds, int 
     lowerbounds.max.vec[axis] = pos;
     upperbounds.min.vec[axis] = pos;
     
-    std::vector<planarEvent*> totalevents_left, totalevents_right, oldevents_left, oldevents_right, newevents_left, newevents_right;
+    std::vector<planar_event*> totalevents_left, totalevents_right, oldevents_left, oldevents_right, newevents_left, newevents_right;
     std::vector<face_wrapper*> faces_bothsides;
-    for(planarEvent *e: events) e->fw->classification = 3;
-    for(planarEvent *e: events){
+    for(planar_event *e: events) e->fw->classification = 3;
+    for(planar_event *e: events){
         if(e->axis==axis){
             if(e->type==0 && e->pos <= pos) e->fw->classification=2; //left only
             else if(e->type==2 && e->pos >= pos) e->fw->classification=1; //right only
@@ -88,7 +88,7 @@ kdtree::kdtree(std::vector<planarEvent*>& events, const bounds& facebounds, int 
             }
         }
     }
-    for(planarEvent *e: events){
+    for(planar_event *e: events){
         if(e->fw->classification==1) oldevents_right.push_back(e);
         else if (e->fw->classification==2) oldevents_left.push_back(e);
         else if (e->fw->classification==3){
@@ -97,11 +97,11 @@ kdtree::kdtree(std::vector<planarEvent*>& events, const bounds& facebounds, int 
         }
     }
     
-    for(face_wrapper *fw : faces_bothsides) generateClippedEvents(fw, pos, axis, boundingbox, newevents_left, newevents_right);
-    std::sort(newevents_left.begin(), newevents_left.end(), kdtree::planarEvent::planarEventComparator());
-    std::sort(newevents_right.begin(), newevents_right.end(), kdtree::planarEvent::planarEventComparator());
-    std::merge(oldevents_left.begin(), oldevents_left.end(), newevents_left.begin(), newevents_left.end(), std::back_inserter(totalevents_left), kdtree::planarEvent::planarEventComparator());
-    std::merge(oldevents_right.begin(), oldevents_right.end(), newevents_right.begin(), newevents_right.end(), std::back_inserter(totalevents_right), kdtree::planarEvent::planarEventComparator());
+    for(face_wrapper *fw : faces_bothsides) generate_clipped_events(fw, pos, axis, boundingbox, newevents_left, newevents_right);
+    std::sort(newevents_left.begin(), newevents_left.end(), kdtree::planar_event::planar_event_comparator());
+    std::sort(newevents_right.begin(), newevents_right.end(), kdtree::planar_event::planar_event_comparator());
+    std::merge(oldevents_left.begin(), oldevents_left.end(), newevents_left.begin(), newevents_left.end(), std::back_inserter(totalevents_left), kdtree::planar_event::planar_event_comparator());
+    std::merge(oldevents_right.begin(), oldevents_right.end(), newevents_right.begin(), newevents_right.end(), std::back_inserter(totalevents_right), kdtree::planar_event::planar_event_comparator());
     
 //    double lowerboundsarea = lowerbounds.area();
 //    double upperboundsarea = upperbounds.area();
@@ -112,7 +112,7 @@ kdtree::kdtree(std::vector<planarEvent*>& events, const bounds& facebounds, int 
     //clean up events and face wrappers
     if(depth==0){
         std::vector<face_wrapper*> allfaces;
-        for(planarEvent *e: events){
+        for(planar_event *e: events){
             if(e->fw->classification!=5) {
                 e->fw->classification=5;
                 allfaces.push_back(e->fw);
@@ -121,15 +121,15 @@ kdtree::kdtree(std::vector<planarEvent*>& events, const bounds& facebounds, int 
         }
         for(face_wrapper *fw : allfaces) delete fw;
     }
-    for(planarEvent* e : newevents_left) delete e;
-    for(planarEvent* e : newevents_right) delete e;
+    for(planar_event* e : newevents_left) delete e;
+    for(planar_event* e : newevents_right) delete e;
 }
 
 /**
  Generates splitting plane events at the 6 planes of the bounding box of each face. These represent candidates for a splitting plane of the kdtere. The SAH algorithm finds the optimal plane out of these to split the tree
  */
-std::vector<kdtree::planarEvent*> kdtree::buildEventList(const std::vector<face_wrapper*>& faces){
-    std::vector<planarEvent*> events;
+std::vector<kdtree::planar_event*> kdtree::build_event_list(const std::vector<face_wrapper*>& faces){
+    std::vector<planar_event*> events;
     double minx, maxx, miny, maxy, minz , maxz;
     for(face_wrapper *fw : faces){
         minx = fw->f->min_coord(0);
@@ -139,23 +139,23 @@ std::vector<kdtree::planarEvent*> kdtree::buildEventList(const std::vector<face_
         minz = fw->f->min_coord(2);
         maxz = fw->f->max_coord(2);
         
-        if(minx==maxx) events.push_back(new planarEvent(fw, minx, 0, 1));
+        if(minx==maxx) events.push_back(new planar_event(fw, minx, 0, 1));
         else{
-            events.push_back(new planarEvent(fw, minx, 0, 2));
-            events.push_back(new planarEvent(fw, maxx, 0, 0));
+            events.push_back(new planar_event(fw, minx, 0, 2));
+            events.push_back(new planar_event(fw, maxx, 0, 0));
         }
-        if(miny==maxy) events.push_back(new planarEvent(fw, miny, 1, 1));
+        if(miny==maxy) events.push_back(new planar_event(fw, miny, 1, 1));
         else{
-            events.push_back(new planarEvent(fw, miny, 1, 2));
-            events.push_back(new planarEvent(fw, maxy, 1, 0));
+            events.push_back(new planar_event(fw, miny, 1, 2));
+            events.push_back(new planar_event(fw, maxy, 1, 0));
         }
-        if(minz==maxz) events.push_back(new planarEvent(fw, minz, 2, 1));
+        if(minz==maxz) events.push_back(new planar_event(fw, minz, 2, 1));
         else{
-            events.push_back(new planarEvent(fw, minz, 2, 2));
-            events.push_back(new planarEvent(fw, maxz, 2, 0));
+            events.push_back(new planar_event(fw, minz, 2, 2));
+            events.push_back(new planar_event(fw, maxz, 2, 0));
         }
     }
-    std::sort(events.begin(), events.end(), planarEvent::planarEventComparator());
+    std::sort(events.begin(), events.end(), planar_event::planar_event_comparator());
     return events;
 }
 /**
@@ -171,7 +171,7 @@ std::vector<kdtree::planarEvent*> kdtree::buildEventList(const std::vector<face_
  * @return A plane_data struct containing data for the optimal splitting plane
  */
 
-kdtree::plane_data kdtree::findOptimalPlane(int nfaces, const std::vector<planarEvent*>& events, bounds& boundingbox, double area){
+kdtree::plane_data kdtree::find_optimal_plane(int nfaces, const std::vector<planar_event*>& events, bounds& boundingbox, double area){
     
     int Nleft[3] = {0}, Nplanar[3] = {0}, Nright[3] = {nfaces, nfaces, nfaces};
     int axis_best = 0;
@@ -181,7 +181,7 @@ kdtree::plane_data kdtree::findOptimalPlane(int nfaces, const std::vector<planar
     //temp variables
     int plane_axis, start_count, planar_count, end_count;
     double plane_pos;
-    planarEvent *e;
+    planar_event *e;
     std::pair<double, bool> planecostdata;
     
     for(int i=0; i<events.size();){
@@ -252,20 +252,20 @@ std::pair<double, bool> kdtree::SAH(const bounds& boundingbox, double position, 
     upperbounds.min.vec[axis] = position;
     
      //probability of a ray hitting each subvoxel, given that boundingbox is already intersected.
-    double lowerarea = lowerbounds.area() / area;
-    double upperarea = upperbounds.area() / area;
+    double lower_area = lowerbounds.area() / area;
+    double upper_area = upperbounds.area() / area;
     //if bounding box has no area, or split cuts off just a plane,
-    if(area==0 || boundingbox.d(axis)==0 || lowerarea==0 || upperarea==0) return std::pair<double, bool>(HUGE_VAL, false);
+    if(area==0 || boundingbox.d(axis)==0 || lower_area==0 || upper_area==0) return std::pair<double, bool>(HUGE_VAL, false);
     
-    double costleftbias = (lowerarea*(Nl+Np) + upperarea*Nr) * lambda(lowerarea, upperarea, Nl+Np, Nr);
-    double costrightbias = lowerarea*Nl + upperarea*(Np+Nr) * lambda(lowerarea, upperarea, Nl, Np+Nr);
+    double costleftbias = (lower_area*(Nl+Np) + upper_area*Nr) * lambda(lower_area, upper_area, Nl+Np, Nr);
+    double costrightbias = lower_area*Nl + upper_area*(Np+Nr) * lambda(lower_area, upper_area, Nl, Np+Nr);
     //planar faces go into left or right depending on which results in lowest cost
     return std::pair<double, bool>(fmin(costleftbias, costrightbias)*KDT_CINTERSECT+KDT_CTRAVERSAL, costrightbias<costleftbias);
 }
 
 #define ROUGH_FACE_SPLIT
 #ifdef ROUGH_FACE_SPLIT
-void kdtree::generateClippedEvents(kdtree::face_wrapper *fw, double pos, int axis, const bounds &boundingbox, std::vector<planarEvent *> &newevents_left, std::vector<planarEvent *> &newevents_right){
+void kdtree::generate_clipped_events(kdtree::face_wrapper *fw, double pos, int axis, const bounds &boundingbox, std::vector<planar_event *> &newevents_left, std::vector<planar_event *> &newevents_right){
     bounds upperbounds = boundingbox;
     bounds lowerbounds = boundingbox;
     bounds facebound = fw->f->bounding_box();
@@ -276,24 +276,24 @@ void kdtree::generateClippedEvents(kdtree::face_wrapper *fw, double pos, int axi
     
     for(int k=0; k<3; k++){
         if(lowerbounds.min.vec[k] == lowerbounds.max.vec[k]){
-            newevents_left.push_back(new planarEvent(fw, lowerbounds.min.vec[k], k, 1));
+            newevents_left.push_back(new planar_event(fw, lowerbounds.min.vec[k], k, 1));
         }
         else{
-            newevents_left.push_back(new planarEvent(fw, lowerbounds.min.vec[k], k, 2));
-            newevents_left.push_back(new planarEvent(fw, lowerbounds.max.vec[k], k, 0));
+            newevents_left.push_back(new planar_event(fw, lowerbounds.min.vec[k], k, 2));
+            newevents_left.push_back(new planar_event(fw, lowerbounds.max.vec[k], k, 0));
         }
         
         if(upperbounds.min.vec[k] == upperbounds.max.vec[k]){
-            newevents_right.push_back(new planarEvent(fw, upperbounds.min.vec[k], k, 1));
+            newevents_right.push_back(new planar_event(fw, upperbounds.min.vec[k], k, 1));
         }
         else{
-            newevents_right.push_back(new planarEvent(fw, upperbounds.min.vec[k], k, 2));
-            newevents_right.push_back(new planarEvent(fw, upperbounds.max.vec[k], k, 0));
+            newevents_right.push_back(new planar_event(fw, upperbounds.min.vec[k], k, 2));
+            newevents_right.push_back(new planar_event(fw, upperbounds.max.vec[k], k, 0));
         }
     }
 }
 #else
-void kdtree::generateClippedEvents(kdtree::face_wrapper *fw, double pos, int axis, const bounds &boundingbox, std::vector<planarEvent *> &newevents_left, std::vector<planarEvent *> &newevents_right){
+void kdtree::generate_clipped_events(kdtree::face_wrapper *fw, double pos, int axis, const bounds &boundingbox, std::vector<planar_event *> &newevents_left, std::vector<planar_event *> &newevents_right){
     int sideflags = (fw->f->vertices[0]->vec[axis] < pos ? 0 : 1)
     | (fw->f->vertices[1]->vec[axis] < pos ? 0 : 2)
     | (fw->f->vertices[2]->vec[axis] < pos ? 0 : 4);
@@ -349,18 +349,18 @@ void kdtree::generateClippedEvents(kdtree::face_wrapper *fw, double pos, int axi
     
     for(int k=0; k<3; k++){
         if(lowerbounds.min.vec[k] == lowerbounds.max.vec[k]){
-            newevents_left.push_back(new planarEvent(fw, lowerbounds.min.vec[k], k, 1));
+            newevents_left.push_back(new planar_event(fw, lowerbounds.min.vec[k], k, 1));
         }
         else{
-            newevents_left.push_back(new planarEvent(fw, lowerbounds.min.vec[k], k, 2));
-            newevents_left.push_back(new planarEvent(fw, lowerbounds.max.vec[k], k, 0));
+            newevents_left.push_back(new planar_event(fw, lowerbounds.min.vec[k], k, 2));
+            newevents_left.push_back(new planar_event(fw, lowerbounds.max.vec[k], k, 0));
         }
         if(upperbounds.min.vec[k] == upperbounds.max.vec[k]){
-            newevents_right.push_back(new planarEvent(fw, upperbounds.min.vec[k], k, 1));
+            newevents_right.push_back(new planar_event(fw, upperbounds.min.vec[k], k, 1));
         }
         else{
-            newevents_right.push_back(new planarEvent(fw, upperbounds.min.vec[k], k, 2));
-            newevents_right.push_back(new planarEvent(fw, upperbounds.max.vec[k], k, 0));
+            newevents_right.push_back(new planar_event(fw, upperbounds.min.vec[k], k, 2));
+            newevents_right.push_back(new planar_event(fw, upperbounds.max.vec[k], k, 0));
         }
     }
 }
@@ -371,22 +371,22 @@ kdtree::face_wrapper::face_wrapper(face *f, int classification) :f(f), classific
 kdtree::face_wrapper::face_wrapper(face *f) :f(f){i++;}
 kdtree::face_wrapper::~face_wrapper() {i--;}
 
-std::vector<face*> kdtree::face_wrapper::toFaceList(const std::vector<face_wrapper*>& wrappedfaces){
+std::vector<face*> kdtree::face_wrapper::to_face_list(const std::vector<face_wrapper*>& wrapped_faces){
     std::vector<face*> faces;
-    for(face_wrapper* fw: wrappedfaces) faces.push_back(fw->f);
+    for(face_wrapper* fw: wrapped_faces) faces.push_back(fw->f);
     return faces;
 }
-std::vector<kdtree::face_wrapper*> kdtree::face_wrapper::toWrapperList(const std::vector<face*>& faces){
-    std::vector<face_wrapper*> wrappedfaces;
-    for(face* f: faces) wrappedfaces.push_back(new face_wrapper(f, 1));
-    return wrappedfaces;
+std::vector<kdtree::face_wrapper*> kdtree::face_wrapper::to_wrapper_list(const std::vector<face*>& faces){
+    std::vector<face_wrapper*> wrapped_faces;
+    for(face* f: faces) wrapped_faces.push_back(new face_wrapper(f, 1));
+    return wrapped_faces;
 }
 
-int kdtree::planarEvent::i = 0;
-kdtree::planarEvent::planarEvent(face_wrapper *fw, double p, int k, int type) :fw(fw), pos(p), axis(k), type(type){i++;}
-kdtree::planarEvent::~planarEvent(){i--;}
+int kdtree::planar_event::i = 0;
+kdtree::planar_event::planar_event(face_wrapper *fw, double p, int k, int type) :fw(fw), pos(p), axis(k), type(type){i++;}
+kdtree::planar_event::~planar_event(){i--;}
 
-bool kdtree::planarEvent::planarEventComparator::operator()(const kdtree::planarEvent* pe1, const kdtree::planarEvent* pe2){
+bool kdtree::planar_event::planar_event_comparator::operator()(const kdtree::planar_event* pe1, const kdtree::planar_event* pe2){
     if(pe1->pos==pe2->pos){
         if(pe1->axis==pe2->axis) return pe1->type < pe2->type;
         return pe1->axis < pe2->axis;

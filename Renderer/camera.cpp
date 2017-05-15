@@ -8,18 +8,26 @@
 
 #include "camera.h"
 
-camera::camera() :center(vertex(-5,0,0)), focus(vertex()), normal(vertex(1,0,0)), vert(vertex(0,0,1)), fov(0.75), mindist(0.01),  maxdist(100), ortho(false) {
-    calc_image_vectors();
-}
-camera::camera(const vertex& center, const vertex& focus, const vertex& normal, const vertex& vert, const double fov, const double mindist, const double maxdist, const bool ortho){
-    this->center = center;
-    this->focus = focus;
-    this->normal = normal;
-    this->vert = vert;
-    this->fov = fov;
-    this->mindist = mindist;
-    this->maxdist = maxdist > 0 ? maxdist : HUGE_VAL;
-    this->ortho = ortho;
+camera::camera(const vertex& center,
+               const vertex& focus,
+               const vertex& normal,
+               const vertex& vert,
+               const double fov,
+               const double mindist,
+               const double maxdist,
+               const bool ortho,
+               double dof_focus_distance,
+               double aperture_size)
+:center(center),
+focus(focus),
+normal(normal),
+vert(vert),
+fov(fov),
+mindist(mindist),
+maxdist(maxdist > 0 ? maxdist : HUGE_VAL),
+ortho(ortho),
+dof_focus_distance(dof_focus_distance),
+aperture_size(aperture_size){
     calc_image_vectors();
 }
 
@@ -39,8 +47,16 @@ ray camera::cast_ray(const double px, const double py, const double w, const dou
         return castray;
     }
     else{
-        castray.org = center;
-        castray.dir = normal + cx*(x*img_w) + cy*(-y*img_h);
+        if (this->aperture_size == 0){
+            castray.org = center;
+            castray.dir = normal + cx*(x*img_w) + cy*(-y*img_h);
+        } else {
+            auto dp = random_point_in_unit_circle();
+            // TODO probably wrong :-(
+            castray.org = center + (aperture_size * cx * dp.x) + (aperture_size * cy * dp.y); // ray is shifted along image plane by random amount depending on aperture size
+            vertex focal_point = center + dof_focus_distance * (normal + cx*(x*img_w) + cy*(-y*img_h));
+            castray.dir = focal_point - castray.org;
+        }
         castray.dir.normalize();
         return castray;
     }

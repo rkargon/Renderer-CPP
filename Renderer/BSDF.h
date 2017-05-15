@@ -34,7 +34,7 @@ public:
     color col;
     double intensity;
     
-    EmissionBSDF(color c=color(1,1,1), double i=1);
+    EmissionBSDF(color c=color(1,1,1), double i=10);
     virtual color getLight(color incidentColor, vertex incidentDirection, vertex normal, vertex returningDirection);
     virtual vertex getIncidentDirection(vertex normal, vertex viewDirection);
 };

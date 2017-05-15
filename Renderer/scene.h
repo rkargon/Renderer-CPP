@@ -78,7 +78,7 @@ public:
     color horizoncol, zenithcol; //The color at horizon level, and the the color at the top of the sky
     bool isFlat; //If isFlat, all colors are horizoncol and zenithcol is ignored.
     double ambient_intensity;
-    world(const color& hc = color(1,1,1), const color& zc=color(0.8,0.8,1), const bool flat=false, const double ambient_intensity=1);
+    world(const color& hc = color(1,1,1), const color& zc=color(0.8,0.8,1), const bool flat=false, const double ambient_intensity=0);
     virtual color getColor(const ray& r);
 };
 

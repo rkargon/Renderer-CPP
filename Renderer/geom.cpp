@@ -365,7 +365,29 @@ color rgb_to_normal(const uint n){
                   (n&0xff)/255.0 - 0.5);
 }
 
-//bounding box related functions
+color hsv_to_rgb(const int hue, const double saturation, const double value){
+    double chroma = value * saturation;
+    double hue_mod = hue / 60.0;
+    double x = chroma * (1 - fabs(fmod(hue_mod, 2) - 1));
+    switch (int(hue_mod)) {
+        case 0:
+            return {chroma, x, 0};
+        case 1:
+            return {x, chroma, 0};
+        case 2:
+            return {0, chroma, x};
+        case 3:
+            return {0, x, chroma};
+        case 4:
+            return {x, 0, chroma};
+        case 5:
+            return {chroma, 0, x};
+        default:
+            return {0,0,0};
+    }
+}
+
+/* bounding box related functions */
 
 //THe bounding box of a set of faces.
 bounds calc_bounding_box(const std::vector<face *>& faces){
@@ -494,4 +516,10 @@ bool ray_sphere_intersect(const ray& r, const double rad, double& t){
         }
         else return false;
     }
+}
+
+point_2d<double> random_point_in_unit_circle(){
+    double theta = double(rand())/RAND_MAX * M_PI * 2;
+    double r = double(rand())/RAND_MAX;
+    return {r * cos(theta), r * sin(theta)};
 }
