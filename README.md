@@ -17,3 +17,13 @@ Also supports:
   - Limited texture support
   - Multithreading
   - Depth of Field
+
+Planned Features:
+  - Bi-directional path tracing
+  - Metropolis Light Transport
+  - Sub-surface scattering
+  - Spectral rendering
+  
+TODO:
+ - refactor to use RAII where possible
+ - Port to CMake
