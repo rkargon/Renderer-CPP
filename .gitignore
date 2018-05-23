@@ -28,3 +28,6 @@
 *.app
 
 *.xcodeproj/
+
+# build dir
+build/*
