@@ -4,6 +4,7 @@ QT += core gui widgets
 
 TARGET = renderer
 TEMPLATE = app
+CONFIG += console
 
 QMAKE_CXXFLAGS += -msse2
 QMAKE_CXXFLAGS += -std=c++14
@@ -67,12 +68,12 @@ SOURCES += \
     src/ui/view.cpp
 
 FORMS += src/ui/mainwindow.ui
-INCLUDEPATH += libs src src/ui # libs/glm libs/glew-1.10.0/include
-DEPENDPATH += libs src src/ui # libs/glm libs/glew-1.10.0/include
+INCLUDEPATH += libs src src/ui libs/glm # libs/glew-1.10.0/include
+DEPENDPATH += libs src src/ui libs/glm # libs/glew-1.10.0/include
 
 DEFINES += _USE_MATH_DEFINES
 # DEFINES += TIXML_USE_STL
-# DEFINES += GLM_SWIZZLE GLM_FORCE_RADIANS
+DEFINES += GLM_SWIZZLE GLM_FORCE_RADIANS
 # OTHER_FILES += \
 #     shaders/*
 
