@@ -36,7 +36,7 @@ class View : public QWidget {
   Q_OBJECT
 
 public:
-  scene *sc;
+  scene sc;
 
   unsigned int rendermode = 0;
   raster *imgrasters;

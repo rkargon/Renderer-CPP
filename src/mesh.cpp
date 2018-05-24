@@ -7,145 +7,123 @@
 //
 
 #include "mesh.h"
-using namespace std;
 
-mesh::mesh(ifstream &infile, string objname) {
-  smooth = false; // not smooth by default
-  name = objname;
-  cout << "Loading STL object \"" << name << "\"" << endl;
-  if (infile.fail()) {
-    cout << "Reading of " << name << " failed, creating an empty object."
-         << endl;
-    return;
-  }
+#include <glm/gtc/type_ptr.hpp>
 
+#include <set>
+#include <unordered_map>
+#include <unordered_set>
+
+struct stl_face {
+  float normal[3], vs[3][3];
+  std::uint16_t attr;
+};
+
+vertex vertex_from_floats(const float *fs) {
+  return vertex(fs[0], fs[1], fs[2]);
+}
+
+mesh::mesh(std::ifstream &infile, std::string objname)
+    : name(objname), smooth(false) {
+  std::cout << "Loading STL object \"" << name << "\"" << std::endl;
   // read header
-  char *header = new char[80];
-  infile.read(header, 80);
-  cout << header << endl;
+  std::unique_ptr<char[]> header = std::make_unique<char[]>(80);
+  infile.read(header.get(), 80);
+  std::cout << header.get() << std::endl;
 
-  char *facebuffer = new char[50];
-  infile.read(facebuffer, 4);
+  stl_face facebuffer;
+  char *fb_ptr = reinterpret_cast<char *>(&facebuffer);
+  infile.read(fb_ptr, 4);
 
   // read face data
-  int i = 0;
-  float xtmp, ytmp, ztmp;
-  vertex norm, vtmp;
-  meshvertex *v1, *v2, *v3;
-  face *facetmp;
-  unordered_map<vertex, meshvertex *, vertex_hasher> vertices_hash;
-  unordered_map<vertex, meshvertex *, vertex_hasher>::const_iterator v_iter;
-  unordered_set<edge, edge_hasher> edges_hash;
-  unordered_set<edge, edge_hasher>::const_iterator e_iter;
-  while (!infile.read(facebuffer, 50).eof()) {
-    // read face normal
-    xtmp = ((float *)facebuffer)[0];
-    ytmp = ((float *)facebuffer)[1];
-    ztmp = ((float *)facebuffer)[2];
-    norm.set(xtmp, ytmp, ztmp);
-
-    // read first vertex
-    xtmp = ((float *)facebuffer)[3];
-    ytmp = ((float *)facebuffer)[4];
-    ztmp = ((float *)facebuffer)[5];
-    vtmp.set(xtmp, ytmp, ztmp);
-    // if vertex is not unique, then just point to the existing vertex.
-    // Otherwise, store new vertex
-    if ((v_iter = vertices_hash.find(vtmp)) == vertices_hash.end()) {
-      v1 = new meshvertex(xtmp, ytmp, ztmp);
-      vertices_hash.insert({vtmp, v1});
-    } else
-      v1 = v_iter->second;
-
-    // second vertex
-    xtmp = ((float *)facebuffer)[6];
-    ytmp = ((float *)facebuffer)[7];
-    ztmp = ((float *)facebuffer)[8];
-    vtmp.set(xtmp, ytmp, ztmp);
-    if ((v_iter = vertices_hash.find(vtmp)) == vertices_hash.end()) {
-      v2 = new meshvertex(xtmp, ytmp, ztmp);
-      vertices_hash.insert({vtmp, v2});
-    } else
-      v2 = v_iter->second;
-
-    // third vertex
-    xtmp = ((float *)facebuffer)[9];
-    ytmp = ((float *)facebuffer)[10];
-    ztmp = ((float *)facebuffer)[11];
-    vtmp.set(xtmp, ytmp, ztmp);
-    if ((v_iter = vertices_hash.find(vtmp)) == vertices_hash.end()) {
-      v3 = new meshvertex(xtmp, ytmp, ztmp);
-      vertices_hash.insert({vtmp, v3});
-    } else
-      v3 = v_iter->second;
+  std::unordered_map<vertex, vertex_id> vertices_hash;
+  std::unordered_set<edge> edges_hash;
+  while (!infile.read(fb_ptr, 50).eof()) {
+    // load normal and vertices
+    auto norm = vertex_from_floats(facebuffer.normal);
+    vertex_id vids[3];
+    for (int vi = 0; vi < 3; ++vi) {
+      auto vtmp = vertex_from_floats(facebuffer.vs[vi]);
+      auto res = vertices_hash.emplace(vtmp, vertices_hash.size());
+      vids[vi] = res.first->second;
+    }
 
     // Store edges of triangle
-    edges_hash.emplace(v1, v2);
-    edges_hash.emplace(v2, v3);
-    edges_hash.emplace(v3, v1);
+    edges_hash.emplace(vids[0], vids[1]);
+    edges_hash.emplace(vids[1], vids[2]);
+    edges_hash.emplace(vids[2], vids[0]);
 
     // Load face with normal, vertices, and link to this object
-    facetmp = new face(norm, v1, v2, v3, this);
-    faces.push_back(facetmp);
-    v1->faces.push_back(facetmp);
-    v2->faces.push_back(facetmp);
-    v3->faces.push_back(facetmp);
-
-    i++;
+    face f(norm, vids[0], vids[1], vids[2], this);
+    this->faces.push_back(f);
+    for (int vi = 0; vi < 3; ++vi) {
+      this->face_adjacencies[vids[vi]].insert(this->faces.size() - 1);
+    }
   }
 
   // Load unique vertices into this->vertices
-  for (auto it = vertices_hash.begin(); it != vertices_hash.end(); ++it) {
-    vertices.push_back(it->second);
-  }
-  // load unique edges into this->edges
-  for (auto it = edges_hash.begin(); it != edges_hash.end(); ++it) {
-    edges.push_back(new edge(it->v1, it->v2));
+  vertices.reserve(vertices_hash.size());
+  for (const auto &kv_iter : vertices_hash) {
+    vertices[kv_iter.second] = kv_iter.first;
   }
 
-  // generate object origin
+  // load unique edges into this->edges
+  std::copy(edges_hash.begin(), edges_hash.end(), edges.begin());
+
+  // calc vertex normals
+  vertex_normals.reserve(vertices.size());
+  for (int i = 0; i < vertices.size(); ++i) {
+    vertex n(0, 0, 0);
+    for (face_id f_id : face_adjacencies[i]) {
+      n += faces[f_id].normal;
+    }
+    vertex_normals[i] = glm::normalize(n);
+  }
+
   origin = centroid();
 
-  cout << vertices.size() << " vertices." << endl;
-  cout << edges.size() << " edges." << endl;
-  cout << faces.size() << " faces." << endl;
-
-  delete header;
-  delete facebuffer;
-}
-
-void mesh::project_texture(tex_projection_t proj) {
-  vertex vn;
-  for (meshvertex *v : vertices) {
-    vn = v->unitvect();
-    switch (proj) {
-    case TEX_PROJ_SPHERICAL:
-      v->tex_u = atan2(vn.x, vn.y);
-      if (v->tex_u < 0)
-        v->tex_u += M_PI * 2;
-      v->tex_u /= (2 * M_PI);
-      v->tex_v = acos(vn.z) / M_PI;
-      break;
-
-    default:
-      break;
-    }
+  std::cout << vertices.size() << " vertices." << std::endl;
+  std::cout << edges.size() << " edges." << std::endl;
+  std::cout << faces.size() << " faces." << std::endl;
+  if (infile.fail()) {
+    std::cout << "Reading of " << name << " failed, creating an empty object."
+              << std::endl;
+    return;
   }
 }
 
+// void mesh::project_texture(tex_projection_t proj) {
+//   vertex vn;
+//   for (meshvertex *v : vertices) {
+//     vn = v->unitvect();
+//     switch (proj) {
+//     case TEX_PROJ_SPHERICAL:
+//       v->tex_u = std::atan2(vn.x, vn.y);
+//       if (v->tex_u < 0)
+//         v->tex_u += M_PI * 2;
+//       v->tex_u /= (2 * M_PI);
+//       v->tex_v = std::acos(vn.z) / M_PI;
+//       break;
+
+//     default:
+//       break;
+//     }
+//   }
+// }
+
 void mesh::move(const vertex &dv) {
-  for (vertex *v : vertices) {
-    (*v) += dv;
+  for (auto &v : vertices) {
+    v += dv;
   }
   origin += dv;
 }
 
 void mesh::scale(const vertex &ds, const vertex &scale_center) {
   vertex dv;
-  for (vertex *v : vertices) {
-    dv = *v - scale_center; // get vertex relative to center
-    dv *= ds;               // scale vertex relative to center
-    *v = scale_center + dv; // return new vertex
+  for (auto &v : vertices) {
+    dv = v - scale_center; // get vertex relative to center
+    dv *= ds;              // scale vertex relative to center
+    v = scale_center + dv; // return new vertex
   }
   dv = origin - scale_center;
   dv *= ds;
@@ -155,7 +133,7 @@ void mesh::scale_centered(const vertex &ds) { scale(ds, origin); }
 
 vertex mesh::centroid() const {
   vertex mean;
-  for (vertex *v : vertices) {
+  for (const auto &v : vertices) {
     mean += v;
   }
   return mean * (1.0 / vertices.size());

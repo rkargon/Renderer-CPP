@@ -11,57 +11,57 @@
 
 #include "geom.h"
 
-class BSDF
-{
+class BSDF {
 public:
-    virtual color getLight(color incidentColor, vertex incidentDirection, vertex normal, vertex returningDirection) = 0;
-    virtual vertex getIncidentDirection(vertex normal, vertex viewDirection) = 0;
+  virtual color getLight(color incidentColor, vertex incidentDirection,
+                         vertex normal, vertex returningDirection) = 0;
+  virtual vertex getIncidentDirection(vertex normal, vertex viewDirection) = 0;
 };
 
-class DiffuseBSDF : public BSDF
-{
+class DiffuseBSDF : public BSDF {
 public:
-    color col;
-    
-    DiffuseBSDF(color c = color(1,1,1));
-    virtual color getLight(color incidentColor, vertex incidentDirection, vertex normal, vertex returningDirection);
-    virtual vertex getIncidentDirection(vertex normal, vertex viewDirection);
+  color col;
+
+  DiffuseBSDF(color c = color(1, 1, 1));
+  virtual color getLight(color incidentColor, vertex incidentDirection,
+                         vertex normal, vertex returningDirection);
+  virtual vertex getIncidentDirection(vertex normal, vertex viewDirection);
 };
 
-class EmissionBSDF : public BSDF
-{
+class EmissionBSDF : public BSDF {
 public:
-    color col;
-    double intensity;
-    
-    EmissionBSDF(color c=color(1,1,1), double i=10);
-    virtual color getLight(color incidentColor, vertex incidentDirection, vertex normal, vertex returningDirection);
-    virtual vertex getIncidentDirection(vertex normal, vertex viewDirection);
+  color col;
+  double intensity;
+
+  EmissionBSDF(color c = color(1, 1, 1), double i = 10);
+  virtual color getLight(color incidentColor, vertex incidentDirection,
+                         vertex normal, vertex returningDirection);
+  virtual vertex getIncidentDirection(vertex normal, vertex viewDirection);
 };
 
-class GlossyBSDF : public BSDF
-{
+class GlossyBSDF : public BSDF {
 public:
-    color col;
-    double roughness;
-    
-    GlossyBSDF(color c=color(1,1,1), double r=0.2);
-    virtual color getLight(color incidentColor, vertex incidentDirection, vertex normal, vertex returningDirection);
-    virtual vertex getIncidentDirection(vertex normal, vertex viewDirection);
+  color col;
+  double roughness;
+
+  GlossyBSDF(color c = color(1, 1, 1), double r = 0.2);
+  virtual color getLight(color incidentColor, vertex incidentDirection,
+                         vertex normal, vertex returningDirection);
+  virtual vertex getIncidentDirection(vertex normal, vertex viewDirection);
 };
 
-class MixBSDF : public BSDF
-{
+class MixBSDF : public BSDF {
 public:
-    double fac;
-    BSDF *mat1;
-    BSDF *mat2;
-    
-    //whether current sample should come from material 1
-    bool materialCounter;
-    
-    MixBSDF(double f = 0.5, BSDF *m1=nullptr, BSDF *m2=nullptr);
-    virtual color getLight(color incidentColor, vertex incidentDirection, vertex normal, vertex returningDirection);
-    virtual vertex getIncidentDirection(vertex normal, vertex viewDirection);
+  double fac;
+  BSDF *mat1;
+  BSDF *mat2;
+
+  // whether current sample should come from material 1
+  bool materialCounter;
+
+  MixBSDF(double f = 0.5, BSDF *m1 = nullptr, BSDF *m2 = nullptr);
+  virtual color getLight(color incidentColor, vertex incidentDirection,
+                         vertex normal, vertex returningDirection);
+  virtual vertex getIncidentDirection(vertex normal, vertex viewDirection);
 };
 #endif /* defined(__Renderer__BSDF__) */

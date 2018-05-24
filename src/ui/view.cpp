@@ -20,30 +20,30 @@ View::View(QWidget *parent) : QWidget(parent) {
                            "Computer Graphics/Models/dragonsmall.stl");
   std::ifstream spherefile("/Users/raphaelkargon/Documents/Programming/"
                            "Computer Graphics/Models/sphere.stl");
-  camera *cam = new camera();
-  cam->dof_focus_distance = 4;
-  cam->aperture_size = 0.0;
-  std::vector<lamp *> lamps;
+  camera cam();
+  cam.dof_focus_distance = 4;
+  cam.aperture_size = 0.0;
+  std::vector<lamp> lamps;
   //    lamps.push_back(new lamp(45, 2, vertex(-10, 0,-7),
   //    rgb_to_color(0xFFAAAA)));
   //    lamps.push_back(new lamp(45, 2, vertex( 10, 0,-7),
   //    rgb_to_color(0xAAFFAA)));
   //    lamps.push_back(new lamp(45, 2, vertex( 0,-10, 7),
   //    rgb_to_color(0xAAAAFF)));
-  lamps.push_back(new lamp(25, 2, vertex(0, 5, 5), rgb_to_color(0xFFCC66)));
-  world *sc_world = new world(color(0.4, 0.4, 0.4), color(0.3, 0.4, 0.5));
+  lamps.emplace_back(25, 2, vertex(0, 5, 5), rgb_to_color(0xFFCC66));
+  world sc_world(color(0.4, 0.4, 0.4), color(0.3, 0.4, 0.5));
   ;
-  std::vector<mesh *> objects;
+  std::vector<mesh> objects;
 
   // dragon
-  mesh *dragonobj = new mesh(dragonfile, "Dragon");
+  mesh dragonobj(dragonfile, "Dragon");
   dragonfile.close();
   dragonobj->mat = new material();
   dragonobj->bsdf = new DiffuseBSDF();
   dragonobj->project_texture(TEX_PROJ_SPHERICAL);
 
   // sphere
-  mesh *sphereobj = new mesh(spherefile, "Sphere");
+  mesh sphereobj(spherefile, "Sphere");
   spherefile.close();
   sphereobj->mat = new material();
   sphereobj->bsdf = new EmissionBSDF();
@@ -54,8 +54,8 @@ View::View(QWidget *parent) : QWidget(parent) {
   objects.push_back(dragonobj);
   objects.push_back(sphereobj);
 
-  distance_estimator *de_obj = new auto(de_mandelbox(2.5, 1, 0.5, 1, 30));
-  sc = new scene(cam, lamps, sc_world, objects, de_obj, new material{});
+  distance_estimator de_obj(de_mandelbox(2.5, 1, 0.5, 1, 30));
+  sc = scene(cam, lamps, sc_world, objects, de_obj, material{});
   //    if(sc->kdt != nullptr) sc->kdt->print_stats();
 
   // set up images and buffers
@@ -157,7 +157,7 @@ void View::updateImage() {
 void View::keyPressEvent(QKeyEvent *event) {
   switch (event->key()) {
   case Qt::Key_5:
-    sc->cam->ortho = !sc->cam->ortho;
+    sc->cam.ortho = !sc->cam.ortho;
     updateImage();
     break;
   case Qt::Key_S:
@@ -178,8 +178,8 @@ void View::keyPressEvent(QKeyEvent *event) {
     updateImage();
     break;
   case Qt::Key_Space:
-    sc->cam->focus = vertex();
-    sc->cam->center_focus();
+    sc->cam.focus = vertex();
+    sc->cam.center_focus();
     updateImage();
     break;
   default:
@@ -193,12 +193,12 @@ void View::mouseMoveEvent(QMouseEvent *event) {
   QPoint delta = pos - prevpos; // prevpos initialized in mousePressEvent
 
   if (event->modifiers() & Qt::ShiftModifier) {
-    sc->cam->shift_focus(-delta.x() / 100.0, delta.y() / 100.0);
+    sc->cam.shift_focus(-delta.x() / 100.0, delta.y() / 100.0);
   } else {
-    sc->cam->rotate_local_x(delta.y() / 100.0);
-    sc->cam->rotate_local_y(delta.x() / 100.0);
+    sc->cam.rotate_local_x(delta.y() / 100.0);
+    sc->cam.rotate_local_y(delta.x() / 100.0);
   }
-  sc->cam->center_focus();
+  sc->cam.center_focus();
   prevpos = pos;
   updateImage();
   repaint();
@@ -207,8 +207,8 @@ void View::mouseMoveEvent(QMouseEvent *event) {
 void View::mousePressEvent(QMouseEvent *event) {
   prevpos = event->pos();
   if (event->button() == Qt::MiddleButton) {
-    sc->cam->set_global_rotation(0, 0, 0);
-    sc->cam->center_focus();
+    sc->cam.set_global_rotation(0, 0, 0);
+    sc->cam.center_focus();
     updateImage();
     repaint();
   }
@@ -216,7 +216,7 @@ void View::mousePressEvent(QMouseEvent *event) {
 
 void View::wheelEvent(QWheelEvent *event) {
   double zoomfactor = pow(1.005, -event->delta());
-  sc->cam->zoom((double)zoomfactor);
+  sc->cam.zoom((double)zoomfactor);
   updateImage();
   repaint();
 }
@@ -242,8 +242,8 @@ void View::drawWireFrame() {
 
   for (mesh *obj : sc->objects) {
     for (edge *e : obj->edges) {
-      p1 = sc->cam->project_vertex(*e->v1, w, h);
-      p2 = sc->cam->project_vertex(*e->v2, w, h);
+      p1 = sc->cam.project_vertex(*e->v1, w, h);
+      p2 = sc->cam.project_vertex(*e->v2, w, h);
       if (isnan(p1.x) || isnan(p2.x) || isnan(p1.y) || isnan(p2.y))
         continue;
       painter.drawLine(p1.x, p1.y, p2.x, p2.y);
