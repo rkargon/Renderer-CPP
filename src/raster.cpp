@@ -8,29 +8,15 @@
 
 #include "raster.h"
 
-raster::raster(const int w, const int h){
-    this->w = w;
-    this->h = h;
-    colbuffer = new int[w*h];
-    zbuffer = new double[w*h];
-    normbuffer = new int[w*h];
-}
+raster::raster(const int w, const int h)
+    : _w(w), _h(h), colbuffer(std::make_unique<int[]>(_w * _h)),
+      zbuffer(std::make_unique<double[]>(_w * _h)),
+      normbuffer(std::make_unique<int[]>(_w * _h)) {}
 
-raster::~raster(){
-    delete[] colbuffer;
-    delete[] zbuffer;
-    delete[] normbuffer;
-}
-
-void raster::resize(const int w, const int h){
-    this->w = w;
-    this->h = h;
-    
-    delete[] colbuffer;
-    delete[] zbuffer;
-    delete[] normbuffer;
-    
-    colbuffer = new int[w*h];
-    zbuffer = new double[w*h];
-    normbuffer = new int[w*h];
+void raster::resize(const int w, const int h) {
+  _w = w;
+  _h = h;
+  colbuffer = std::make_unique<int[]>(_w * _h);
+  zbuffer = std::make_unique<double[]>(_w * _h);
+  normbuffer = std::make_unique<int[]>(_w * _h);
 }

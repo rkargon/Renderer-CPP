@@ -8,6 +8,12 @@
 
 #include "scene.h"
 
+#include "mesh.h"
+
+#include <glm/gtx/io.hpp>
+
+#include <iostream>
+
 material::material(const color &dc, const double di, const color &sc,
                    const double si, const double sh, const double ri,
                    const double a, const double indxofrefr, QImage *c,
@@ -53,10 +59,8 @@ lamp::lamp(const double i, const int fall, const vertex &l, const color &c,
     : intensity(i), falloff(fall), loc(l), col(c), sun_direction(sun_direction),
       is_sun(true) {}
 
-world::world(const color &hc, const color &zc, const bool flat,
-             const double ambient_intensity)
-    : horizon_col(hc), zenith_col(zc), is_flat(flat),
-      ambient_intensity(ambient_intensity) {}
+world::world()
+    : horizon_col(0), zenith_col(0), is_flat(true), ambient_intensity(0) {}
 
 // PRECONDITION: dir is normalized
 // If is_flat, horizon_col is returned.
@@ -66,20 +70,26 @@ color world::get_color(const ray &r) const {
   if (is_flat)
     return horizon_col;
   else {
-    return lerp(horizon_col, zenith_col, fabs(r.dir.z)); // not really a linear
-                                                         // progression from
-                                                         // horizon to zenith,
-                                                         // but close enough
+    return glm::mix(horizon_col, zenith_col,
+                    fabs(r.dir.z)); // not really a linear progression
+                                    // from horizon to zenith, but
+                                    // close enough
   }
 }
 
-sky::sky(vertex beta_r, vertex beta_m, double Hr, double Hm,
-         double radius_earth, double radius_atmo, vertex sun_direction,
-         double sun_intensity, double g)
-    : beta_r(beta_r), beta_m(beta_m), Hr(Hr), Hm(Hm),
-      radius_earth(radius_earth), radius_atmo(radius_atmo),
-      sun_direction(sun_direction.unitvect()), sun_intensity(sun_intensity),
-      g(g) {}
+// sky::sky(vertex beta_r, vertex beta_m, double Hr, double Hm,
+//          double radius_earth, double radius_atmo, vertex sun_direction,
+//          double sun_intensity, double g)
+//     : beta_r(beta_r), beta_m(beta_m), Hr(Hr), Hm(Hm),
+//       radius_earth(radius_earth), radius_atmo(radius_atmo),
+//       sun_direction(glm::normalize(sun_direction)),
+//       sun_intensity(sun_intensity), g(g) {}
+
+sky::sky()
+    : beta_r(5.5e-6, 13.0e-6, 22.4e-6), beta_m(21e-6, 21e-6, 21e-6), Hr(7994),
+      Hm(1200), radius_earth(6360e3), radius_atmo(6420e3),
+      sun_direction(glm::normalize(vertex(0, -1, 0.4))), sun_intensity(20),
+      g(0.76) {}
 
 // Source:
 // http://scratchapixel.com/lessons/3d-advanced-lessons/simulating-the-colors-of-the-sky/atmospheric-scattering/
@@ -90,8 +100,9 @@ color sky::get_color(const ray &r) const {
   r_new.org.z += radius_earth;
   // get atmosphere intersection point
   double t_atmo;
-  if (!ray_sphere_intersect(r_new, radius_atmo, t_atmo))
-    return color();
+  if (!ray_sphere_intersect(r_new, radius_atmo, t_atmo)) {
+    return color(0, 0, 0);
+  }
   double segment_length = t_atmo / samples;
   vertex ray_segment = r_new.dir * segment_length,
          ray_sample = r_new.org + ray_segment * 0.5; // set up initial sample
@@ -105,14 +116,14 @@ color sky::get_color(const ray &r) const {
                    (8 * M_PI * (2 + g * g) * pow(1 + g * g - 2 * g * mu, 1.5));
 
   double optical_depth_r = 0, optical_depth_m = 0;
-  color col_r{}, col_m{}; // resulting colors of each type of scattering
+  color col_r(0), col_m(0); // resulting colors of each type of scattering
   // for each sample along ray
   for (int i = 0; i < samples; i++, ray_sample += ray_segment) {
     // get sample altitude
-    double height = ray_sample.len() - radius_earth;
+    double height = glm::length(ray_sample) - radius_earth;
     // update optical depth
-    double hr = exp(-height / Hr) * segment_length;
-    double hm = exp(-height / Hm) * segment_length;
+    double hr = std::exp(-height / Hr) * segment_length;
+    double hm = std::exp(-height / Hm) * segment_length;
     optical_depth_r += hr;
     optical_depth_m += hm;
 
@@ -130,39 +141,48 @@ color sky::get_color(const ray &r) const {
     int j;
     for (j = 0; j < samples_lightray;
          j++, lightray_sample += lightray_segment) {
-      double heightlight = lightray_sample.len() - radius_earth;
-      if (heightlight < 0)
+      double heightlight = glm::length(lightray_sample) - radius_earth;
+      if (heightlight < 0) {
         break; // discard ray if it is in shadow of the earth
+      }
       // calc optical depth at each subsample
-      optical_depth_light_r += exp(-heightlight / Hr) * segment_length_light;
-      optical_depth_light_m += exp(-heightlight / Hm) * segment_length_light;
+      optical_depth_light_r +=
+          std::exp(-heightlight / Hr) * segment_length_light;
+      optical_depth_light_m +=
+          std::exp(-heightlight / Hm) * segment_length_light;
     }
     if (j == samples_lightray) { // ray is not in shadow of earth
       // calc light color based on attenuation
       vertex tau = beta_r * (optical_depth_r + optical_depth_light_r) +
                    beta_m * 1.1 * (optical_depth_m + optical_depth_light_m);
-      vertex attenuation(exp(-tau.x), exp(-tau.y), exp(-tau.z));
+      vertex attenuation(std::exp(-tau.x), std::exp(-tau.y), std::exp(-tau.z));
       col_r += hr * attenuation;
       col_m += hm * attenuation;
-    } else
+    } else {
       return color();
+    }
   }
   return (col_r * beta_r * phase_r + col_m * beta_m * phase_m) * sun_intensity;
 }
 
-scene::scene()
-    : cam(nullptr), lamps(), w(nullptr), objects(std::vector<mesh *>()),
-      kdt(nullptr) {}
+scene::scene() : w(std::make_unique<world>()) {}
 
-// automatically builds kdtree for object
-scene::scene(camera c, std::vector<lamp> l, const world &wor,
-             const std::vector<mesh> &objects, const distance_estimator &de_obj,
-             const material &de_mat)
-    : cam(c), lamps(l), w(wor), objects(objects), de_obj(de_obj),
-      de_mat(de_mat) {
-  std::vector<face *> allfaces;
-  for (mesh *o : objects) {
-    allfaces.insert(allfaces.end(), o->faces.begin(), o->faces.end());
+mesh &scene::add_object(std::ifstream &infile, const std::string &name,
+                        bool update_tree) {
+  objects.emplace_back(infile, name);
+  if (update_tree) {
+    this->update_tree();
+  }
+  return objects.back();
+}
+
+void scene::update_tree() {
+  std::vector<const face *> allfaces;
+  for (const mesh &o : objects) {
+    allfaces.reserve(allfaces.size() + o.faces.size());
+    for (const face &f : o.faces) {
+      allfaces.push_back(&f);
+    }
   }
   this->kdt = kdtree::build_tree(allfaces);
 }

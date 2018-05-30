@@ -8,65 +8,53 @@
 
 #include "view.h"
 
-View::View(QWidget *parent) : QWidget(parent) {
+View::View(QWidget *parent) : QWidget(parent), imgrasters(width(), height()) {
   setBackgroundRole(QPalette::Base);
   setAutoFillBackground(true);
   setFocusPolicy(Qt::StrongFocus);
   setFocus(Qt::ActiveWindowFocusReason);
   setLayout(new QHBoxLayout);
 
+  // set up image
+  renderimg = QImage(reinterpret_cast<uchar *>(imgrasters.colbuffer.get()),
+                     width(), height(), QImage::Format_ARGB32);
+
+  std::string models_dir =
+      "/Users/raphaelkargon/Documents/Programming/Computer Graphics/Models/";
+  std::ifstream dragonfile(models_dir + "dragonsmall.stl");
+  std::ifstream spherefile(models_dir + "sphere.stl");
+  std::ifstream cubefile(models_dir + "cube.stl");
+
   // scene setup
-  std::ifstream dragonfile("/Users/raphaelkargon/Documents/Programming/"
-                           "Computer Graphics/Models/dragonsmall.stl");
-  std::ifstream spherefile("/Users/raphaelkargon/Documents/Programming/"
-                           "Computer Graphics/Models/sphere.stl");
-  camera cam();
-  cam.dof_focus_distance = 4;
-  cam.aperture_size = 0.0;
-  std::vector<lamp> lamps;
-  //    lamps.push_back(new lamp(45, 2, vertex(-10, 0,-7),
-  //    rgb_to_color(0xFFAAAA)));
-  //    lamps.push_back(new lamp(45, 2, vertex( 10, 0,-7),
-  //    rgb_to_color(0xAAFFAA)));
-  //    lamps.push_back(new lamp(45, 2, vertex( 0,-10, 7),
-  //    rgb_to_color(0xAAAAFF)));
-  lamps.emplace_back(25, 2, vertex(0, 5, 5), rgb_to_color(0xFFCC66));
-  world sc_world(color(0.4, 0.4, 0.4), color(0.3, 0.4, 0.5));
-  ;
-  std::vector<mesh> objects;
+  sc.cam.center = vertex(0, -5, 0);
+  sc.cam.normal = vertex(0, 1, 0);
+  sc.cam.focus = vertex(0, 0, 0);
+  sc.cam.dof_focus_distance = 4;
+  sc.cam.aperture_size = 0.0;
+  sc.cam.center_focus();
+  sc.cam.calc_image_vectors();
+  sc.lamps.emplace_back(25, 2, vertex(0, 5, 5), rgb_to_color(0xFFCC66));
+  sc.w = std::make_unique<sky>();
 
-  // dragon
-  mesh dragonobj(dragonfile, "Dragon");
-  dragonfile.close();
-  dragonobj->mat = new material();
-  dragonobj->bsdf = new DiffuseBSDF();
-  dragonobj->project_texture(TEX_PROJ_SPHERICAL);
+  mesh &sphere = sc.add_object(spherefile, "Sphere", false);
+  sphere.mat = new material();
+  sphere.bsdf = new EmissionBSDF();
+  // sphere.project_texture(TEX_PROJ_SPHERICAL);
+  sphere.scale_centered(vertex(0.3, 0.3, 0.3));
+  sphere.move(vertex(0, 0, 1));
 
-  // sphere
-  mesh sphereobj(spherefile, "Sphere");
-  spherefile.close();
-  sphereobj->mat = new material();
-  sphereobj->bsdf = new EmissionBSDF();
-  sphereobj->project_texture(TEX_PROJ_SPHERICAL);
-  sphereobj->scale_centered(vertex(0.3, 0.3, 0.3));
-  sphereobj->move(vertex(0, 0, 1));
+  mesh &dragon = sc.add_object(dragonfile, "Dragon", false);
+  dragon.mat = new material();
+  dragon.bsdf = new DiffuseBSDF();
+  // dragon.project_texture(TEX_PROJ_SPHERICAL);
+  sc.update_tree();
 
-  objects.push_back(dragonobj);
-  objects.push_back(sphereobj);
+  sc.de_obj = de_mandelbox(2.5, 1, 0.5, 1, 30);
 
-  distance_estimator de_obj(de_mandelbox(2.5, 1, 0.5, 1, 30));
-  sc = scene(cam, lamps, sc_world, objects, de_obj, material{});
-  //    if(sc->kdt != nullptr) sc->kdt->print_stats();
-
-  // set up images and buffers
-  int h = height(), w = width();
-  imgrasters = new raster(w, h);
-  renderimg = new QImage((uchar *)imgrasters->colbuffer, width(), height(),
-                         QImage::Format_ARGB32);
-  manager = new thread_manager(&imgrasters, sc, 1);
+  manager = new thread_manager(&imgrasters, &sc, 1, 1);
 
   // status label
-  statuslbl = new QLabel("Raph Renderer 2017");
+  statuslbl = new QLabel("Raph Renderer 2018");
   statuslbl->setParent(this);
   this->layout()->addWidget(statuslbl);
   statuslbl->setSizePolicy(QSizePolicy::MinimumExpanding,
@@ -82,7 +70,7 @@ QSize View::sizeHint() const { return QSize(10000, 10000); }
 
 void View::paintEvent(QPaintEvent *event) {
   QPainter painter(this);
-  painter.drawImage(QPoint(0, 0), *renderimg);
+  painter.drawImage(QPoint(0, 0), renderimg);
 }
 
 void View::updateText() {
@@ -148,7 +136,6 @@ void View::updateImage() {
     manager->set_render_method(ray_march_pixel);
     manager->start();
     break;
-    break;
   }
 }
 
@@ -157,29 +144,30 @@ void View::updateImage() {
 void View::keyPressEvent(QKeyEvent *event) {
   switch (event->key()) {
   case Qt::Key_5:
-    sc->cam.ortho = !sc->cam.ortho;
+    sc.cam.ortho = !sc.cam.ortho;
     updateImage();
     break;
   case Qt::Key_S:
     // TODO: add per-object smoothing and, in general, selection
-    for (mesh *o : sc->objects) {
-      o->smooth = !o->smooth;
+    for (mesh &o : sc.objects) {
+      o.smooth = !o.smooth;
     }
     updateText();
     updateImage();
     break;
   case Qt::Key_Z:
-    if (event->modifiers() & Qt::ShiftModifier)
+    if (event->modifiers() & Qt::ShiftModifier) {
       --rendermode;
-    else
+    } else {
       ++rendermode;
+    }
     rendermode = (rendermode + 8) % 8;
     updateText();
     updateImage();
     break;
   case Qt::Key_Space:
-    sc->cam.focus = vertex();
-    sc->cam.center_focus();
+    sc.cam.focus = vertex();
+    sc.cam.center_focus();
     updateImage();
     break;
   default:
@@ -193,12 +181,12 @@ void View::mouseMoveEvent(QMouseEvent *event) {
   QPoint delta = pos - prevpos; // prevpos initialized in mousePressEvent
 
   if (event->modifiers() & Qt::ShiftModifier) {
-    sc->cam.shift_focus(-delta.x() / 100.0, delta.y() / 100.0);
+    sc.cam.shift_focus(-delta.x() / 100.0, delta.y() / 100.0);
   } else {
-    sc->cam.rotate_local_x(delta.y() / 100.0);
-    sc->cam.rotate_local_y(delta.x() / 100.0);
+    sc.cam.rotate_local_x(delta.y() / 100.0);
+    sc.cam.rotate_local_y(delta.x() / 100.0);
   }
-  sc->cam.center_focus();
+  sc.cam.center_focus();
   prevpos = pos;
   updateImage();
   repaint();
@@ -207,8 +195,8 @@ void View::mouseMoveEvent(QMouseEvent *event) {
 void View::mousePressEvent(QMouseEvent *event) {
   prevpos = event->pos();
   if (event->button() == Qt::MiddleButton) {
-    sc->cam.set_global_rotation(0, 0, 0);
-    sc->cam.center_focus();
+    sc.cam.set_global_rotation(0, 0, 0);
+    sc.cam.center_focus();
     updateImage();
     repaint();
   }
@@ -216,7 +204,7 @@ void View::mousePressEvent(QMouseEvent *event) {
 
 void View::wheelEvent(QWheelEvent *event) {
   double zoomfactor = pow(1.005, -event->delta());
-  sc->cam.zoom((double)zoomfactor);
+  sc.cam.zoom((double)zoomfactor);
   updateImage();
   repaint();
 }
@@ -225,33 +213,47 @@ void View::resizeEvent(QResizeEvent *event) {
   // thread manager will segfault if image buffer changes out from under its
   // feet.
   manager->stop();
-  imgrasters->resize(width(), height());
-  renderimg = new QImage((uchar *)imgrasters->colbuffer, width(), height(),
-                         QImage::Format_RGB32);
+  imgrasters.resize(width(), height());
+  renderimg = QImage(reinterpret_cast<uchar *>(imgrasters.colbuffer.get()),
+                     width(), height(), QImage::Format_RGB32);
   updateImage();
 }
 
 /* DRAWING FUNCTIONS */
 
 void View::drawWireFrame() {
-  renderimg->fill(0xffffff);
-  QPainter painter(renderimg);
+  renderimg.fill(0xffffff);
+  QPainter painter(&renderimg);
   int w = width(), h = height();
   point_2d<double> p1, p2;
   painter.setPen(QColor(0, 0, 0));
 
-  for (mesh *obj : sc->objects) {
-    for (edge *e : obj->edges) {
-      p1 = sc->cam.project_vertex(*e->v1, w, h);
-      p2 = sc->cam.project_vertex(*e->v2, w, h);
-      if (isnan(p1.x) || isnan(p2.x) || isnan(p1.y) || isnan(p2.y))
+  for (const mesh &obj : sc.objects) {
+    for (const edge &e : obj.edges) {
+      p1 = sc.cam.project_vertex(obj.vertices[e[0]], w, h);
+      p2 = sc.cam.project_vertex(obj.vertices[e[1]], w, h);
+      if (isnan(p1.x) || isnan(p2.x) || isnan(p1.y) || isnan(p2.y)) {
         continue;
+      }
+      painter.drawLine(p1.x, p1.y, p2.x, p2.y);
+    }
+  }
+
+  bool draw_kdtree = false;
+  if (draw_kdtree) {
+    painter.setPen(QColor(255, 0, 0));
+    for (const auto &e : sc.kdt.wireframe()) {
+      p1 = sc.cam.project_vertex(e.first, w, h);
+      p2 = sc.cam.project_vertex(e.second, w, h);
+      if (isnan(p1.x) || isnan(p2.x) || isnan(p1.y) || isnan(p2.y)) {
+        continue;
+      }
       painter.drawLine(p1.x, p1.y, p2.x, p2.y);
     }
   }
 }
 
 QColor colorToQColor(const color &c) {
-  return QColor((int)clamp(c.r * 255, 0, 255), (int)clamp(c.g * 255, 0, 255),
-                (int)clamp(c.b * 255, 0, 255));
+  auto c1 = glm::clamp(c * 255.0, color(0.0), color(255.0));
+  return QColor((int)c1.r, (int)c1.g, (int)c1.b);
 }

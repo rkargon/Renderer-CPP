@@ -30,11 +30,13 @@ public:
   double aperture_size;      // Width of aperture for DOF effects. 0 means no
                              // blurring due to depth of field.
 
-  camera(const vertex &center = {-5, 0, 0}, const vertex &focus = {},
-         const vertex &normal = {1, 0, 0}, const vertex &vert = {0, 0, 1},
-         const double fov = 0.75, const double mindist = 0.01,
-         const double maxdist = 100, const bool ortho = false,
-         double dof_focus_distance = 0, double aperture_size = 0);
+  /* camera(const vertex &center = {0, -5, 0}, const vertex &focus = {}, */
+  /*        const vertex &normal = {0, 1, 0}, const vertex &vert = {0, 0, 1}, */
+  /*        const double fov = 0.75, const double mindist = 0.01, */
+  /*        const double maxdist = 100, const bool ortho = false, */
+  /*        double dof_focus_distance = 0, double aperture_size = 0); */
+
+  camera();
 
   /* projections */
 
@@ -63,14 +65,12 @@ public:
   void set_global_rotation(const double theta, const double rho,
                            const double psi); // set global rotation angles
 
+  // recalculates image plane vectors
+  void calc_image_vectors();
+
 private:
   // keeps track of image plane vectors
   vertex _cx, _cy;
-  // recalculates image plane vectors
-  void calc_image_vectors() {
-    _cx = glm::normalize(glm::cross(normal, vert));
-    _cy = glm::normalize(glm::cross(_cx, normal));
-  }
 };
 
 #endif /* defined(__Renderer__camera__) */

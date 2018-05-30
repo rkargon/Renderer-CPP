@@ -9,11 +9,14 @@
 #ifndef __Renderer__scene__
 #define __Renderer__scene__
 
+#include <memory>
+
+#include <QtGui/QImage>
+
 #include "camera.h"
 #include "distance_estimation.h"
 #include "geom.h"
 #include "kdtree.h"
-#include <QtGui/QImage>
 
 class material {
 public:
@@ -76,8 +79,10 @@ public:
   bool is_flat; // If is_flat, all colors are horizon_col and zenith_col is
                 // ignored.
   double ambient_intensity;
-  world(const color &hc = color(1, 1, 1), const color &zc = color(0.8, 0.8, 1),
-        const bool flat = false, const double ambient_intensity = 0);
+  // world(const color &hc = color(1, 1, 1), const color &zc = color(0.8, 0.8,
+  // 1),
+  //       const bool flat = false, const double ambient_intensity = 0);
+  world();
   virtual color get_color(const ray &r) const;
 };
 
@@ -95,12 +100,13 @@ public:
   double sun_intensity;             // Intensity of the sun
   double g;                         // mean cosine
 
-  sky(vertex beta_r = vertex(5.5e-6, 13.0e-6, 22.4e-6),
-      vertex beta_m = vertex(21e-6, 21e-6, 21e-6), double Hr = 7994,
-      double Hm = 1200, double radius_earth = 6360e3,
-      double radius_atmo = 6420e3,
-      vertex sun_direction = glm::normalize(vertex(0, -1, 0.4)),
-      double sun_intensity = 20, double g = 0.76);
+  sky();
+  // sky(vertex beta_r = vertex(5.5e-6, 13.0e-6, 22.4e-6),
+  //     vertex beta_m = vertex(21e-6, 21e-6, 21e-6), double Hr = 7994,
+  //     double Hm = 1200, double radius_earth = 6360e3,
+  //     double radius_atmo = 6420e3,
+  //     vertex sun_direction = glm::normalize(vertex(0, -1, 0.4)),
+  //     double sun_intensity = 20, double g = 0.76);
   color get_color(const ray &r) const;
 };
 
@@ -108,16 +114,20 @@ class scene {
 public:
   camera cam;
   std::vector<lamp> lamps;
-  world w;
+  std::unique_ptr<world> w;
   std::vector<mesh> objects;
   kdtree kdt;
   distance_estimator de_obj;
   material de_mat;
 
-  scene(const camera &c, const std::vector<lamp> &l, const world &wor,
-        const std::vector<mesh> &objects, const distance_estimator &de_obj,
-        const material &de_mat);
   scene();
+
+  mesh &add_object(std::ifstream &infile, const std::string &name,
+                   bool update_tree = true);
+
+  void update_tree();
+
+private:
 };
 
 #endif /* defined(__Renderer__material__) */

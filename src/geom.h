@@ -37,70 +37,6 @@ template <typename T> T orient_2d(point_2d<T> a, point_2d<T> b, point_2d<T> c) {
   return ((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x));
 }
 
-// // Represents a point in three-dimensional space in cartesian coordinates.
-// Also
-// // used to represent color values.
-// class vertex {
-// public:
-//   vertex();
-//   vertex(double a, double b, double c);
-
-//   inline double len() const { return sqrt(x * x + y * y + z * z); }
-//   inline double lensqr() const { return (x * x + y * y + z * z); }
-//   void normalize();
-//   void set(const double a, const double b, const double c);
-//   vertex reflection(const vertex &n) const;
-//   vertex unitvect() const; // return a normalized copy of this vector
-//   void to_polar(double &radius, double &theta, double &phi) const;
-//   // Convenience function for getting polar coordinates, given a
-//   pre-calculated
-//   // radius. This saves some computation time.
-//   void to_polar_angles(const double radius_squared, double &theta,
-//                        double &phi) const;
-//   vertex box_fold(const double l) const;
-//   // Returns the scaling factor for a sphere fold
-//   double sphere_fold_ratio(const double min_radius_2,
-//                            const double fixed_radius_2) const;
-
-//   void operator+=(const vertex &v2);
-//   void operator+=(const vertex *v2);
-//   void operator-=(const vertex &v2);
-//   void operator-=(const vertex *v2);
-//   void operator*=(const double r);
-//   void operator*=(const vertex &v2);
-//   void operator*=(const vertex *v2);
-//   vertex operator-();
-//   friend vertex operator+(const vertex &v1, const vertex &v2);
-//   friend vertex operator+(const vertex &v1, const vertex *v2);
-//   friend vertex operator-(const vertex &v1, const vertex &v2);
-//   friend vertex operator-(const vertex &v1, const vertex *v2);
-//   friend vertex operator*(const vertex &v1, double r);
-//   friend vertex operator*(const double r, const vertex &v1);
-//   friend vertex operator*(const vertex &v1, const vertex &v2);
-//   friend vertex operator/(const double r, const vertex &v1);
-//   friend vertex operator/(const vertex &v1, const double r);
-//   friend bool operator==(const vertex &v1, const vertex &v2);
-//   friend bool operator!=(const vertex &v1, const vertex &v2);
-//   friend std::ostream &operator<<(std::ostream &os, const vertex &v);
-
-//   // data
-//   union {
-//     struct {
-//       double r, g, b;
-//     };
-//     struct {
-//       double t, u, v;
-//     };
-//     struct {
-//       double x, y, z;
-//     };
-//     struct {
-//       double vec[3];
-//     };
-//     // ok so maybe I'm lazy
-//   };
-// };
-
 template <typename GLM_T> void normalize_in_place(GLM_T &x) {
   x = glm::normalize(x);
 }
@@ -135,6 +71,8 @@ public:
 
 typedef bounds ray;
 
+std::ostream &operator<<(std::ostream &os, bounds &b);
+
 // Represents a triangular face on a 3D mesh
 class face {
 public:
@@ -151,9 +89,11 @@ public:
 
   bounds bounding_box() const;
   vertex center() const;
-  vertex generate_normal();
-  bool intersect_ray_triangle(const ray &r, vertex *tuv);
-  bool is_perpendicular(const vertex &normal);
+  vertex generate_normal() const;
+  static vertex generate_normal(const vertex &v1, const vertex &v2,
+                                const vertex &v3);
+  bool intersect_ray_triangle(const ray &r, vertex *tuv) const;
+  bool is_perpendicular(const vertex &normal) const;
   inline double min_coord(int axis) const {
     return fmin(fmin(get_vert(0)[axis], get_vert(1)[axis]), get_vert(2)[axis]);
   }
@@ -162,11 +102,14 @@ public:
   }
 };
 
+std::ostream &operator<<(std::ostream &os, const face &f);
+
 namespace std {
 template <> struct hash<vertex> {
   std::size_t operator()(const vertex &v) const noexcept;
 };
 }
+
 // an undirected edge. The hash for this ignores the ordering of the vertices.
 // It is "undirected" for equality & hashing purposes, because during
 // construction thw two vertices are sorted least to greatest
@@ -181,6 +124,7 @@ public:
   const vertex_id &greatest() const;
   const vertex_id &first() const;
   const vertex_id &second() const;
+  const vertex_id &operator[](std::size_t i) const;
 
 private:
   union {
@@ -230,15 +174,15 @@ vertex rgb_to_normal(const uint n);
 color hsv_to_rgb(const int hue, const double saturation, const double value);
 
 /* bounding box related functions */
-bounds calc_bounding_box(const std::vector<face *> &faces);
+bounds calc_bounding_box(const std::vector<const face *> &faces);
 void intersect_bounding_boxes(const bounds &b1, const bounds &b2,
                               bounds &newbounds);
 void list_bounds(bounds &newbounds, int nverts, const vertex *vertices...);
 
 /* geometry intersections */
 bool ray_AABB_intersect(const bounds &AABB, const ray &r);
-face *ray_faces_intersect(const std::vector<face *> &faces, const ray &r,
-                          bool lazy, vertex *tuv);
+const face *ray_faces_intersect(const std::vector<const face *> &faces,
+                                const ray &r, bool lazy, vertex *tuv);
 bool ray_sphere_intersect(const ray &r, const double rad,
                           double &t); // intersects a ray with a sphere centered
                                       // on the origin. Assumes ray direction is

@@ -8,6 +8,7 @@
 
 #include "rendering.h"
 
+#include <glm/gtx/io.hpp>
 #include <glm/gtx/norm.hpp>
 
 int num_rays_traced = 0;
@@ -20,7 +21,7 @@ int num_rays_traced = 0;
 // reflections etc.
 color calc_lighting(const vertex &v, const vertex &n, const material &mat,
                     const scene &sc) {
-  color lightcol, speclightcol;
+  color lightcol(0), speclightcol(0);
   for (const lamp &l : sc.lamps) {
     vertex lampvect = l.loc - v;
     vertex lampvnorm = glm::normalize(lampvect);
@@ -28,8 +29,9 @@ color calc_lighting(const vertex &v, const vertex &n, const material &mat,
     vertex view = glm::normalize(sc.cam.view_vector(v));
     // if lamp and view are on different sides of face, then one is looking at
     // underside of face)
-    if (dotprod * glm::dot(n, view) > 0)
+    if (dotprod * glm::dot(n, view) > 0) {
       continue;
+    }
     double dstsqr = glm::length2(lampvect);
     if (dstsqr == 0) {
       for (int c = 0; c < 3; ++c) {
@@ -44,7 +46,8 @@ color calc_lighting(const vertex &v, const vertex &n, const material &mat,
     double spec_intensity =
         l.intensity * mat.spec_intensity *
         std::fmax(0, std::pow(glm::dot(view, refl), mat.spec_hardness));
-    double diff_intensity = l.intensity * fabs(dotprod) * mat.diff_intensity;
+    double diff_intensity =
+        l.intensity * std::fabs(dotprod) * mat.diff_intensity;
     // calc falloff
     diff_intensity /= dstsqr;
     spec_intensity /= dstsqr;
@@ -62,9 +65,9 @@ color trace_ray(const ray &viewray, const scene &sc, int depth) {
   num_rays_traced++;
   vertex tuv;
   const face *f = kdtree::ray_tree_intersect(&sc.kdt, viewray, false, &tuv);
-  if (f == nullptr)
-    return sc.w.get_color(viewray);
-  else {
+  if (f == nullptr) {
+    return sc.w->get_color(viewray);
+  } else {
     const mesh &obj = *f->obj;
     const material &mat = *obj.mat;
     vertex v = viewray.org + viewray.dir * tuv[0]; // calculate vertex location
@@ -93,7 +96,7 @@ color trace_ray(const ray &viewray, const scene &sc, int depth) {
     double ndotray = dot(n, viewray.dir);
 
     /* SPECULAR & DIFFUSE LIGHTING */
-    color lightcol, speclightcol;
+    color lightcol(0), speclightcol(0);
     for (const lamp &l : sc.lamps) {
       vertex lampvect = l.loc - v;
       vertex lampvnorm = glm::normalize(lampvect);
@@ -146,9 +149,9 @@ color trace_ray(const ray &viewray, const scene &sc, int depth) {
                    mat.get_spec_col(txu, txv) * speclightcol;
 
     /* Ambient lighting from sky */
-    if (sc.w.ambient_intensity > 0) {
+    if (sc.w->ambient_intensity > 0) {
       ray normal_ray{v, n};
-      totcol += sc.w.ambient_intensity * sc.w.get_color(normal_ray);
+      totcol += sc.w->ambient_intensity * sc.w->get_color(normal_ray);
     }
 
     /* REFLECTION & REFRACTION */
@@ -194,15 +197,16 @@ color trace_ray(const ray &viewray, const scene &sc, int depth) {
 // Traces a path through a scene, up to the given depth.
 // Used for path-tracing, and calculates indirect lighting.
 color trace_path(const ray &viewray, const scene &sc, int depth) {
-  if (depth > RAY_DEPTH)
+  if (depth > RAY_DEPTH) {
     return color();
+  }
 
   num_rays_traced++;
   vertex tuv;
-  face *f = kdtree::ray_tree_intersect(&sc.kdt, viewray, false, &tuv);
-  if (f == nullptr)
-    return sc.w.get_color(viewray);
-  else {
+  const face *f = kdtree::ray_tree_intersect(&sc.kdt, viewray, false, &tuv);
+  if (f == nullptr) {
+    return sc.w->get_color(viewray);
+  } else {
     const mesh &obj = *f->obj;
     vertex v = viewray.org + viewray.dir * tuv[0]; // calculate vertex location
 
@@ -219,7 +223,11 @@ color trace_path(const ray &viewray, const scene &sc, int depth) {
 
     // calculate incident light
     vertex inc_dir = obj.bsdf->getIncidentDirection(n, viewray.dir);
-    color inc_col = trace_path(ray(v, inc_dir), sc, depth + 1);
+    color inc_col(1, 0, 0);
+    // TODO use russian roullette
+    if (!dynamic_cast<EmissionBSDF *>(obj.bsdf)) {
+      inc_col = trace_path(ray(v, inc_dir), sc, depth + 1);
+    }
     // calculate returned light
     color return_col = obj.bsdf->getLight(inc_col, inc_dir, n, viewray.dir);
     return return_col;
@@ -229,7 +237,7 @@ color trace_path(const ray &viewray, const scene &sc, int depth) {
 // Calculates ambient occlusion for a ray.
 double ambient_occlusion(const ray &viewray, const scene &sc) {
   vertex tuv;
-  face *f = kdtree::ray_tree_intersect(&sc.kdt, viewray, false, &tuv);
+  const face *f = kdtree::ray_tree_intersect(&sc.kdt, viewray, false, &tuv);
   if (f == nullptr)
     return 1;
   else {
@@ -269,7 +277,7 @@ color raytrace_distance_field(const ray &viewray, const scene &sc,
   double t;
   int steps;
   if (!ray_march(viewray, sc.de_obj, &t, &steps, num_steps)) {
-    return sc.w.get_color(viewray);
+    return sc.w->get_color(viewray);
   } else {
     vertex v = viewray.org + t * viewray.dir;
     double ambient_occlusion = 1.0 - (steps / (double)num_steps);
@@ -327,9 +335,9 @@ color raytrace_distance_field(const ray &viewray, const scene &sc,
         sc.de_mat.diff_col * lightcol + sc.de_mat.spec_col * speclightcol;
 
     /* Ambient lighting from sky */
-    if (sc.w.ambient_intensity > 0) {
+    if (sc.w->ambient_intensity > 0) {
       ray normal_ray{v, n};
-      totcol += sc.w.ambient_intensity * sc.w.get_color(normal_ray) *
+      totcol += sc.w->ambient_intensity * sc.w->get_color(normal_ray) *
                 ambient_occlusion;
     }
 
@@ -397,11 +405,11 @@ void generate_maps(int mapflags, raster &imgrasters, const scene &sc) {
   vertex norm, norm2, norm3, normtmp;
   uint colrgb = 1;
 
-  std::fill_n(imgrasters.zbuffer, w * h, 1);
+  std::fill_n(imgrasters.zbuffer.get(), imgrasters.size(), 1);
   if (mapflags & 2)
-    std::fill_n(imgrasters.normbuffer, w * h, 0xffffff);
+    std::fill_n(imgrasters.normbuffer.get(), imgrasters.size(), 0xffffff);
   if (mapflags & 4)
-    std::fill_n(imgrasters.colbuffer, w * h, 0xffffff);
+    std::fill_n(imgrasters.colbuffer.get(), imgrasters.size(), 0xffffff);
 
   for (const mesh &obj : sc.objects) {
     for (const face &f : obj.faces) {
@@ -438,7 +446,6 @@ void generate_maps(int mapflags, raster &imgrasters, const scene &sc) {
 
       // smooth shading, get vertex colors
       if ((mapflags & (4 + 2)) && f.obj->smooth) {
-
         norm = obj.vertex_normals[f.v[0]];
         norm2 = obj.vertex_normals[f.v[1]];
         norm3 = obj.vertex_normals[f.v[2]];
@@ -545,12 +552,12 @@ void generate_maps_vector(int mapflags, raster &imgrasters, const scene &sc) {
   vertex norm, norm2, norm3, normtmp;
   uint colrgb = 1;
 
-  std::fill_n(imgrasters.zbuffer, w * h, 1);
+  std::fill_n(imgrasters.zbuffer.get(), imgrasters.size(), 1);
   if (mapflags & 2) {
-    std::fill_n(imgrasters.normbuffer, w * h, 0xffffff);
+    std::fill_n(imgrasters.normbuffer.get(), imgrasters.size(), 0xffffff);
   }
   if (mapflags & 4) {
-    std::fill_n(imgrasters.colbuffer, w * h, 0xffffff);
+    std::fill_n(imgrasters.colbuffer.get(), imgrasters.size(), 0xffffff);
   }
 
   for (const mesh &obj : sc.objects) {
@@ -561,8 +568,10 @@ void generate_maps_vector(int mapflags, raster &imgrasters, const scene &sc) {
       p3 = sc.cam.project_vertex(f.get_vert(2), w, h);
 
       if (isnan(p1.x) || isnan(p1.y) || isnan(p2.x) || isnan(p2.y) ||
-          isnan(p3.x) || isnan(p3.y))
+          isnan(p3.x) || isnan(p3.y)) {
         continue;
+      }
+
       p1int.x = (int)p1.x;
       p1int.y = (int)p1.y;
       p2int.x = (int)p2.x;
@@ -657,22 +666,24 @@ void generate_maps_vector(int mapflags, raster &imgrasters, const scene &sc) {
             if (pint.x + i < w && pxmask[i] != 0 &&
                 z[i] < imgrasters.zbuffer[w * pint.y + pint.x + i]) {
               if (mapflags & 2) {
-                if (obj.smooth)
+                if (obj.smooth) {
                   normtmp = lerp(norm, norm2, norm3, double(w1[i]) / w0[i],
                                  double(w2[i]) / w0[i], double(w3[i]) / w0[i]);
-                else
+                } else {
                   normtmp = f.normal;
+                }
                 imgrasters.normbuffer[pint.y * w + pint.x + i] =
                     normal_to_rgb(normtmp);
               }
               if (mapflags & 4) {
-                if (obj.smooth)
+                if (obj.smooth) {
                   colrgb = color_to_rgb(
                       lerp(col, col2, col3, double(w1[i]) / w0[i],
                            double(w2[i]) / w0[i], double(w3[i]) / w0[i]));
-                else if (colrgb >> 24)
+                } else if (colrgb >> 24) {
                   colrgb = color_to_rgb(
                       calc_lighting(fcenter, f.normal, *obj.mat, sc));
+                }
                 imgrasters.colbuffer[pint.y * w + pint.x + i] = colrgb;
               }
               imgrasters.zbuffer[w * pint.y + pint.x + i] = z[i];
@@ -701,9 +712,10 @@ void zbuffer_draw(raster &imgrasters, const scene &sc) {
 
 void paint_normal_map(raster &imgrasters, const scene &sc) {
   generate_maps_vector(3, imgrasters, sc);
-  std::copy(imgrasters.normbuffer,
-            imgrasters.normbuffer + (imgrasters.width() * imgrasters.height()),
-            imgrasters.colbuffer);
+  std::copy(imgrasters.normbuffer.get(),
+            imgrasters.normbuffer.get() +
+                (imgrasters.width() * imgrasters.height()),
+            imgrasters.colbuffer.get());
 }
 
 // TODO not really SSAO, should probably fix some tweaks
@@ -781,7 +793,7 @@ color ray_march_pixel(double x, double y, int w, int h, const scene &sc) {
   //    double iterations;
   double t;
   if (!ray_march(viewray, sc.de_obj, &t, &steps, num_steps)) {
-    return sc.w.get_color(viewray);
+    return sc.w->get_color(viewray);
   } else {
     double ambient_occlusion = (1.0 - double(steps) / num_steps);
     //        double hue = 360 * iterations;

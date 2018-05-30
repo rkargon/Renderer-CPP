@@ -39,8 +39,8 @@ public:
   scene sc;
 
   unsigned int rendermode = 0;
-  raster *imgrasters;
-  QImage *renderimg;
+  raster imgrasters;
+  QImage renderimg;
   thread_manager *manager;
 
   QPoint prevpos; // for mouse movement tracking

@@ -9,6 +9,7 @@
 #include "mesh.h"
 
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/io.hpp>
 
 #include <set>
 #include <unordered_map>
@@ -46,6 +47,10 @@ mesh::mesh(std::ifstream &infile, std::string objname)
       auto vtmp = vertex_from_floats(facebuffer.vs[vi]);
       auto res = vertices_hash.emplace(vtmp, vertices_hash.size());
       vids[vi] = res.first->second;
+      if (vids[vi] == this->vertices.size()) {
+        this->vertices.push_back(vtmp);
+        this->face_adjacencies.emplace_back();
+      }
     }
 
     // Store edges of triangle
@@ -61,14 +66,15 @@ mesh::mesh(std::ifstream &infile, std::string objname)
     }
   }
 
+  // TODO unnecesary?
   // Load unique vertices into this->vertices
-  vertices.reserve(vertices_hash.size());
-  for (const auto &kv_iter : vertices_hash) {
-    vertices[kv_iter.second] = kv_iter.first;
-  }
+  // vertices.reserve(vertices_hash.size());
+  // for (const auto &kv_iter : vertices_hash) {
+  //   vertices[kv_iter.second] = kv_iter.first;
+  // }
 
   // load unique edges into this->edges
-  std::copy(edges_hash.begin(), edges_hash.end(), edges.begin());
+  edges.insert(edges.begin(), edges_hash.begin(), edges_hash.end());
 
   // calc vertex normals
   vertex_normals.reserve(vertices.size());
@@ -77,7 +83,7 @@ mesh::mesh(std::ifstream &infile, std::string objname)
     for (face_id f_id : face_adjacencies[i]) {
       n += faces[f_id].normal;
     }
-    vertex_normals[i] = glm::normalize(n);
+    vertex_normals.push_back(glm::normalize(n));
   }
 
   origin = centroid();
@@ -85,7 +91,7 @@ mesh::mesh(std::ifstream &infile, std::string objname)
   std::cout << vertices.size() << " vertices." << std::endl;
   std::cout << edges.size() << " edges." << std::endl;
   std::cout << faces.size() << " faces." << std::endl;
-  if (infile.fail()) {
+  if (infile.bad()) {
     std::cout << "Reading of " << name << " failed, creating an empty object."
               << std::endl;
     return;
@@ -137,4 +143,17 @@ vertex mesh::centroid() const {
     mean += v;
   }
   return mean * (1.0 / vertices.size());
+}
+
+void mesh::reset_face_obj_ptrs() {
+  std::cout << "UPDATING FACE OBJ PTRS!" << std::endl;
+  for (auto &f : faces) {
+    f.obj = this;
+  }
+}
+
+std::ostream &operator<<(std::ostream &os, const mesh &m) {
+  return os << "mesh: (" << &m << ") " << m.name << " [" << m.vertices.size()
+            << " vertices, " << m.edges.size() << " edges, " << m.faces.size()
+            << " faces]." << std::endl;
 }

@@ -8,13 +8,10 @@
 
 #include "camera.h"
 
-camera::camera(const vertex &center, const vertex &focus, const vertex &normal,
-               const vertex &vert, const double fov, const double mindist,
-               const double maxdist, const bool ortho,
-               double dof_focus_distance, double aperture_size)
-    : center(center), focus(focus), normal(normal), vert(vert), fov(fov),
-      mindist(mindist), maxdist(maxdist > 0 ? maxdist : HUGE_VAL), ortho(ortho),
-      dof_focus_distance(dof_focus_distance), aperture_size(aperture_size) {
+camera::camera()
+    : center(0), focus(0), normal(1, 0, 0), vert(0, 0, 1), fov(0.75),
+      mindist(0.01), maxdist(100), ortho(false), dof_focus_distance(0),
+      aperture_size(0) {
   calc_image_vectors();
 }
 
@@ -81,10 +78,11 @@ point_2d<double> camera::project_vertex(const vertex &v, const double w,
 // The distance of a vertex from the camera.
 double camera::vertex_depth(const vertex &v) const {
   vertex dv = v - center;
-  if (ortho)
+  if (ortho) {
     return glm::dot(dv, normal);
-  else
+  } else {
     return glm::length(dv) * (glm::dot(dv, normal) < 0 ? -1 : 1);
+  }
 }
 
 // Get vector from camera to given vertex
@@ -137,4 +135,9 @@ void camera::set_global_rotation(const double theta, const double rho,
   vert = vertex(-sr, cr * sp, cr * cp);
   normal = vertex(ct * cr, ct * sr * sp - cp * st, st * sp + ct * cp * sr);
   calc_image_vectors();
+}
+
+void camera::calc_image_vectors() {
+  _cx = glm::normalize(glm::cross(normal, vert));
+  _cy = glm::normalize(glm::cross(_cx, normal));
 }

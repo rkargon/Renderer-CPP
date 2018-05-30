@@ -17,12 +17,14 @@
 #include <immintrin.h>
 #endif
 
+#include <cmath>
 #include <cstdarg>
-#include <math.h>
 #include <random>
 #include <utility>
 
 #define EPSILON 0.00000001
+
+#define PRINT_VARIABLE(v) (std::cout << #v ": " << (v) << std::endl)
 
 /* MATH UTILITY FUNCTIONS */
 

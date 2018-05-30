@@ -10,7 +10,7 @@ Loads and displays STL files in a variety of modes, including:
   - Raytracing
   - Ambient occlusion
   - Path Tracing
-  
+
 Also supports:
   - Smooth shading
   - Atmospheric scattering
@@ -23,7 +23,8 @@ Planned Features:
   - Metropolis Light Transport
   - Sub-surface scattering
   - Spectral rendering
-  
+
 TODO:
  - refactor to use RAII where possible
- - Port to CMake
+ - have scene own all data
+ - move semantics for mesh's

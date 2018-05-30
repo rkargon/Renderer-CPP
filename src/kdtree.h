@@ -10,6 +10,7 @@
 #define __Renderer__kdtree__
 
 #include "geom.h"
+
 #include <fstream>
 #include <iomanip>
 
@@ -32,9 +33,10 @@
  */
 class kdtree {
 public:
+  kdtree() = default;
   std::unique_ptr<kdtree> lower;
   std::unique_ptr<kdtree> upper;
-  std::vector<face *> faces;
+  std::vector<const face *> faces;
   double pos;
   int axis = -1;
   bool planarside; // whether or not faces on the split plane go to the right
@@ -50,9 +52,10 @@ public:
                   double &est_leaves_visited, double &est_tris_intersected,
                   double &estcost, double root_area = -1);
   void print_stats();
-  static std::unique_ptr<kdtree> build_tree(const std::vector<face *> &faces);
-  static face *ray_tree_intersect(const kdtree *kdt, const ray &r, bool lazy,
-                                  vertex *tuv, bool isRoot = true);
+  static kdtree build_tree(const std::vector<const face *> &faces);
+  static const face *ray_tree_intersect(const kdtree *kdt, const ray &r,
+                                        bool lazy, vertex *tuv,
+                                        bool isRoot = true);
 
 private:
   typedef struct plane_data {
@@ -66,7 +69,7 @@ private:
   public:
     static int i; // keeps track of how many objects are created, for debugging
                   // purposes.
-    face *f;
+    const face *f;
     // last two bits of int correspond to left, right subset during
     // classification.
     // 00 = 0 = none
@@ -75,13 +78,13 @@ private:
     // 11 = 3 = both
     int classification;
 
-    face_wrapper(face *f, int classification);
-    face_wrapper(face *f);
+    face_wrapper(const face *f, int classification);
+    face_wrapper(const face *f);
     ~face_wrapper();
-    static std::vector<face *>
+    static std::vector<const face *>
     to_face_list(const std::vector<face_wrapper *> &wrapped_faces);
     static std::vector<face_wrapper *>
-    to_wrapper_list(const std::vector<face *> &faces);
+    to_wrapper_list(const std::vector<const face *> &faces);
   };
 
   class planar_event {

@@ -10,152 +10,10 @@
 
 #include "mesh.h"
 
+#include <glm/gtx/io.hpp>
 #include <glm/gtx/norm.hpp>
 
 /* VERTEX */
-// vertex::vertex() : x(0), y(0), z(0){};
-// vertex::vertex(double a, double b, double c) : x(a), y(b), z(c){};
-
-// // Scales the vector such that its magnitude is one, while keeping its
-// // orientation the same.
-// // If the vector is 0, it is unchanged.
-// void vertex::normalize() {
-//   double len = x * x + y * y + z * z;
-//   if (len != 0 && len != 1) {
-//     len = 1.0 / sqrt(len);
-//     x *= len;
-//     y *= len;
-//     z *= len;
-//   }
-// }
-// void vertex::set(const double a, const double b, const double c) {
-//   x = a;
-//   y = b;
-//   z = c;
-// }
-
-// // Calculates the refelction of this vertex across a normal vector n.
-// // REFL = V - N*(2(V.N))
-// vertex vertex::reflection(const vertex &n) const {
-//   return *this - n * (2 * dot(*this, n));
-// }
-
-// // Returns the corresponding unit vector of this vertex, but this vertex is
-// not
-// // modified.
-// vertex vertex::unitvect() const {
-//   double len = x * x + y * y + z * z;
-//   if (len != 0 && len != 1) {
-//     len = 1.0 / sqrt(len);
-//     return vertex(x * len, y * len, z * len);
-//   }
-//   return vertex(x, y, z);
-// }
-
-// void vertex::to_polar(double &radius, double &theta, double &phi) const {
-//   radius = this->len();
-//   theta = acos(z / radius);
-//   phi = atan2(y, x);
-// }
-
-// void vertex::to_polar_angles(const double radius, double &theta,
-//                              double &phi) const {
-//   theta = acos(z / radius);
-//   phi = atan2(y, x);
-// }
-
-// vertex vertex::box_fold(const double l) const {
-//   return 2 * clamp(*this, {-l, -l, -l}, {l, l, l}) - *this;
-// }
-
-// // TODO test if optimization makes a difference
-// double vertex::sphere_fold_ratio(const double min_radius_2,
-//                                  const double fixed_radius_2) const {
-//   double r2 = this->lensqr();
-//   if (r2 < min_radius_2) {
-//     return fixed_radius_2 / min_radius_2;
-//   } else if (r2 < fixed_radius_2) {
-//     return fixed_radius_2 / r2;
-//   } else {
-//     return 1;
-//   }
-
-//   //    double rad = this->len();
-//   //     branchless optimization
-//   //    double f = (rad < r) * ((r * r) / (rad * rad)) + (rad >= r) * ((rad <
-//   1)
-//   //    / rad + (rad >= 1));
-//   //    return *this * f;
-// }
-
-// void vertex::operator+=(const vertex &v2) {
-//   x += v2.x;
-//   y += v2.y;
-//   z += v2.z;
-// }
-// void vertex::operator+=(const vertex *v2) {
-//   x += v2->x;
-//   y += v2->y;
-//   z += v2->z;
-// }
-// void vertex::operator-=(const vertex &v2) {
-//   x -= v2.x;
-//   y -= v2.y;
-//   z -= v2.z;
-// }
-// void vertex::operator-=(const vertex *v2) {
-//   x -= v2->x;
-//   y -= v2->y;
-//   z -= v2->z;
-// }
-// void vertex::operator*=(const double r) {
-//   x *= r;
-//   y *= r;
-//   z *= r;
-// } // scalar multiplication
-// void vertex::operator*=(const vertex &v2) {
-//   x *= v2.x;
-//   y *= v2.y;
-//   z *= v2.z;
-// } // coordinate-wise multiplication
-// void vertex::operator*=(const vertex *v2) {
-//   x *= v2->x;
-//   y *= v2->y;
-//   z *= v2->z;
-// }
-// vertex vertex::operator-() { return vertex(-x, -y, -z); }
-
-// vertex operator+(const vertex &v1, const vertex &v2) {
-//   return vertex(v1.x + v2.x, v1.y + v2.y, v1.z + v2.z);
-// }
-// vertex operator-(const vertex &v1, const vertex &v2) {
-//   return vertex(v1.x - v2.x, v1.y - v2.y, v1.z - v2.z);
-// }
-// vertex operator*(const vertex &v1, const double r) {
-//   return vertex(v1.x * r, v1.y * r, v1.z * r);
-// }
-// vertex operator*(const double r, const vertex &v1) {
-//   return vertex(v1.x * r, v1.y * r, v1.z * r);
-// }
-// vertex operator*(const vertex &v1, const vertex &v2) {
-//   return vertex(v1.x * v2.x, v1.y * v2.y, v1.z * v2.z);
-// } // coordinate-wise multiplication
-// vertex operator/(const double r, const vertex &v1) {
-//   return vertex(v1.x / r, v1.y / r, v1.z / r);
-// }
-// vertex operator/(const vertex &v1, const double r) {
-//   return vertex(v1.x / r, v1.y / r, v1.z / r);
-// }
-// bool operator==(const vertex &v1, const vertex &v2) {
-//   return v1.x == v2.x && v1.y == v2.y && v1.z == v2.z;
-// }
-// bool operator!=(const vertex &v1, const vertex &v2) { return !(v1 == v2); }
-// std::ostream &operator<<(std::ostream &os, const vertex &v) {
-//   return os << "(" << v.x << ", " << v.y << ", " << v.z << ")";
-// }
-// std::ostream &operator<<(std::ostream &os, const vertex *&v) {
-//   return os << "(" << v->x << ", " << v->y << ", " << v->z << ")";
-// }
 
 std::size_t std::hash<vertex>::operator()(const vertex &v) const noexcept {
   std::size_t seed = 0;
@@ -171,7 +29,7 @@ face::face() = default;
 face::face(const vertex &norm, vertex_id v1, vertex_id v2, vertex_id v3,
            mesh *object)
     : normal(norm), v{v1, v2, v3}, obj(object) {
-  if (glm::length2(normal) && is_perpendicular(normal)) {
+  if (glm::length2(normal) > EPSILON && is_perpendicular(normal)) {
     normalize_in_place(normal);
   } else {
     normal = generate_normal(); // if normal is invalid, generate it
@@ -183,7 +41,7 @@ const vertex &face::get_vert(unsigned int i) const {
   return obj->vertices[v[i]];
 }
 
-bool face::is_perpendicular(const vertex &normal) {
+bool face::is_perpendicular(const vertex &normal) const {
   vertex v12 = get_vert(1) - get_vert(0);
   vertex v23 = get_vert(2) - get_vert(1);
   // normal must be perpendicular to two of the edges, and must have nonzero
@@ -193,12 +51,18 @@ bool face::is_perpendicular(const vertex &normal) {
 }
 // use cross product of edges to create normal. Orientation depends on order of
 // vertices
-vertex face::generate_normal() {
-  vertex v12 = get_vert(1) - get_vert(0);
-  vertex v23 = get_vert(2) - get_vert(1);
-  vertex n = cross(v12, v23);
+vertex face::generate_normal() const {
+  return face::generate_normal(get_vert(0), get_vert(1), get_vert(2));
+}
+
+vertex face::generate_normal(const vertex &v1, const vertex &v2,
+                             const vertex &v3) {
+  vertex v12 = v2 - v1;
+  vertex v23 = v3 - v2;
+  vertex n = glm::cross(v12, v23);
   return glm::normalize(n);
 }
+
 // the center of the face, the arithmetic mean of vertices.
 vertex face::center() const {
   return (get_vert(0) + get_vert(1) + get_vert(2)) * (1 / 3.0);
@@ -209,42 +73,44 @@ vertex face::center() const {
 // u, v: barycentric coordinates of intersect based on edge1, edge2
 // Muller-Trumbore algorithm
 // TODO return optional?
-bool face::intersect_ray_triangle(const ray &r, vertex *tuv) {
-  vertex edge1, edge2, tvec, pvec, qvec;
-  double det, inv_det;
+bool face::intersect_ray_triangle(const ray &r, vertex *tuv) const {
   double t, u, v;
 
-  edge1 = get_vert(1) - get_vert(0);
-  edge2 = get_vert(2) - get_vert(0);
+  vertex edge1 = get_vert(1) - get_vert(0);
+  vertex edge2 = get_vert(2) - get_vert(0);
 
-  pvec = cross(r.dir, edge2);
-  det = dot(edge1, pvec);
+  vertex pvec = glm::cross(r.dir, edge2);
+  double det = glm::dot(edge1, pvec);
 
-  tvec = r.org - get_vert(0);
-  inv_det = 1.0 / det;
-  qvec = cross(tvec, edge1);
+  vertex tvec = r.org - get_vert(0);
+  double inv_det = 1.0 / det;
+  vertex qvec = glm::cross(tvec, edge1);
 
   if (det > EPSILON) {
-    u = dot(tvec, pvec);
-    if (u < 0.0 || u > det)
+    u = glm::dot(tvec, pvec);
+    if (u < 0.0 || u > det) {
       return false;
-    v = dot(r.dir, qvec);
-    if (v < 0.0 || u + v > det)
+    }
+    v = glm::dot(r.dir, qvec);
+    if (v < 0.0 || u + v > det) {
       return false;
+    }
   } else if (det < -EPSILON) {
-    u = dot(tvec, pvec);
-    if (u > 0.0 || u < det)
+    u = glm::dot(tvec, pvec);
+    if (u > 0.0 || u < det) {
       return false;
-    v = dot(r.dir, qvec);
-    if (v > 0.0 || u + v < det)
+    }
+    v = glm::dot(r.dir, qvec);
+    if (v > 0.0 || u + v < det) {
       return false;
-
-  } else
+    }
+  } else {
     return false;
+  }
 
   u *= inv_det;
   v *= inv_det;
-  t = dot(edge2, qvec) * inv_det;
+  t = glm::dot(edge2, qvec) * inv_det;
   if (tuv != nullptr) {
     *tuv = vertex(t, u, v);
   }
@@ -258,6 +124,15 @@ bounds face::bounding_box() const {
   return b;
 }
 
+std::ostream &operator<<(std::ostream &os, const face &f) {
+  os << "face: n=" << f.normal << ", obj=" << f.obj << ", (" << f.v[0] << ", "
+     << f.v[1] << ", " << f.v[2] << ")" << std::endl;
+  for (int i = 0; i < 3; ++i) {
+    os << "f.v" << i << ": " << f.get_vert(i) << std::endl;
+  }
+  return os;
+}
+
 bounds::bounds() : min(0, 0, 0), max(0, 0, 0) {}
 bounds::bounds(const vertex &a, const vertex &b) : min(a), max(b) {}
 
@@ -267,6 +142,10 @@ double bounds::area() const {
   double dy = fabs(max.y - min.y);
   double dz = fabs(max.z - min.z);
   return 2 * (dx * dy + dy * dz + dz * dx);
+}
+
+std::ostream &operator<<(std::ostream &os, bounds &b) {
+  return os << b.min << " --> " << b.max;
 }
 
 /*  EDGE  */
@@ -285,6 +164,7 @@ const vertex_id &edge::least() const { return v1; }
 const vertex_id &edge::greatest() const { return v2; }
 const vertex_id &edge::first() const { return v1; }
 const vertex_id &edge::second() const { return v2; }
+const vertex_id &edge::operator[](std::size_t i) const { return this->vec[i]; }
 
 std::size_t std::hash<edge>::operator()(const edge &e) const noexcept {
   std::size_t hash_1 = std::hash<vertex_id>{}(e.least());
@@ -423,29 +303,35 @@ color hsv_to_rgb(const int hue, const double saturation, const double value) {
 /* bounding box related functions */
 
 // THe bounding box of a set of faces.
-bounds calc_bounding_box(const std::vector<face *> &faces) {
+bounds calc_bounding_box(const std::vector<const face *> &faces) {
   double minx, miny, minz, maxx, maxy, maxz, tmp;
   minx = miny = minz = maxx = maxy = maxz = nan("");
-  for (face *f : faces) {
+  for (const face *f : faces) {
     tmp = f->min_coord(0);
-    if (isnan(minx) || minx > tmp)
+    if (isnan(minx) || minx > tmp) {
       minx = tmp;
+    }
     tmp = f->min_coord(1);
-    if (isnan(miny) || miny > tmp)
+    if (isnan(miny) || miny > tmp) {
       miny = tmp;
+    }
     tmp = f->min_coord(2);
-    if (isnan(minz) || minz > tmp)
+    if (isnan(minz) || minz > tmp) {
       minz = tmp;
+    }
 
     tmp = f->max_coord(0);
-    if (isnan(maxx) || maxx < tmp)
+    if (isnan(maxx) || maxx < tmp) {
       maxx = tmp;
+    }
     tmp = f->max_coord(1);
-    if (isnan(maxy) || maxy < tmp)
+    if (isnan(maxy) || maxy < tmp) {
       maxy = tmp;
+    }
     tmp = f->max_coord(2);
-    if (isnan(maxz) || maxz < tmp)
+    if (isnan(maxz) || maxz < tmp) {
       maxz = tmp;
+    }
   }
   bounds b;
   b.min = vertex(minx, miny, minz);
@@ -533,20 +419,22 @@ bool ray_AABB_intersect(const bounds &AABB, const ray &r) {
 // Otherwise, return first intersection.
 //(t,u,v) stores (intersection distance, barycentric coordinate from v12,
 // barycentric coordiante from v13)
-face *ray_faces_intersect(const std::vector<face *> &faces, const ray &r,
-                          bool lazy, vertex *tuv) {
-  face *f = nullptr;
+const face *ray_faces_intersect(const std::vector<const face *> &faces,
+                                const ray &r, bool lazy, vertex *tuv) {
+  const face *f = nullptr;
   vertex tuvtmp;
-  double zmin = nan("");
-  for (face *ftmp : faces) {
+  double zmin = std::nan("");
+  for (const face *ftmp : faces) {
     if (ftmp->intersect_ray_triangle(r, &tuvtmp) &&
-        (tuvtmp.t < zmin || isnan(zmin))) {
-      zmin = tuvtmp.t;
+        (tuvtmp[0] < zmin || std::isnan(zmin))) {
+      zmin = tuvtmp[0];
       f = ftmp;
-      if (tuv != nullptr)
+      if (tuv != nullptr) {
         *tuv = tuvtmp;
-      if (lazy)
+      }
+      if (lazy) {
         return f;
+      }
     }
   }
   return f;
@@ -556,21 +444,21 @@ bool ray_sphere_intersect(const ray &r, const double rad, double &t) {
   double d_dot_o = dot(r.dir, r.org);
   double lensq = glm::length2(r.org);
   double disc = d_dot_o * d_dot_o - (lensq - rad * rad);
-  if (disc < 0)
-    return false;       // no intersect
-  else if (disc == 0) { // one intersect
+  if (disc < 0) {
+    return false;         // no intersect
+  } else if (disc == 0) { // one intersect
     t = -d_dot_o;
     return (t >= 0);
   } else {
     // return nearest intersection, that is not behind ray origin
-    disc = sqrt(disc);
+    disc = std::sqrt(disc);
     // two intersection points.
     double t1 = disc - d_dot_o, t2 = (-disc) - d_dot_o;
     if (t1 >= 0 && t2 >= 0) {
-      t = fmin(t1, t2);
+      t = std::fmin(t1, t2);
       return true;
     } else if (t1 >= 0 || t2 >= 0) {
-      t = fmax(t1, t2);
+      t = std::fmax(t1, t2);
       return true;
     } else
       return false;
