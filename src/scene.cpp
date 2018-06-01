@@ -10,17 +10,27 @@
 
 #include "mesh.h"
 
-#include <glm/gtx/io.hpp>
+#include "glm/gtc/type_ptr.hpp"
+#include "glm/gtx/io.hpp"
+#include "tiny_obj_loader/tiny_obj_loader.h"
 
 #include <iostream>
+#include <unordered_map>
+#include <unordered_set>
 
-material::material(const color &dc, const double di, const color &sc,
-                   const double si, const double sh, const double ri,
-                   const double a, const double indxofrefr, QImage *c,
-                   QImage *s, QImage *n)
-    : diff_col(dc), diff_intensity(di), spec_col(sc), spec_intensity(si),
-      spec_hardness(sh), refl_intensity(ri), alpha(a), ior(indxofrefr),
-      col_tex(c), spec_tex(s), norm_tex(n) {}
+material::material()
+    : diff_col(0), spec_col(0), spec_hardness(128), refl_intensity(0), alpha(1),
+      ior(1), col_tex(nullptr), spec_tex(nullptr), norm_tex(nullptr) {}
+
+material::material(const color &diff_col) : material() {
+  this->diff_col = diff_col;
+}
+
+material::material(const tinyobj::material_t &mat)
+    : diff_col(glm::make_vec3(mat.diffuse)),
+      spec_col(glm::make_vec3(mat.specular)), spec_hardness(mat.shininess),
+      alpha(mat.dissolve), ior(mat.ior), col_tex(nullptr), spec_tex(nullptr),
+      norm_tex(nullptr) {}
 
 // Either returns diff_col, or if col_tex is defined, the pixel corresponding to
 // the passed texture coordinates
@@ -56,8 +66,8 @@ lamp::lamp(const double i, const int fall, const vertex &l, const color &c)
 
 lamp::lamp(const double i, const int fall, const vertex &l, const color &c,
            const vertex &sun_direction)
-    : intensity(i), falloff(fall), loc(l), col(c), sun_direction(sun_direction),
-      is_sun(true) {}
+    : intensity(i), falloff(fall), loc(l), col(c), is_sun(true),
+      sun_direction(sun_direction) {}
 
 world::world()
     : horizon_col(0), zenith_col(0), is_flat(true), ambient_intensity(0) {}
@@ -166,6 +176,108 @@ color sky::get_color(const ray &r) const {
 }
 
 scene::scene() : w(std::make_unique<world>()) {}
+
+scene::scene(const std::string &filename) : scene() {
+  tinyobj::attrib_t attrs;
+  std::vector<tinyobj::shape_t> shapes;
+  std::vector<tinyobj::material_t> mats;
+  std::string err;
+  // TODO use stdx::filesystem
+  // TODO check if empty material basedir works
+  PRINT_VARIABLE(filename);
+  PRINT_VARIABLE(containing_directory(filename));
+  bool succ = tinyobj::LoadObj(&attrs, &shapes, &mats, &err, filename.c_str(),
+                               containing_directory(filename).c_str(), true);
+  if (!succ) {
+    throw std::runtime_error("Failed to load .obj file: " + err);
+  }
+
+  // convert OBJ materials
+  if (mats.size() > 0) {
+    this->materials.insert(this->materials.begin(), mats.begin(), mats.end());
+    this->bsdfs.reserve(materials.size());
+    std::transform(mats.begin(), mats.end(), std::back_inserter(this->bsdfs),
+                   BSDF::from_obj_mat);
+  } else {
+    this->materials.emplace_back();
+    this->bsdfs.push_back(std::make_unique<DiffuseBSDF>());
+  }
+  for (const auto &s : shapes) {
+    objects.emplace_back();
+    mesh &m = objects.back();
+    m.name = s.name;
+    if (mats.size() > 0) {
+      // TODO only one material per object right now.
+      auto mat_id = s.mesh.material_ids[0];
+      m.mat_id = mat_id;
+      m.bsdf = this->bsdfs[mat_id].get();
+    } else {
+      m.mat_id = 0;
+      m.bsdf = this->bsdfs.front().get();
+    }
+
+    m.faces.reserve(s.mesh.indices.size() / 3);
+    // TODO this should be a vector
+    std::unordered_map<vertex_id, vertex_id> vertex_ids_map; // old to new
+    std::unordered_set<edge> edges;
+    for (std::size_t i = 0; i < s.mesh.indices.size(); i += 3) {
+      // get vertices & their IDs
+      vertex v[3];
+      vertex_id vid[3]; // new ids
+      for (int vi = 0; vi < 3; ++vi) {
+        auto iter_bool = vertex_ids_map.emplace(
+            s.mesh.indices[i + vi].vertex_index, vertex_ids_map.size());
+        vid[vi] = iter_bool.first->second;
+        v[vi] = glm::make_vec3(
+            &attrs.vertices[3 * s.mesh.indices[i + vi].vertex_index]);
+      }
+      // face
+      vertex norm = face::generate_normal(v[0], v[1], v[2]);
+      m.faces.push_back(face(norm, vid[0], vid[1], vid[2], &m, false));
+
+      // add edges
+      edges.emplace(vid[0], vid[1]);
+      edges.emplace(vid[1], vid[2]);
+      edges.emplace(vid[2], vid[0]);
+    }
+
+    // add vertices from hash
+    m.vertices.resize(vertex_ids_map.size());
+    for (const auto &kv : vertex_ids_map) {
+      m.vertices[kv.second] = glm::make_vec3(&attrs.vertices[3 * kv.first]);
+    }
+
+    // add edges from hash
+    m.edges.insert(m.edges.begin(), edges.begin(), edges.end());
+
+    // face adjacencies
+    m.face_adjacencies.resize(m.vertices.size());
+    for (face_id fi = 0; fi < m.faces.size(); ++fi) {
+      for (vertex_id vi : m.faces[fi].v) {
+        m.face_adjacencies[vi].insert(fi);
+      }
+    }
+
+    // calc vertex normals
+    // TODO get normal index
+    m.vertex_normals.resize(m.vertices.size());
+    for (const auto &kv : vertex_ids_map) {
+      vertex_id old_id = kv.first;
+      vertex_id new_id = kv.second;
+      m.vertex_normals[new_id] = glm::make_vec3(&attrs.normals[3 * old_id]);
+      // Recalculate?
+      // if (glm::length2(normal) > EPSILON && face::is_perpendicular(normal)) {
+      //   normalize_in_place(normal);
+      // } else {
+      //   vertex n(0);
+      //   for (face_id f_id : m.face_adjacencies[i]) {
+      //     n += faces[f_id].normal;
+      //   }
+      //   vertex_normals.push_back(glm::normalize(n));
+      // }
+    }
+  }
+}
 
 mesh &scene::add_object(std::ifstream &infile, const std::string &name,
                         bool update_tree) {

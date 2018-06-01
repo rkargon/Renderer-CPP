@@ -62,6 +62,9 @@ protected:
   void mousePressEvent(QMouseEvent *event);
   void wheelEvent(QWheelEvent *event);
   void resizeEvent(QResizeEvent *event);
+
+private:
+  void init_scene();
 };
 
 QColor colorToQColor(const color &c);

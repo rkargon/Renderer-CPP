@@ -1,5 +1,5 @@
 //
-//  BRDF.h
+//  BSDF.h
 //  Renderer
 //
 //  Created by Raphael Kargon on 11/9/14.
@@ -11,11 +11,18 @@
 
 #include "geom.h"
 
+#include "tiny_obj_loader/tiny_obj_loader.h"
+
+#include <memory>
+
 class BSDF {
 public:
   virtual color getLight(color incidentColor, vertex incidentDirection,
-                         vertex normal, vertex returningDirection) = 0;
-  virtual vertex getIncidentDirection(vertex normal, vertex viewDirection) = 0;
+                         vertex normal, vertex returningDirection) const = 0;
+  virtual vertex getIncidentDirection(vertex normal,
+                                      vertex viewDirection) const = 0;
+
+  static std::unique_ptr<BSDF> from_obj_mat(const tinyobj::material_t &mat);
 };
 
 class DiffuseBSDF : public BSDF {
@@ -24,19 +31,20 @@ public:
 
   DiffuseBSDF(color c = color(1, 1, 1));
   virtual color getLight(color incidentColor, vertex incidentDirection,
-                         vertex normal, vertex returningDirection);
-  virtual vertex getIncidentDirection(vertex normal, vertex viewDirection);
+                         vertex normal, vertex returningDirection) const;
+  virtual vertex getIncidentDirection(vertex normal,
+                                      vertex viewDirection) const;
 };
 
 class EmissionBSDF : public BSDF {
 public:
   color col;
-  double intensity;
 
-  EmissionBSDF(color c = color(1, 1, 1), double i = 10);
+  EmissionBSDF(color c = color(10, 10, 10));
   virtual color getLight(color incidentColor, vertex incidentDirection,
-                         vertex normal, vertex returningDirection);
-  virtual vertex getIncidentDirection(vertex normal, vertex viewDirection);
+                         vertex normal, vertex returningDirection) const;
+  virtual vertex getIncidentDirection(vertex normal,
+                                      vertex viewDirection) const;
 };
 
 class GlossyBSDF : public BSDF {
@@ -46,8 +54,9 @@ public:
 
   GlossyBSDF(color c = color(1, 1, 1), double r = 0.2);
   virtual color getLight(color incidentColor, vertex incidentDirection,
-                         vertex normal, vertex returningDirection);
-  virtual vertex getIncidentDirection(vertex normal, vertex viewDirection);
+                         vertex normal, vertex returningDirection) const;
+  virtual vertex getIncidentDirection(vertex normal,
+                                      vertex viewDirection) const;
 };
 
 class MixBSDF : public BSDF {
@@ -57,11 +66,12 @@ public:
   BSDF *mat2;
 
   // whether current sample should come from material 1
-  bool materialCounter;
+  mutable bool materialCounter;
 
   MixBSDF(double f = 0.5, BSDF *m1 = nullptr, BSDF *m2 = nullptr);
   virtual color getLight(color incidentColor, vertex incidentDirection,
-                         vertex normal, vertex returningDirection);
-  virtual vertex getIncidentDirection(vertex normal, vertex viewDirection);
+                         vertex normal, vertex returningDirection) const;
+  virtual vertex getIncidentDirection(vertex normal,
+                                      vertex viewDirection) const;
 };
 #endif /* defined(__Renderer__BSDF__) */

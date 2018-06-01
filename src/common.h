@@ -17,6 +17,7 @@
 #include <immintrin.h>
 #endif
 
+#include <algorithm>
 #include <cmath>
 #include <cstdarg>
 #include <random>
@@ -74,6 +75,18 @@ inline __v4si muli32(const __v4si &a, const __v4si &b) {
 template <class T> inline void hash_combine(std::size_t &seed, const T &v) {
   std::hash<T> hasher;
   seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+}
+
+/* String utility functions  */
+
+// TODO stdx__filesystem
+
+std::string containing_directory(const std::string &filename,
+                                 const char *separator = "/");
+
+template <typename Container, typename T>
+bool range_contains(const Container &c, const T x) {
+  return std::find(std::begin(c), std::end(c), x) != std::end(c);
 }
 
 #endif

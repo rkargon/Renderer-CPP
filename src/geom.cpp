@@ -27,12 +27,14 @@ std::size_t std::hash<vertex>::operator()(const vertex &v) const noexcept {
 face::face() = default;
 
 face::face(const vertex &norm, vertex_id v1, vertex_id v2, vertex_id v3,
-           mesh *object)
+           mesh *object, bool check_normal)
     : normal(norm), v{v1, v2, v3}, obj(object) {
-  if (glm::length2(normal) > EPSILON && is_perpendicular(normal)) {
-    normalize_in_place(normal);
-  } else {
-    normal = generate_normal(); // if normal is invalid, generate it
+  if (check_normal) {
+    if (glm::length2(normal) > EPSILON && is_perpendicular(normal)) {
+      normalize_in_place(normal);
+    } else {
+      normal = generate_normal(); // if normal is invalid, generate it
+    }
   }
 }
 

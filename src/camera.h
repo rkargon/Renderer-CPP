@@ -14,6 +14,9 @@
 
 #include "geom.h"
 
+#include <ostream>
+
+// TODO better manual setting
 class camera {
 public:
   vertex center; // location of the camera
@@ -72,5 +75,7 @@ private:
   // keeps track of image plane vectors
   vertex _cx, _cy;
 };
+
+std::ostream &operator<<(std::ostream &os, const camera &cam);
 
 #endif /* defined(__Renderer__camera__) */

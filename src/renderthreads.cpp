@@ -24,6 +24,13 @@ thread_manager::thread_manager(raster *raster_ref, const scene *sc,
   }
 }
 
+thread_manager::~thread_manager() {
+  this->stop();
+  for (auto &th : thread_pool) {
+    th.join();
+  }
+}
+
 // TODO worker threads might finish current tile before actually re-starting
 void thread_manager::start() {
   if (!is_running) {

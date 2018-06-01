@@ -8,6 +8,8 @@
 
 #include "camera.h"
 
+#include "glm/gtx/io.hpp"
+
 camera::camera()
     : center(0), focus(0), normal(1, 0, 0), vert(0, 0, 1), fov(0.75),
       mindist(0.01), maxdist(100), ortho(false), dof_focus_distance(0),
@@ -106,7 +108,12 @@ void camera::shift_focus(const double dx, const double dy) {
 }
 
 void camera::zoom(const double zoomfactor) {
-  center = focus + (center - focus) * zoomfactor;
+  // normal term is for when camera is near 0.
+  vertex zoom_dir = center - focus;
+  if (zoom_dir == vertex(0)) {
+    zoom_dir = -normal * 0.01;
+  }
+  center = focus + zoom_dir * zoomfactor;
 }
 
 vertex camera::image_plane_vector(const double dx, const double dy) {
@@ -140,4 +147,8 @@ void camera::set_global_rotation(const double theta, const double rho,
 void camera::calc_image_vectors() {
   _cx = glm::normalize(glm::cross(normal, vert));
   _cy = glm::normalize(glm::cross(_cx, normal));
+}
+
+std::ostream &operator<<(std::ostream &os, const camera &cam) {
+  return os << cam.center << " --> " << cam.focus << " (" << cam.normal << ")";
 }

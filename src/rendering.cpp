@@ -44,10 +44,9 @@ color calc_lighting(const vertex &v, const vertex &n, const material &mat,
     // Phong specular reflection
     vertex refl = glm::reflect(lampvnorm, n);
     double spec_intensity =
-        l.intensity * mat.spec_intensity *
+        l.intensity *
         std::fmax(0, std::pow(glm::dot(view, refl), mat.spec_hardness));
-    double diff_intensity =
-        l.intensity * std::fabs(dotprod) * mat.diff_intensity;
+    double diff_intensity = l.intensity * std::fabs(dotprod);
     // calc falloff
     diff_intensity /= dstsqr;
     spec_intensity /= dstsqr;
@@ -69,7 +68,7 @@ color trace_ray(const ray &viewray, const scene &sc, int depth) {
     return sc.w->get_color(viewray);
   } else {
     const mesh &obj = *f->obj;
-    const material &mat = *obj.mat;
+    const material &mat = sc.materials[obj.mat_id];
     vertex v = viewray.org + viewray.dir * tuv[0]; // calculate vertex location
 
     // interpolate texture coordinates
@@ -123,11 +122,9 @@ color trace_ray(const ray &viewray, const scene &sc, int depth) {
       // Phong shading
       vertex lamprefl = glm::reflect(lampvnorm, n);
       double spec_intensity =
-          l.intensity * mat.spec_intensity *
-          std::fmax(
-              0, std::pow(glm::dot(viewray.dir, lamprefl), mat.spec_hardness));
-      double diff_intensity =
-          l.intensity * std::fabs(dotprod) * mat.diff_intensity;
+          l.intensity * std::fmax(0, std::pow(glm::dot(viewray.dir, lamprefl),
+                                              mat.spec_hardness));
+      double diff_intensity = l.intensity * std::fabs(dotprod);
       // calculate falloff
       switch (l.falloff) {
       case 2:
@@ -223,9 +220,9 @@ color trace_path(const ray &viewray, const scene &sc, int depth) {
 
     // calculate incident light
     vertex inc_dir = obj.bsdf->getIncidentDirection(n, viewray.dir);
-    color inc_col(1, 0, 0);
+    color inc_col(0);
     // TODO use russian roullette
-    if (!dynamic_cast<EmissionBSDF *>(obj.bsdf)) {
+    if (!dynamic_cast<const EmissionBSDF *>(obj.bsdf)) {
       inc_col = trace_path(ray(v, inc_dir), sc, depth + 1);
     }
     // calculate returned light
@@ -311,10 +308,9 @@ color raytrace_distance_field(const ray &viewray, const scene &sc,
       // Phong shading
       vertex lamprefl = glm::reflect(lampvnorm, n);
       double spec_intensity =
-          l.intensity * sc.de_mat.spec_intensity *
+          l.intensity *
           fmax(0, pow(dot(viewray.dir, lamprefl), sc.de_mat.spec_hardness));
-      double diff_intensity =
-          l.intensity * fabs(dotprod) * sc.de_mat.diff_intensity;
+      double diff_intensity = l.intensity * fabs(dotprod);
       // calculate falloff
       switch (l.falloff) {
       case 2:
@@ -413,6 +409,9 @@ void generate_maps(int mapflags, raster &imgrasters, const scene &sc) {
 
   for (const mesh &obj : sc.objects) {
     for (const face &f : obj.faces) {
+      // TODO per-face materials
+      const material &mat = sc.materials[obj.mat_id];
+
       // get pixels of vertices
       p1 = sc.cam.project_vertex(f.get_vert(0), w, h);
       p2 = sc.cam.project_vertex(f.get_vert(1), w, h);
@@ -449,9 +448,9 @@ void generate_maps(int mapflags, raster &imgrasters, const scene &sc) {
         norm = obj.vertex_normals[f.v[0]];
         norm2 = obj.vertex_normals[f.v[1]];
         norm3 = obj.vertex_normals[f.v[2]];
-        col = calc_lighting(f.get_vert(0), norm, *obj.mat, sc);
-        col2 = calc_lighting(f.get_vert(1), norm2, *obj.mat, sc);
-        col3 = calc_lighting(f.get_vert(2), norm3, *obj.mat, sc);
+        col = calc_lighting(f.get_vert(0), norm, mat, sc);
+        col2 = calc_lighting(f.get_vert(1), norm2, mat, sc);
+        col3 = calc_lighting(f.get_vert(2), norm3, mat, sc);
       }
 
       // triangle bounding box
@@ -513,8 +512,9 @@ void generate_maps(int mapflags, raster &imgrasters, const scene &sc) {
                   colrgb = color_to_rgb(lerp(col, col2, col3, double(w1) / w0,
                                              double(w2) / w0, double(w3) / w0));
                 } else if (colrgb >> 24) {
-                  colrgb = color_to_rgb(
-                      calc_lighting(fcenter, f.normal, *obj.mat, sc));
+                  // TODO per-face materials
+                  colrgb =
+                      color_to_rgb(calc_lighting(fcenter, f.normal, mat, sc));
                 }
                 imgrasters.colbuffer[pint.y * w + pint.x] = colrgb;
               }
@@ -562,6 +562,8 @@ void generate_maps_vector(int mapflags, raster &imgrasters, const scene &sc) {
 
   for (const mesh &obj : sc.objects) {
     for (const face &f : obj.faces) {
+      // TODO per-face materials
+      const material &mat = sc.materials[obj.mat_id];
       // get pixels of vertices
       p1 = sc.cam.project_vertex(f.get_vert(0), w, h);
       p2 = sc.cam.project_vertex(f.get_vert(1), w, h);
@@ -601,9 +603,9 @@ void generate_maps_vector(int mapflags, raster &imgrasters, const scene &sc) {
         norm = obj.vertex_normals[f.v[0]];
         norm2 = obj.vertex_normals[f.v[1]];
         norm3 = obj.vertex_normals[f.v[2]];
-        col = calc_lighting(f.get_vert(0), norm, *obj.mat, sc);
-        col2 = calc_lighting(f.get_vert(1), norm2, *obj.mat, sc);
-        col3 = calc_lighting(f.get_vert(2), norm3, *obj.mat, sc);
+        col = calc_lighting(f.get_vert(0), norm, mat, sc);
+        col2 = calc_lighting(f.get_vert(1), norm2, mat, sc);
+        col3 = calc_lighting(f.get_vert(2), norm3, mat, sc);
       }
 
       // triangle bounding box
@@ -681,8 +683,8 @@ void generate_maps_vector(int mapflags, raster &imgrasters, const scene &sc) {
                       lerp(col, col2, col3, double(w1[i]) / w0[i],
                            double(w2[i]) / w0[i], double(w3[i]) / w0[i]));
                 } else if (colrgb >> 24) {
-                  colrgb = color_to_rgb(
-                      calc_lighting(fcenter, f.normal, *obj.mat, sc));
+                  colrgb =
+                      color_to_rgb(calc_lighting(fcenter, f.normal, mat, sc));
                 }
                 imgrasters.colbuffer[pint.y * w + pint.x + i] = colrgb;
               }
@@ -730,8 +732,9 @@ void SSAO(raster &imgrasters, const scene &sc) {
   for (y = 0; y < h; y++) {
     for (x = 0; x < w; x++) {
       z = imgrasters.zbuffer[y * w + x];
-      if (z == 1)
+      if (z == 1) {
         continue;
+      }
       z = z * (sc.cam.maxdist - sc.cam.mindist) + sc.cam.mindist;
       r = sc.cam.cast_ray(x, y, w, h);
       v = r.org + r.dir * z;
@@ -742,14 +745,17 @@ void SSAO(raster &imgrasters, const scene &sc) {
       for (dir = 0; dir < 20; dir++) {
         dx = rand() % 10 - 5;
         dy = rand() % 10 - 5;
-        if (x + dx < 0 || x + dx >= w)
+        if (x + dx < 0 || x + dx >= w) {
           continue;
-        if (y + dy < 0 || y + dy >= h)
+        }
+        if (y + dy < 0 || y + dy >= h) {
           continue;
+        }
 
         ztmp = imgrasters.zbuffer[(y + dy) * w + (x + dx)];
-        if (ztmp == 1)
+        if (ztmp == 1) {
           continue;
+        }
         ztmp = ztmp * (sc.cam.maxdist - sc.cam.mindist) + sc.cam.mindist;
         rtmp = sc.cam.cast_ray(x, y, w, h);
         vtmp = rtmp.org + rtmp.dir * ztmp;

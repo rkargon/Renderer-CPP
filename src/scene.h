@@ -9,24 +9,27 @@
 #ifndef __Renderer__scene__
 #define __Renderer__scene__
 
-#include <memory>
-
-#include <QtGui/QImage>
-
+#include "BSDF.h"
 #include "camera.h"
 #include "distance_estimation.h"
 #include "geom.h"
 #include "kdtree.h"
 
+#include "tiny_obj_loader/tiny_obj_loader.h"
+
+#include <QtGui/QImage>
+
+#include <fstream>
+#include <memory>
+
+typedef unsigned int material_id;
+
 class material {
 public:
-  color diff_col;        // The diffuse color of the material
-  double diff_intensity; // The intensity of the diffuse color.
-
-  color spec_col;        // The color of specular highlights
-  double spec_intensity; // The intensity of specular highlights
-  double spec_hardness;  // The hardness of specular highlights (according to
-                         // Phong reflection model)
+  color diff_col;       // The diffuse color of the material
+  color spec_col;       // The color of specular highlights
+  double spec_hardness; // The hardness of specular highlights (according to
+                        // Phong reflection model)
 
   double refl_intensity; // Amount of light reflected (0 = no reflection, 1 =
                          // mirror)
@@ -38,11 +41,9 @@ public:
   QImage *spec_tex;
   QImage *norm_tex;
 
-  material(const color &dc = color(1, 1, 1), const double di = 1,
-           const color &sc = color(1, 1, 1), const double si = 1,
-           const double sh = 128, const double ri = 0, const double a = 1,
-           const double indxofrefr = 1.3, QImage *c = nullptr,
-           QImage *s = nullptr, QImage *n = nullptr);
+  material();
+  material(const color &diff_col);
+  material(const tinyobj::material_t &mat);
 
   // Get color, normal vector, and specular color using given texture coordinate
   color get_color(double txu, double txv) const;
@@ -116,11 +117,15 @@ public:
   std::vector<lamp> lamps;
   std::unique_ptr<world> w;
   std::vector<mesh> objects;
+  std::vector<material> materials;
+  std::vector<std::unique_ptr<BSDF>> bsdfs;
   kdtree kdt;
   distance_estimator de_obj;
   material de_mat;
 
   scene();
+  // load from obj file
+  scene(const std::string &filename);
 
   mesh &add_object(std::ifstream &infile, const std::string &name,
                    bool update_tree = true);

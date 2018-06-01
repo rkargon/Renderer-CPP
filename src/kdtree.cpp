@@ -245,7 +245,7 @@ kdtree::find_optimal_plane(int nfaces,
   planar_event *e;
   std::pair<double, bool> planecostdata;
 
-  for (int i = 0; i < events.size();) {
+  for (unsigned int i = 0; i < events.size();) {
     e = events[i];
     plane_pos = e->pos;
     plane_axis = e->axis;
@@ -486,7 +486,7 @@ operator()(const kdtree::planar_event *pe1, const kdtree::planar_event *pe2) {
 }
 
 const face *kdtree::ray_tree_intersect(const kdtree *kdt, const ray &r,
-                                       bool lazy, vertex *tuv, bool isRoot) {
+                                       bool lazy, vertex *tuv) {
   if (kdt == nullptr) {
     return nullptr;
   }
@@ -499,14 +499,14 @@ const face *kdtree::ray_tree_intersect(const kdtree *kdt, const ray &r,
   if (ray_AABB_intersect(kdt->boundingbox, r)) {
     // leaf node or nah?
     if (kdt->lower != nullptr || kdt->upper != nullptr) {
-      f1 = ray_tree_intersect(kdt->lower.get(), r, lazy, &tuv1, true);
+      f1 = ray_tree_intersect(kdt->lower.get(), r, lazy, &tuv1);
       if (lazy && f1 != nullptr) {
         if (tuvvalid) {
           *tuv = tuv1;
         }
         return f1;
       }
-      f2 = ray_tree_intersect(kdt->upper.get(), r, lazy, &tuv2, true);
+      f2 = ray_tree_intersect(kdt->upper.get(), r, lazy, &tuv2);
       if (lazy && f2 != nullptr) {
         if (tuvvalid) {
           *tuv = tuv2;

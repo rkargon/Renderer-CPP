@@ -37,6 +37,7 @@ linux {
 }
 
 HEADERS += \
+    libs/tiny_obj_loader/tiny_obj_loader.h \
     src/BSDF.h \
     src/camera.h \
     src/common.h \
@@ -52,6 +53,7 @@ HEADERS += \
     src/ui/view.h
 
 SOURCES += \
+    libs/tiny_obj_loader/tiny_obj_loader.cpp \
     src/BSDF.cpp \
     src/camera.cpp \
     src/common.cpp \
@@ -68,8 +70,8 @@ SOURCES += \
     src/ui/view.cpp
 
 FORMS += src/ui/mainwindow.ui
-INCLUDEPATH += libs src src/ui libs/glm # libs/glew-1.10.0/include
-DEPENDPATH += libs src src/ui libs/glm # libs/glew-1.10.0/include
+INCLUDEPATH += libs src src/ui libs/glm libs/tiny_obj_loader # libs/glew-1.10.0/include
+DEPENDPATH += libs src src/ui libs/glm libs/tiny_obj_loader # libs/glew-1.10.0/include
 
 DEFINES += _USE_MATH_DEFINES
 # DEFINES += TIXML_USE_STL

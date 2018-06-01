@@ -41,8 +41,8 @@ public:
   std::string name;
   vertex origin;
   // TODOP multiple materials
-  material *mat;
-  BSDF *bsdf;
+  material_id mat_id;
+  const BSDF *bsdf;
   bool smooth;
   // TODO change these to unordered_maps if we want to modify
   std::vector<vertex> vertices; // List of *unique* vertices in mesh
@@ -51,6 +51,7 @@ public:
   std::vector<std::set<face_id>> face_adjacencies;
   std::vector<vertex> vertex_normals;
 
+  mesh();
   // loads object from STL file
   // smooth off by default, materials uninitialized.
   // TODO exceptions
@@ -72,7 +73,7 @@ public:
   //               std::is_same<mesh, std::remove_reference<M>>::value>>
   template <typename M>
   mesh(M &&m)
-      : name(std::forward<M>(m).name), origin(m.origin), mat(m.mat),
+      : name(std::forward<M>(m).name), origin(m.origin), mat_id(m.mat_id),
         bsdf(m.bsdf), smooth(m.smooth), vertices(std::forward<M>(m).vertices),
         edges(std::forward<M>(m).edges), faces(std::forward<M>(m).faces),
         face_adjacencies(std::forward<M>(m).face_adjacencies),
@@ -84,6 +85,7 @@ public:
     std::cout << "COPY ASSIGN" << std::endl;
     name = m.name;
     origin = m.origin;
+    mat_id = m.mat_id;
     bsdf = m.bsdf;
     smooth = m.smooth;
 
@@ -101,6 +103,7 @@ public:
     std::cout << "MOVE ASSIGN" << std::endl;
     name = std::move(m).name;
     origin = m.origin;
+    mat_id = m.mat_id;
     bsdf = m.bsdf;
     smooth = m.smooth;
 

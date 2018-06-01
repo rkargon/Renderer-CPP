@@ -24,6 +24,8 @@ vertex vertex_from_floats(const float *fs) {
   return vertex(fs[0], fs[1], fs[2]);
 }
 
+mesh::mesh() : origin(0), mat_id(0), bsdf(nullptr), smooth(false) {}
+
 mesh::mesh(std::ifstream &infile, std::string objname)
     : name(objname), smooth(false) {
   std::cout << "Loading STL object \"" << name << "\"" << std::endl;
@@ -78,7 +80,7 @@ mesh::mesh(std::ifstream &infile, std::string objname)
 
   // calc vertex normals
   vertex_normals.reserve(vertices.size());
-  for (int i = 0; i < vertices.size(); ++i) {
+  for (vertex_id i = 0; i < vertices.size(); ++i) {
     vertex n(0, 0, 0);
     for (face_id f_id : face_adjacencies[i]) {
       n += faces[f_id].normal;
@@ -146,7 +148,8 @@ vertex mesh::centroid() const {
 }
 
 void mesh::reset_face_obj_ptrs() {
-  std::cout << "UPDATING FACE OBJ PTRS!" << std::endl;
+  std::cout << "UPDATING FACE OBJ PTRS! (" << name << ", " << faces.size()
+            << " faces)" << std::endl;
   for (auto &f : faces) {
     f.obj = this;
   }

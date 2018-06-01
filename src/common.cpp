@@ -7,3 +7,13 @@
 //
 
 #include "common.h"
+
+std::string containing_directory(const std::string &filename,
+                                 const char *separator) {
+  auto pos = filename.rfind(separator);
+  if (pos == std::string::npos) {
+    return ".";
+  } else {
+    return filename.substr(0, pos + 1);
+  }
+}

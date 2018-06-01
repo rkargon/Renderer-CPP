@@ -74,6 +74,8 @@ public:
                  const int antialiasing_per_side = 1, int nthreads = 0,
                  const int tilesize = 32);
 
+  ~thread_manager();
+
   /**
    *  Starts the thread pool, and re-sets the tile queue.
    */

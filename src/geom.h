@@ -82,7 +82,7 @@ public:
 
   face();
   face(const vertex &norm, vertex_id v1, vertex_id v2, vertex_id v3,
-       mesh *object);
+       mesh *object, bool check_normal = true);
 
   vertex &get_vert(unsigned int i);
   const vertex &get_vert(unsigned int i) const;

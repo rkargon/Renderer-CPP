@@ -54,8 +54,7 @@ public:
   void print_stats();
   static kdtree build_tree(const std::vector<const face *> &faces);
   static const face *ray_tree_intersect(const kdtree *kdt, const ray &r,
-                                        bool lazy, vertex *tuv,
-                                        bool isRoot = true);
+                                        bool lazy, vertex *tuv);
 
 private:
   typedef struct plane_data {
