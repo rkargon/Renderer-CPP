@@ -13,6 +13,26 @@
 
 namespace tinyobj {
 
+bool material_t::is_reflective() const {
+  int mirror_illum[] = {3, 5, 8};
+  for (int mi : mirror_illum) {
+    if (mi == this->illum) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool material_t::is_transparent() const {
+  int glass_illum[] = {4, 6, 7, 9};
+  for (int gi : glass_illum) {
+    if (gi == this->illum) {
+      return true;
+    }
+  }
+  return false;
+}
+
 MaterialReader::~MaterialReader() {}
 
 struct vertex_index_t {

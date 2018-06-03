@@ -6,6 +6,10 @@ TARGET = renderer
 TEMPLATE = app
 CONFIG += console
 
+# TODO mac os x only
+QMAKE_CXX = /usr/local/Cellar/llvm/4.0.0_1/bin/clang++
+# QMAKE_CXX = g++-8
+# QMAKE_CXXFLAGS -= -stdlib=libc++
 QMAKE_CXXFLAGS += -msse2
 QMAKE_CXXFLAGS += -std=c++14
 CONFIG += c++14
@@ -48,6 +52,7 @@ HEADERS += \
     src/raster.h \
     src/rendering.h \
     src/renderthreads.h \
+    src/sampling.h \
     src/scene.h \
     src/ui/mainwindow.h \
     src/ui/view.h
@@ -65,6 +70,7 @@ SOURCES += \
     src/raster.cpp \
     src/rendering.cpp \
     src/renderthreads.cpp \
+    src/sampling.cpp \
     src/scene.cpp \
     src/ui/mainwindow.cpp \
     src/ui/view.cpp

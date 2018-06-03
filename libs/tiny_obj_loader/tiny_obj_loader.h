@@ -199,6 +199,9 @@ typedef struct {
   int pad2;
 
   std::map<std::string, std::string> unknown_parameter;
+
+  bool is_reflective() const;
+  bool is_transparent() const;
 } material_t;
 
 typedef struct {

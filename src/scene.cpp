@@ -11,6 +11,7 @@
 #include "mesh.h"
 
 #include "glm/gtc/type_ptr.hpp"
+#include "glm/gtx/component_wise.hpp"
 #include "glm/gtx/io.hpp"
 #include "tiny_obj_loader/tiny_obj_loader.h"
 
@@ -29,8 +30,9 @@ material::material(const color &diff_col) : material() {
 material::material(const tinyobj::material_t &mat)
     : diff_col(glm::make_vec3(mat.diffuse)),
       spec_col(glm::make_vec3(mat.specular)), spec_hardness(mat.shininess),
-      alpha(mat.dissolve), ior(mat.ior), col_tex(nullptr), spec_tex(nullptr),
-      norm_tex(nullptr) {}
+      refl_intensity(static_cast<double>(mat.is_reflective())),
+      alpha(1.0 - glm::compMax(glm::make_vec3(mat.transmittance))),
+      ior(mat.ior), col_tex(nullptr), spec_tex(nullptr), norm_tex(nullptr) {}
 
 // Either returns diff_col, or if col_tex is defined, the pixel corresponding to
 // the passed texture coordinates
@@ -203,14 +205,16 @@ scene::scene(const std::string &filename) : scene() {
     this->bsdfs.push_back(std::make_unique<DiffuseBSDF>());
   }
   for (const auto &s : shapes) {
-    objects.emplace_back();
-    mesh &m = objects.back();
+    objects.emplace_back(std::make_unique<mesh>());
+    mesh &m = *objects.back();
     m.name = s.name;
     if (mats.size() > 0) {
       // TODO only one material per object right now.
       auto mat_id = s.mesh.material_ids[0];
       m.mat_id = mat_id;
       m.bsdf = this->bsdfs[mat_id].get();
+      std::cout << "!!! " << mats[mat_id].name << ", " << mats[mat_id].ior
+                << std::endl;
     } else {
       m.mat_id = 0;
       m.bsdf = this->bsdfs.front().get();
@@ -259,40 +263,45 @@ scene::scene(const std::string &filename) : scene() {
     }
 
     // calc vertex normals
-    // TODO get normal index
     m.vertex_normals.resize(m.vertices.size());
     for (const auto &kv : vertex_ids_map) {
       vertex_id old_id = kv.first;
       vertex_id new_id = kv.second;
-      m.vertex_normals[new_id] = glm::make_vec3(&attrs.normals[3 * old_id]);
-      // Recalculate?
-      // if (glm::length2(normal) > EPSILON && face::is_perpendicular(normal)) {
-      //   normalize_in_place(normal);
-      // } else {
-      //   vertex n(0);
-      //   for (face_id f_id : m.face_adjacencies[i]) {
-      //     n += faces[f_id].normal;
-      //   }
-      //   vertex_normals.push_back(glm::normalize(n));
-      // }
+      vertex normal;
+      if (attrs.normals.size() > 0) {
+        normal = glm::make_vec3(&attrs.normals[3 * old_id]);
+      } else {
+        normal = vertex(0);
+      }
+      if (glm::length2(normal) > EPSILON) {
+        normalize_in_place(normal);
+      } else {
+        vertex n(0);
+        for (face_id f_id : m.face_adjacencies[new_id]) {
+          n += m.faces[f_id].normal;
+        }
+        normal = glm::normalize(n);
+      }
+
+      m.vertex_normals[new_id] = normal;
     }
   }
 }
 
 mesh &scene::add_object(std::ifstream &infile, const std::string &name,
                         bool update_tree) {
-  objects.emplace_back(infile, name);
+  objects.push_back(std::make_unique<mesh>(infile, name));
   if (update_tree) {
     this->update_tree();
   }
-  return objects.back();
+  return *objects.back();
 }
 
 void scene::update_tree() {
   std::vector<const face *> allfaces;
-  for (const mesh &o : objects) {
-    allfaces.reserve(allfaces.size() + o.faces.size());
-    for (const face &f : o.faces) {
+  for (const auto &o_ptr : objects) {
+    allfaces.reserve(allfaces.size() + o_ptr->faces.size());
+    for (const face &f : o_ptr->faces) {
       allfaces.push_back(&f);
     }
   }

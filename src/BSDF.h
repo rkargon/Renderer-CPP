@@ -11,16 +11,21 @@
 
 #include "geom.h"
 
+#include "sampling.h"
+
 #include "tiny_obj_loader/tiny_obj_loader.h"
 
 #include <memory>
+#include <utility>
 
 class BSDF {
 public:
-  virtual color getLight(color incidentColor, vertex incidentDirection,
-                         vertex normal, vertex returningDirection) const = 0;
-  virtual vertex getIncidentDirection(vertex normal,
-                                      vertex viewDirection) const = 0;
+  virtual direction_sample
+  sample_direction(const vertex &normal,
+                   const vertex &outgoing_direction) const = 0;
+
+  virtual color bsdf(const vertex &incoming_dir,
+                     const vertex &outgoing_dir) const = 0;
 
   static std::unique_ptr<BSDF> from_obj_mat(const tinyobj::material_t &mat);
 };
@@ -30,10 +35,13 @@ public:
   color col;
 
   DiffuseBSDF(color c = color(1, 1, 1));
-  virtual color getLight(color incidentColor, vertex incidentDirection,
-                         vertex normal, vertex returningDirection) const;
-  virtual vertex getIncidentDirection(vertex normal,
-                                      vertex viewDirection) const;
+
+  virtual direction_sample
+  sample_direction(const vertex &normal,
+                   const vertex &outgoing_direction) const override;
+
+  virtual color bsdf(const vertex &incoming_dir,
+                     const vertex &outgoing_dir) const override;
 };
 
 class EmissionBSDF : public BSDF {
@@ -41,10 +49,13 @@ public:
   color col;
 
   EmissionBSDF(color c = color(10, 10, 10));
-  virtual color getLight(color incidentColor, vertex incidentDirection,
-                         vertex normal, vertex returningDirection) const;
-  virtual vertex getIncidentDirection(vertex normal,
-                                      vertex viewDirection) const;
+
+  virtual direction_sample
+  sample_direction(const vertex &normal,
+                   const vertex &outgoing_direction) const override;
+
+  virtual color bsdf(const vertex &incoming_dir,
+                     const vertex &outgoing_dir) const override;
 };
 
 class GlossyBSDF : public BSDF {
@@ -53,10 +64,13 @@ public:
   double roughness;
 
   GlossyBSDF(color c = color(1, 1, 1), double r = 0.2);
-  virtual color getLight(color incidentColor, vertex incidentDirection,
-                         vertex normal, vertex returningDirection) const;
-  virtual vertex getIncidentDirection(vertex normal,
-                                      vertex viewDirection) const;
+
+  virtual direction_sample
+  sample_direction(const vertex &normal,
+                   const vertex &outgoing_direction) const override;
+
+  virtual color bsdf(const vertex &incoming_dir,
+                     const vertex &outgoing_dir) const override;
 };
 
 class MixBSDF : public BSDF {
@@ -69,9 +83,12 @@ public:
   mutable bool materialCounter;
 
   MixBSDF(double f = 0.5, BSDF *m1 = nullptr, BSDF *m2 = nullptr);
-  virtual color getLight(color incidentColor, vertex incidentDirection,
-                         vertex normal, vertex returningDirection) const;
-  virtual vertex getIncidentDirection(vertex normal,
-                                      vertex viewDirection) const;
+
+  virtual direction_sample
+  sample_direction(const vertex &normal,
+                   const vertex &outgoing_direction) const override;
+
+  virtual color bsdf(const vertex &incoming_dir,
+                     const vertex &outgoing_dir) const override;
 };
 #endif /* defined(__Renderer__BSDF__) */

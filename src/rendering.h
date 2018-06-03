@@ -31,8 +31,8 @@
 #include "scene.h"
 
 #define AMB_OCC_SAMPLES 100
-#define PATH_TRACE_SAMPLES 20
-#define RAY_DEPTH 5
+#define PATH_TRACE_SAMPLES 500
+#define RAY_DEPTH 10
 
 extern int num_rays_traced; // keeps track of how many rays have been traced, to
                             // measure performance

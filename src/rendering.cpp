@@ -8,8 +8,12 @@
 
 #include "rendering.h"
 
+#include "sampling.h"
+
 #include <glm/gtx/io.hpp>
 #include <glm/gtx/norm.hpp>
+
+#include <random>
 
 int num_rays_traced = 0;
 
@@ -169,8 +173,7 @@ color trace_ray(const ray &viewray, const scene &sc, int depth) {
           n1 = mat.ior;
           n2 = 1;
         }
-        vertex raynorm = n * ndotray;
-        vertex raytang = viewray.dir - raynorm;
+        vertex raytang = viewray.dir - n * ndotray;
         vertex transtang = raytang * (n1 / n2);
         double transsinsquared = glm::length2(transtang);
         if (transsinsquared > 1)
@@ -183,7 +186,7 @@ color trace_ray(const ray &viewray, const scene &sc, int depth) {
         totcol = glm::mix(transcol, totcol, mat.alpha);
       }
       if (mat.refl_intensity > 0) {
-        color refcol = trace_ray(ray(v, refl), sc, depth + 1);
+        color refcol = mat.spec_col * trace_ray(ray(v, refl), sc, depth + 1);
         totcol = glm::mix(totcol, refcol, mat.refl_intensity);
       }
     }
@@ -191,11 +194,13 @@ color trace_ray(const ray &viewray, const scene &sc, int depth) {
   }
 }
 
+// TODO transparent objects cast shadows
+
 // Traces a path through a scene, up to the given depth.
 // Used for path-tracing, and calculates indirect lighting.
 color trace_path(const ray &viewray, const scene &sc, int depth) {
   if (depth > RAY_DEPTH) {
-    return color();
+    return color(0);
   }
 
   num_rays_traced++;
@@ -203,32 +208,47 @@ color trace_path(const ray &viewray, const scene &sc, int depth) {
   const face *f = kdtree::ray_tree_intersect(&sc.kdt, viewray, false, &tuv);
   if (f == nullptr) {
     return sc.w->get_color(viewray);
-  } else {
-    const mesh &obj = *f->obj;
-    vertex v = viewray.org + viewray.dir * tuv[0]; // calculate vertex location
-
-    // calculate normal
-    vertex n;
-    if (obj.smooth) {
-      n = (obj.vertex_normals[f->v[0]]) * (1 - tuv[1] - tuv[2]) +
-          (obj.vertex_normals[f->v[1]]) * tuv[1] +
-          (obj.vertex_normals[f->v[2]]) * tuv[2];
-      normalize_in_place(n);
-    } else {
-      n = f->normal;
-    }
-
-    // calculate incident light
-    vertex inc_dir = obj.bsdf->getIncidentDirection(n, viewray.dir);
-    color inc_col(0);
-    // TODO use russian roullette
-    if (!dynamic_cast<const EmissionBSDF *>(obj.bsdf)) {
-      inc_col = trace_path(ray(v, inc_dir), sc, depth + 1);
-    }
-    // calculate returned light
-    color return_col = obj.bsdf->getLight(inc_col, inc_dir, n, viewray.dir);
-    return return_col;
   }
+  const mesh &obj = *f->obj;
+  vertex v = viewray.org + viewray.dir * tuv[0]; // calculate vertex location
+
+  // calculate normal
+  vertex n;
+  if (obj.smooth) {
+    n = (obj.vertex_normals[f->v[0]]) * (1 - tuv[1] - tuv[2]) +
+        (obj.vertex_normals[f->v[1]]) * tuv[1] +
+        (obj.vertex_normals[f->v[2]]) * tuv[2];
+    normalize_in_place(n);
+  } else {
+    n = f->normal;
+  }
+
+  auto emitter = dynamic_cast<const EmissionBSDF *>(obj.bsdf);
+  if (emitter) {
+    return emitter->col;
+  }
+  double pdf_rr = 0.9; // TODO smarter russian roullette
+  if (std::uniform_real_distribution<float>(0, 1)(generator) > pdf_rr) {
+    return color(0);
+  }
+
+  auto wi_pdf = obj.bsdf->sample_direction(n, -viewray.dir);
+  vertex wi = wi_pdf.first;
+  double pdf = wi_pdf.second;
+  color incoming_light = trace_path(ray(v + EPSILON * wi, wi), sc, depth + 1);
+  return incoming_light * obj.bsdf->bsdf(-wi, -viewray.dir) * glm::dot(wi, n) /
+         (pdf * pdf_rr);
+
+  // // calculate incident light
+  // vertex inc_dir = obj.bsdf->getIncidentDirection(n, viewray.dir);
+  // color inc_col(0);
+  // // TODO use russian roullette
+  // if (!dynamic_cast<const EmissionBSDF *>(obj.bsdf)) {
+  //   inc_col = trace_path(ray(v, inc_dir), sc, depth + 1);
+  // }
+  // // calculate returned light
+  // color return_col = obj.bsdf->getLight(inc_col, inc_dir, n, viewray.dir);
+  // return return_col;
 }
 
 // Calculates ambient occlusion for a ray.
@@ -371,7 +391,8 @@ color raytrace_distance_field(const ray &viewray, const scene &sc,
         totcol = glm::mix(transcol, totcol, sc.de_mat.alpha);
       }
       if (sc.de_mat.refl_intensity > 0) {
-        color refcol = trace_ray(ray(v, refl), sc, depth + 1);
+        color refcol =
+            sc.de_mat.spec_col * trace_ray(ray(v, refl), sc, depth + 1);
         totcol = glm::mix(totcol, refcol, sc.de_mat.refl_intensity);
       }
     }
@@ -407,10 +428,10 @@ void generate_maps(int mapflags, raster &imgrasters, const scene &sc) {
   if (mapflags & 4)
     std::fill_n(imgrasters.colbuffer.get(), imgrasters.size(), 0xffffff);
 
-  for (const mesh &obj : sc.objects) {
-    for (const face &f : obj.faces) {
+  for (const auto &obj_ptr : sc.objects) {
+    for (const face &f : obj_ptr->faces) {
       // TODO per-face materials
-      const material &mat = sc.materials[obj.mat_id];
+      const material &mat = sc.materials[obj_ptr->mat_id];
 
       // get pixels of vertices
       p1 = sc.cam.project_vertex(f.get_vert(0), w, h);
@@ -445,9 +466,9 @@ void generate_maps(int mapflags, raster &imgrasters, const scene &sc) {
 
       // smooth shading, get vertex colors
       if ((mapflags & (4 + 2)) && f.obj->smooth) {
-        norm = obj.vertex_normals[f.v[0]];
-        norm2 = obj.vertex_normals[f.v[1]];
-        norm3 = obj.vertex_normals[f.v[2]];
+        norm = obj_ptr->vertex_normals[f.v[0]];
+        norm2 = obj_ptr->vertex_normals[f.v[1]];
+        norm3 = obj_ptr->vertex_normals[f.v[2]];
         col = calc_lighting(f.get_vert(0), norm, mat, sc);
         col2 = calc_lighting(f.get_vert(1), norm2, mat, sc);
         col3 = calc_lighting(f.get_vert(2), norm3, mat, sc);
@@ -498,7 +519,7 @@ void generate_maps(int mapflags, raster &imgrasters, const scene &sc) {
             z = z1 + w2 * dz21 / w0 + w3 * dz31 / w0;
             if (z < imgrasters.zbuffer[w * pint.y + pint.x]) {
               if (mapflags & 2) {
-                if (obj.smooth) {
+                if (obj_ptr->smooth) {
                   normtmp = lerp(norm, norm2, norm3, double(w1) / w0,
                                  double(w2) / w0, double(w3) / w0);
                 } else {
@@ -560,10 +581,10 @@ void generate_maps_vector(int mapflags, raster &imgrasters, const scene &sc) {
     std::fill_n(imgrasters.colbuffer.get(), imgrasters.size(), 0xffffff);
   }
 
-  for (const mesh &obj : sc.objects) {
-    for (const face &f : obj.faces) {
+  for (const auto &obj_ptr : sc.objects) {
+    for (const face &f : obj_ptr->faces) {
       // TODO per-face materials
-      const material &mat = sc.materials[obj.mat_id];
+      const material &mat = sc.materials[obj_ptr->mat_id];
       // get pixels of vertices
       p1 = sc.cam.project_vertex(f.get_vert(0), w, h);
       p2 = sc.cam.project_vertex(f.get_vert(1), w, h);
@@ -599,10 +620,10 @@ void generate_maps_vector(int mapflags, raster &imgrasters, const scene &sc) {
       }
 
       // smooth shading, get vertex colors
-      if ((mapflags & (4 + 2)) && obj.smooth) {
-        norm = obj.vertex_normals[f.v[0]];
-        norm2 = obj.vertex_normals[f.v[1]];
-        norm3 = obj.vertex_normals[f.v[2]];
+      if ((mapflags & (4 + 2)) && obj_ptr->smooth) {
+        norm = obj_ptr->vertex_normals[f.v[0]];
+        norm2 = obj_ptr->vertex_normals[f.v[1]];
+        norm3 = obj_ptr->vertex_normals[f.v[2]];
         col = calc_lighting(f.get_vert(0), norm, mat, sc);
         col2 = calc_lighting(f.get_vert(1), norm2, mat, sc);
         col3 = calc_lighting(f.get_vert(2), norm3, mat, sc);
@@ -668,7 +689,7 @@ void generate_maps_vector(int mapflags, raster &imgrasters, const scene &sc) {
             if (pint.x + i < w && pxmask[i] != 0 &&
                 z[i] < imgrasters.zbuffer[w * pint.y + pint.x + i]) {
               if (mapflags & 2) {
-                if (obj.smooth) {
+                if (obj_ptr->smooth) {
                   normtmp = lerp(norm, norm2, norm3, double(w1[i]) / w0[i],
                                  double(w2[i]) / w0[i], double(w3[i]) / w0[i]);
                 } else {
@@ -678,7 +699,7 @@ void generate_maps_vector(int mapflags, raster &imgrasters, const scene &sc) {
                     normal_to_rgb(normtmp);
               }
               if (mapflags & 4) {
-                if (obj.smooth) {
+                if (obj_ptr->smooth) {
                   colrgb = color_to_rgb(
                       lerp(col, col2, col3, double(w1[i]) / w0[i],
                            double(w2[i]) / w0[i], double(w3[i]) / w0[i]));

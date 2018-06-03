@@ -115,8 +115,8 @@ void View::keyPressEvent(QKeyEvent *event) {
     break;
   case Qt::Key_S:
     // TODO: add per-object smoothing and, in general, selection
-    for (mesh &o : sc.objects) {
-      o.smooth = !o.smooth;
+    for (auto &o_ptr : sc.objects) {
+      o_ptr->smooth = !o_ptr->smooth;
     }
     updateText();
     updateImage();
@@ -196,10 +196,10 @@ void View::drawWireFrame() {
   point_2d<double> p1, p2;
   painter.setPen(QColor(0, 0, 0));
 
-  for (const mesh &obj : sc.objects) {
-    for (const edge &e : obj.edges) {
-      p1 = sc.cam.project_vertex(obj.vertices[e[0]], w, h);
-      p2 = sc.cam.project_vertex(obj.vertices[e[1]], w, h);
+  for (const auto &obj_ptr : sc.objects) {
+    for (const edge &e : obj_ptr->edges) {
+      p1 = sc.cam.project_vertex(obj_ptr->vertices[e[0]], w, h);
+      p2 = sc.cam.project_vertex(obj_ptr->vertices[e[1]], w, h);
       if (isnan(p1.x) || isnan(p2.x) || isnan(p1.y) || isnan(p2.y)) {
         continue;
       }
@@ -233,9 +233,7 @@ void View::init_scene() {
   std::ifstream spherefile(models_dir + "sphere.stl");
   std::ifstream cubefile(models_dir + "cube.stl");
 
-#undef STL_SCENE
-#ifdef STL_SCENE
-  bool stl_scene = false;
+  bool stl_scene = true;
   if (stl_scene) {
     // scene setup
     sc.cam.center = vertex(0, -5, 0);
@@ -247,39 +245,42 @@ void View::init_scene() {
     sc.cam.calc_image_vectors();
     sc.lamps.emplace_back(25, 2, vertex(0, 5, 5), rgb_to_color(0xFF66CC));
     sc.w = std::make_unique<sky>();
+    sc.materials.emplace_back(color(1));
+    sc.bsdfs.emplace_back(new EmissionBSDF());
+    sc.bsdfs.emplace_back(new DiffuseBSDF());
 
     mesh &sphere = sc.add_object(spherefile, "Sphere", false);
-    sphere.mat = new material(color(1));
-    sphere.bsdf = new EmissionBSDF();
+    sphere.mat_id = 0;
+    sphere.bsdf = sc.bsdfs[0].get();
     // sphere.project_texture(TEX_PROJ_SPHERICAL);
     sphere.scale_centered(vertex(0.3, 0.3, 0.3));
     sphere.move(vertex(0, 0, 1));
 
     mesh &dragon = sc.add_object(dragonfile, "Dragon", false);
-    dragon.mat = new material(color(1));
-    dragon.bsdf = new DiffuseBSDF();
+    dragon.mat_id = 0;
+    dragon.bsdf = sc.bsdfs[1].get();
     // dragon.project_texture(TEX_PROJ_SPHERICAL);
     sc.update_tree();
 
     sc.de_obj = de_mandelbox(2.5, 1, 0.5, 1, 30);
-  }
-#endif
+  } else {
 
-  ///////
-  sc = scene(models_dir + "cornell-box/CornellBox-Sphere.obj");
-  sc.w = std::make_unique<sky>();
-  sc.lamps.emplace_back(100, 2, vertex(0, 10, 10), rgb_to_color(0xFF66CC));
-  sc.lamps.emplace_back(100, 2, vertex(10, 0, 10), rgb_to_color(0x66FFCC));
-  sc.lamps.emplace_back(100, 2, vertex(10, 10, 00), rgb_to_color(0xCC66FF));
-  sc.de_obj = de_mandelbox(2.5, 1, 0.5, 1, 30);
-  sc.cam.center = vertex(0, .8, 3.6);
-  sc.cam.focus = vertex(0);
-  sc.cam.normal = vertex(0, 0, -1);
-  sc.cam.vert = vertex(0, 1, 0);
-  sc.cam.calc_image_vectors();
+    ///////
+    sc = scene(models_dir + "cornell-box/CornellBox-Sphere.obj");
+    sc.w = std::make_unique<sky>();
+    sc.lamps.emplace_back(100, 2, vertex(0, 10, 10), rgb_to_color(0xFF66CC));
+    sc.lamps.emplace_back(100, 2, vertex(10, 0, 10), rgb_to_color(0x66FFCC));
+    sc.lamps.emplace_back(100, 2, vertex(10, 10, 00), rgb_to_color(0xCC66FF));
+    sc.de_obj = de_mandelbox(2.5, 1, 0.5, 1, 30);
+    sc.cam.center = vertex(0, .8, 3.6);
+    sc.cam.focus = vertex(0);
+    sc.cam.normal = vertex(0, 0, -1);
+    sc.cam.vert = vertex(0, 1, 0);
+    sc.cam.calc_image_vectors();
 
-  for (const auto &obj : sc.objects) {
-    std::cout << obj << std::endl;
+    for (const auto &obj_ptr : sc.objects) {
+      std::cout << *obj_ptr << std::endl;
+    }
+    sc.update_tree();
   }
-  sc.update_tree();
 }

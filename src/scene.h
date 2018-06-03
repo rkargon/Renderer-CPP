@@ -116,7 +116,7 @@ public:
   camera cam;
   std::vector<lamp> lamps;
   std::unique_ptr<world> w;
-  std::vector<mesh> objects;
+  std::vector<std::unique_ptr<mesh>> objects;
   std::vector<material> materials;
   std::vector<std::unique_ptr<BSDF>> bsdfs;
   kdtree kdt;
