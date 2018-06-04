@@ -17,16 +17,15 @@ std::unique_ptr<BSDF> BSDF::from_obj_mat(const tinyobj::material_t &mat) {
   int mirror_illum[] = {3, 5, 8};
   int glass_illum[] = {4, 6, 7, 9};
 
-  /// TODO TEMPORARY XXX
-
   if (range_contains(mirror_illum, mat.illum)) {
     // TODO shininess
-    return std::make_unique<DiffuseBSDF>(glm::make_vec3(mat.diffuse));
+    /// TODO TEMPORARY XXX
+    return std::make_unique<DiffuseBSDF>(color(1));
     return std::make_unique<GlossyBSDF>(
         glm::make_vec3(mat.specular), 0 * 1.0 / std::fmax(1.0, mat.shininess));
   } else if (range_contains(glass_illum, mat.illum)) {
     // TODO GLASS
-    return std::make_unique<DiffuseBSDF>();
+    return std::make_unique<DiffuseBSDF>(color(1));
   } else {
     color emission = glm::make_vec3(mat.emission);
     if (glm::compMax(emission) > 0) {

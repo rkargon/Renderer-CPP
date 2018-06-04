@@ -233,7 +233,7 @@ void View::init_scene() {
   std::ifstream spherefile(models_dir + "sphere.stl");
   std::ifstream cubefile(models_dir + "cube.stl");
 
-  bool stl_scene = true;
+  bool stl_scene = false;
   if (stl_scene) {
     // scene setup
     sc.cam.center = vertex(0, -5, 0);
@@ -244,7 +244,7 @@ void View::init_scene() {
     sc.cam.center_focus();
     sc.cam.calc_image_vectors();
     sc.lamps.emplace_back(25, 2, vertex(0, 5, 5), rgb_to_color(0xFF66CC));
-    sc.w = std::make_unique<sky>();
+    sc.w = std::make_unique<world>();
     sc.materials.emplace_back(color(1));
     sc.bsdfs.emplace_back(new EmissionBSDF());
     sc.bsdfs.emplace_back(new DiffuseBSDF());
@@ -254,7 +254,7 @@ void View::init_scene() {
     sphere.bsdf = sc.bsdfs[0].get();
     // sphere.project_texture(TEX_PROJ_SPHERICAL);
     sphere.scale_centered(vertex(0.3, 0.3, 0.3));
-    sphere.move(vertex(0, 0, 1));
+    sphere.move(vertex(0, 0, 2));
 
     mesh &dragon = sc.add_object(dragonfile, "Dragon", false);
     dragon.mat_id = 0;
@@ -267,7 +267,7 @@ void View::init_scene() {
 
     ///////
     sc = scene(models_dir + "cornell-box/CornellBox-Sphere.obj");
-    sc.w = std::make_unique<sky>();
+    sc.w = std::make_unique<world>();
     sc.lamps.emplace_back(100, 2, vertex(0, 10, 10), rgb_to_color(0xFF66CC));
     sc.lamps.emplace_back(100, 2, vertex(10, 0, 10), rgb_to_color(0x66FFCC));
     sc.lamps.emplace_back(100, 2, vertex(10, 10, 00), rgb_to_color(0xCC66FF));
