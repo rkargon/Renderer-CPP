@@ -64,7 +64,8 @@ color calc_lighting(const vertex &v, const vertex &n, const material &mat,
 
 // Traces a ray from the camera through a scene, using ray-tracing, up to a
 // certain depth
-color trace_ray(const ray &viewray, const scene &sc, int depth) {
+color trace_ray(const ray &viewray, const scene &sc, unsigned int depth,
+                unsigned int max_depth) {
   num_rays_traced++;
   vertex tuv;
   const face *f = kdtree::ray_tree_intersect(&sc.kdt, viewray, false, &tuv);
@@ -161,7 +162,7 @@ color trace_ray(const ray &viewray, const scene &sc, int depth) {
     // every object is air.
     // also doesn't do fresnel formula, reflection and refraction are handled
     // separately, except for total internal reflection
-    if (depth < RAY_DEPTH) {
+    if (depth < max_depth) {
       vertex refl = glm::reflect(viewray.dir, n);
       if (mat.alpha < 1) {
         double n1, n2;
@@ -182,11 +183,12 @@ color trace_ray(const ray &viewray, const scene &sc, int depth) {
           vertex transnorm = n * signum(ndotray) * sqrt(1 - transsinsquared);
           transray = transnorm + transtang;
         }
-        color transcol = trace_ray(ray(v, transray), sc, depth + 1);
+        color transcol = trace_ray(ray(v, transray), sc, depth + 1, max_depth);
         totcol = glm::mix(transcol, totcol, mat.alpha);
       }
       if (mat.refl_intensity > 0) {
-        color refcol = mat.spec_col * trace_ray(ray(v, refl), sc, depth + 1);
+        color refcol =
+            mat.spec_col * trace_ray(ray(v, refl), sc, depth + 1, max_depth);
         totcol = glm::mix(totcol, refcol, mat.refl_intensity);
       }
     }
@@ -198,8 +200,9 @@ color trace_ray(const ray &viewray, const scene &sc, int depth) {
 
 // Traces a path through a scene, up to the given depth.
 // Used for path-tracing, and calculates indirect lighting.
-color trace_path(const ray &viewray, const scene &sc, int depth) {
-  if (depth > RAY_DEPTH) {
+color trace_path(const ray &viewray, const scene &sc, unsigned int depth,
+                 unsigned int max_depth) {
+  if (depth > max_depth) {
     return color(0);
   }
 
@@ -252,7 +255,7 @@ color trace_path(const ray &viewray, const scene &sc, int depth) {
 }
 
 // Calculates ambient occlusion for a ray.
-double ambient_occlusion(const ray &viewray, const scene &sc) {
+double ambient_occlusion(const ray &viewray, const scene &sc, int samples) {
   vertex tuv;
   const face *f = kdtree::ray_tree_intersect(&sc.kdt, viewray, false, &tuv);
   if (f == nullptr)
@@ -275,7 +278,7 @@ double ambient_occlusion(const ray &viewray, const scene &sc) {
     double occ_amount = 0; // amount of ambient occlusion, ie how much current
                            // point is illuminated by the background.
     ray testray(v, vertex(0, 0, 0));
-    for (int i = 1; i <= AMB_OCC_SAMPLES; i++) {
+    for (int i = 1; i <= samples; i++) {
       testray.dir = random_direction();
       if (dot(testray.dir, n) < 0)
         continue;
@@ -283,13 +286,14 @@ double ambient_occlusion(const ray &viewray, const scene &sc) {
                nullptr)
         occ_amount++;
     }
-    occ_amount /= AMB_OCC_SAMPLES;
+    occ_amount /= samples;
     return occ_amount;
   }
 }
 
 color raytrace_distance_field(const ray &viewray, const scene &sc,
-                              int num_steps, int depth) {
+                              int num_steps, unsigned int depth,
+                              unsigned int max_depth) {
   num_rays_traced++;
   double t;
   int steps;
@@ -363,7 +367,7 @@ color raytrace_distance_field(const ray &viewray, const scene &sc,
     // Currently assumes 'outside' of every object is air.
     // also doesn't do fresnel formula, reflection and refraction are handled
     // separately, except for total internal reflection
-    if (depth < RAY_DEPTH) {
+    if (depth < max_depth) {
       vertex refl = glm::reflect(viewray.dir, n);
       if (sc.de_mat.alpha < 1) {
         double n1, n2;
@@ -792,27 +796,31 @@ void SSAO(raster &imgrasters, const scene &sc) {
   }
 }
 
-color ray_trace_pixel(double x, double y, int w, int h, const scene &sc) {
-  return trace_ray(sc.cam.cast_ray(x, y, w, h), sc);
+color ray_trace_pixel(double x, double y, int w, int h, const scene &sc,
+                      const render_options &opts) {
+  return trace_ray(sc.cam.cast_ray(x, y, w, h), sc, 1, opts.ray_depth);
 }
 
-color path_trace_pixel(double x, double y, int w, int h, const scene &sc) {
-  int s;
+color path_trace_pixel(double x, double y, int w, int h, const scene &sc,
+                       const render_options &opts) {
+  unsigned int s;
   color totalcol{};
-  for (s = 1; s <= PATH_TRACE_SAMPLES; s++) {
+  for (s = 1; s <= opts.samples; s++) {
     totalcol += trace_path(sc.cam.cast_ray(x, y, w, h), sc);
   }
-  return totalcol / static_cast<double>(s);
+  return tone_map(totalcol / static_cast<double>(s));
 }
 
-color amb_occ_pixel(double x, double y, int w, int h, const scene &sc) {
+color amb_occ_pixel(double x, double y, int w, int h, const scene &sc,
+                    const render_options &opts) {
   ray r = sc.cam.cast_ray(x, y, w, h);
-  double ao = ambient_occlusion(r, sc);
+  double ao = ambient_occlusion(r, sc, opts.samples);
   ao = glm::clamp<double>(ao * 2, 0, 1);
   return color(ao, ao, ao);
 }
 
-color ray_march_pixel(double x, double y, int w, int h, const scene &sc) {
+color ray_march_pixel(double x, double y, int w, int h, const scene &sc,
+                      const render_options &opts) {
   int num_steps = 150;
   ray viewray = sc.cam.cast_ray(x, y, w, h);
   int steps;

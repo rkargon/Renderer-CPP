@@ -8,6 +8,40 @@
 
 #include "view.h"
 
+#include "glm/gtx/io.hpp"
+
+#include <QApplication>
+#include <QCommandLineParser>
+#include <QFileInfo>
+
+struct view_options {
+  render_options render_opts;
+  std::string scene_file;
+};
+
+view_options process_cli_args() {
+  QCommandLineParser parser;
+  parser.setApplicationDescription("Test helper");
+  parser.addHelpOption();
+
+  parser.addOption({"threads", "Number of render threads. A value of 0 means "
+                               "to auto-detect thread num.",
+                    "threads", "0"});
+  parser.addOption(
+      {"samples", "Number of path tracing samples", "samples", "10"});
+  parser.addOption({"file", "STL or OBJ file to load", "file"});
+  parser.addOption({"depth", "Max number of ray bounces", "depth", "10"});
+  parser.addOption({"tilesize", "Tile size", "tilesize", "32"});
+  parser.addOption({"antialiasing_per_side", "Antialiasing samples per side",
+                    "antialiasing_per_side", "1"});
+  parser.process(*QApplication::instance());
+
+  return {{parser.value("threads").toUInt(), parser.value("samples").toUInt(),
+           parser.value("depth").toUInt(), parser.value("tilesize").toUInt(),
+           parser.value("antialiasing_per_side").toUInt()},
+          parser.value("file").toStdString()};
+}
+
 View::View(QWidget *parent) : QWidget(parent), imgrasters(width(), height()) {
   setBackgroundRole(QPalette::Base);
   setAutoFillBackground(true);
@@ -15,15 +49,18 @@ View::View(QWidget *parent) : QWidget(parent), imgrasters(width(), height()) {
   setFocus(Qt::ActiveWindowFocusReason);
   setLayout(new QHBoxLayout);
 
+  auto opts = process_cli_args();
+
   renderimg = QImage(reinterpret_cast<uchar *>(imgrasters.colbuffer.get()),
                      width(), height(), QImage::Format_ARGB32);
-  this->init_scene();
-  manager = new thread_manager(&imgrasters, &sc, 1, 0);
+  this->init_scene(opts.scene_file);
+  manager =
+      std::make_unique<thread_manager>(&imgrasters, &sc, opts.render_opts);
 
   // status label
-  statuslbl = new QLabel("Raph Renderer 2018");
+  statuslbl.reset(new QLabel("Raph Renderer 2018"));
   statuslbl->setParent(this);
-  this->layout()->addWidget(statuslbl);
+  this->layout()->addWidget(statuslbl.get());
   statuslbl->setSizePolicy(QSizePolicy::MinimumExpanding,
                            QSizePolicy::MinimumExpanding);
   statuslbl->setAlignment(Qt::AlignTop);
@@ -226,7 +263,7 @@ QColor colorToQColor(const color &c) {
   return QColor((int)c1.r, (int)c1.g, (int)c1.b);
 }
 
-void View::init_scene() {
+void View::init_scene(const std::string &scene_file) {
   std::string models_dir =
       "/Users/raphaelkargon/Documents/Programming/Computer Graphics/Models/";
   std::ifstream dragonfile(models_dir + "dragonsmall.stl");
@@ -266,11 +303,13 @@ void View::init_scene() {
   } else {
 
     ///////
-    sc = scene(models_dir + "cornell-box/CornellBox-Sphere.obj");
+    sc = scene(QFileInfo(QString::fromStdString(scene_file))
+                   .absoluteFilePath()
+                   .toStdString());
     sc.w = std::make_unique<world>();
-    sc.lamps.emplace_back(100, 2, vertex(0, 10, 10), rgb_to_color(0xFF66CC));
-    sc.lamps.emplace_back(100, 2, vertex(10, 0, 10), rgb_to_color(0x66FFCC));
-    sc.lamps.emplace_back(100, 2, vertex(10, 10, 00), rgb_to_color(0xCC66FF));
+    sc.lamps.emplace_back(100, 2, vertex(10, 10, 10), rgb_to_color(0xFFFFFF));
+    sc.lamps.emplace_back(100, 2, vertex(10, 10, 10), rgb_to_color(0xFFFFFF));
+    sc.lamps.emplace_back(100, 2, vertex(10, 10, 10), rgb_to_color(0xFFFFFF));
     sc.de_obj = de_mandelbox(2.5, 1, 0.5, 1, 30);
     sc.cam.center = vertex(0, .8, 3.6);
     sc.cam.focus = vertex(0);
@@ -280,6 +319,8 @@ void View::init_scene() {
 
     for (const auto &obj_ptr : sc.objects) {
       std::cout << *obj_ptr << std::endl;
+      //  std::cout << sc.materials[obj_ptr->mat_id].name << std::endl;
+      std::cout << sc.materials[obj_ptr->mat_id].diff_col << std::endl;
     }
     sc.update_tree();
   }

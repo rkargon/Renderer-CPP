@@ -256,6 +256,11 @@ double sphere_fold_ratio(const vertex &v, const double min_radius_2,
 }
 
 // color functions
+
+double luma(const color &c) {
+  return glm::dot(c, color(0.2126, 0.7152, 0.0722));
+}
+
 // Take a vertex of three values in range [0,1] and convert to 32-bit RGB
 uint color_to_rgb(const color &c) {
   return (unsigned char)glm::clamp(c.r * 255.0, 0.0, 255.0) << 16 |
@@ -300,6 +305,11 @@ color hsv_to_rgb(const int hue, const double saturation, const double value) {
   default:
     return {0, 0, 0};
   }
+}
+
+color tone_map(const color &c) {
+  double l = luma(c);
+  return c / (l + 1);
 }
 
 /* bounding box related functions */

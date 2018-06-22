@@ -10,6 +10,7 @@
 #define __Renderer__renderthreads__
 
 #include "raster.h"
+#include "rendering.h"
 #include "scene.h"
 #include <algorithm>
 #include <condition_variable>
@@ -23,9 +24,9 @@ class thread_manager;
 // Represents a rectangular tile of the image
 typedef struct tile {
   // top left pixel coordinates
-  int x, y;
+  unsigned int x, y;
   // width and height of tile
-  int w, h;
+  unsigned int w, h;
 } tile;
 
 /**
@@ -43,7 +44,8 @@ typedef struct tile {
  */
 // TODO declare render methods with this signature?
 using render_method_func = std::function<color(
-    const double x, const double y, const int w, const int h, const scene &sc)>;
+    const double x, const double y, const int w, const int h, const scene &sc,
+    const render_options &opts)>;
 
 /**
  *  Manages a pool of rendering threads. Each thread renders one tile of an
@@ -52,7 +54,7 @@ using render_method_func = std::function<color(
  */
 class thread_manager {
 public:
-  thread_manager() = delete;
+  thread_manager() = default;
 
   /**
    *  Creates a rendering thread pool with the given parameters.
@@ -71,8 +73,7 @@ public:
    *  @param tilesize              Width and height in pixels of each tile.
    */
   thread_manager(raster *raster_ref, const scene *sc,
-                 const int antialiasing_per_side = 1, int nthreads = 0,
-                 const int tilesize = 32);
+                 const render_options &opts);
 
   ~thread_manager();
 
@@ -104,8 +105,7 @@ private:
   std::mutex is_running_mutex;
   std::condition_variable is_running_cv;
 
-  int tilesize;
-  int antialiasing_per_side;
+  render_options opts;
   raster *raster_ref;
   render_method_func render_method;
   // TODO make this volatile??

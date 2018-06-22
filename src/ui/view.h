@@ -28,8 +28,8 @@
 #include <QtWidgets/QLayout>
 #include <QtWidgets/QWidget>
 
-#include <algorithm>
 #include <fstream>
+#include <memory>
 #include <thread>
 
 class View : public QWidget {
@@ -41,10 +41,10 @@ public:
   unsigned int rendermode = 0;
   raster imgrasters;
   QImage renderimg;
-  thread_manager *manager;
+  std::unique_ptr<thread_manager> manager;
 
   QPoint prevpos; // for mouse movement tracking
-  QLabel *statuslbl;
+  std::unique_ptr<QLabel> statuslbl;
 
   View(QWidget *parent = 0);
   ~View() = default;
@@ -64,7 +64,7 @@ protected:
   void resizeEvent(QResizeEvent *event);
 
 private:
-  void init_scene();
+  void init_scene(const std::string &scene_file);
 };
 
 QColor colorToQColor(const color &c);

@@ -167,11 +167,13 @@ double sphere_fold_ratio(const vertex &v, const double min_radius_2,
                          const double fixed_radius_2);
 
 /* color functions */
+double luma(const color &c);
 uint color_to_rgb(const color &c);
 uint normal_to_rgb(const vertex &n);
 color rgb_to_color(const uint rgb);
 vertex rgb_to_normal(const uint n);
 color hsv_to_rgb(const int hue, const double saturation, const double value);
+color tone_map(const color &c);
 
 /* bounding box related functions */
 bounds calc_bounding_box(const std::vector<const face *> &faces);

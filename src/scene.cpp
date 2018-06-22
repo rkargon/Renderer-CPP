@@ -213,7 +213,8 @@ scene::scene(const std::string &filename) : scene() {
       auto mat_id = s.mesh.material_ids[0];
       m.mat_id = mat_id;
       m.bsdf = this->bsdfs[mat_id].get();
-      std::cout << "!!! " << mats[mat_id].name << ", " << mats[mat_id].ior
+      std::cout << "!!! " << mats[mat_id].name << ", mesh name: " << m.name
+                << " diffuse: " << glm::make_vec3(mats[mat_id].diffuse)
                 << std::endl;
     } else {
       m.mat_id = 0;

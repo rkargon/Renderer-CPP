@@ -30,18 +30,26 @@
 #include "raster.h"
 #include "scene.h"
 
-#define AMB_OCC_SAMPLES 100
-#define PATH_TRACE_SAMPLES 100
-#define RAY_DEPTH 10
+#include <string>
 
 extern int num_rays_traced; // keeps track of how many rays have been traced, to
                             // measure performance
 
+struct render_options {
+  unsigned int threads;
+  unsigned int samples;
+  unsigned int ray_depth;
+  unsigned int tilesize;
+  unsigned int antialiasing_per_side;
+};
+
 color calc_lighting(const vertex &v, const vertex &n, const material &mat,
                     const scene &sc);
-color trace_ray(const ray &viewray, const scene &sc, int depth = 1);
-color trace_path(const ray &viewray, const scene &sc, int depth = 1);
-double ambient_occlusion(const ray &viewray, kdtree *kdt);
+color trace_ray(const ray &viewray, const scene &sc, unsigned int depth = 1,
+                unsigned int max_depth = 10);
+color trace_path(const ray &viewray, const scene &sc, unsigned int depth = 1,
+                 unsigned int max_depth = 10);
+double ambient_occlusion(const ray &viewray, kdtree *kdt, int samples);
 color raytrace_distance_field(const ray &viewray, const scene &sc,
                               int num_iterations, int depth = 1);
 
@@ -52,10 +60,14 @@ void paint_normal_map(raster &imgrasters, const scene &sc);
 void SSAO(raster &imgrasters, const scene &sc);
 
 /* Used in multithreaded rendering */
-color ray_trace_pixel(double x, double y, int w, int h, const scene &sc);
-color path_trace_pixel(double x, double y, int w, int h, const scene &sc);
-color amb_occ_pixel(double x, double y, int w, int h, const scene &sc);
-color ray_march_pixel(double x, double y, int w, int h, const scene &sc);
+color ray_trace_pixel(double x, double y, int w, int h, const scene &sc,
+                      const render_options &opts);
+color path_trace_pixel(double x, double y, int w, int h, const scene &sc,
+                       const render_options &opts);
+color amb_occ_pixel(double x, double y, int w, int h, const scene &sc,
+                    const render_options &opts);
+color ray_march_pixel(double x, double y, int w, int h, const scene &sc,
+                      const render_options &opts);
 
 // stores increment values of barycentric coordinates for 4 pixel values at once
 typedef struct edge_vect {

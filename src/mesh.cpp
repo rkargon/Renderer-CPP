@@ -158,5 +158,5 @@ void mesh::reset_face_obj_ptrs() {
 std::ostream &operator<<(std::ostream &os, const mesh &m) {
   return os << "mesh: (" << &m << ") " << m.name << " [" << m.vertices.size()
             << " vertices, " << m.edges.size() << " edges, " << m.faces.size()
-            << " faces]." << std::endl;
+            << " faces].";
 }
